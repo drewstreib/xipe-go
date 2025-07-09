@@ -118,6 +118,7 @@
                         <li><strong>Shorten URL:</strong> <code>/api/urlpost?ttl=[1d|1w|1m]&url=[encoded_url]</code></li>
                         <li><strong>Access URL:</strong> <code>/[code]</code> (4-6 alphanumeric characters)</li>
                         <li><strong>Test URL:</strong> <code>/[code]?action=info</code> (view info without redirecting)</li>
+                        <li><strong>Format Override:</strong> Add <code>&format=[json|html]</code> to any endpoint to override response format</li>
                         <li><strong>Statistics:</strong> <code>/stats</code></li>
                     </ul>
                 </div>
@@ -149,6 +150,7 @@
                                 <option value="1m">1 month (6 chars)</option>
                             </select>
                         </div>
+                        <input type="hidden" name="format" value="html">
                         <button type="submit">Shorten URL</button>
                     </form>
                 </div>
@@ -173,7 +175,7 @@
             e.preventDefault();
             const code = document.getElementById('testCode').value;
             if (code) {
-                window.location.href = '/' + code + '?action=info';
+                window.location.href = '/' + code + '?action=info&format=html';
             }
         });
     </script>
