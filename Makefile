@@ -39,7 +39,8 @@ ko-apply:
 
 .PHONY: ko-multiarch
 ko-multiarch:
-	ko build --platform=linux/amd64,linux/arm64 --bare .
+	# Note: AMD64 disabled to speed up builds - add back with --platform=linux/amd64,linux/arm64
+	ko build --platform=linux/arm64 --bare .
 
 .PHONY: docker-build
 docker-build:

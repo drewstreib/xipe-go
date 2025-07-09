@@ -188,16 +188,17 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions.
 
 ## CI/CD Pipeline
 - **GitHub Actions**: Automated builds on main branch pushes
-- **Multi-architecture**: Builds for linux/amd64 and linux/arm64
+- **Architecture**: Builds for linux/arm64 only (AMD64 disabled for faster builds)
 - **Container Registry**: Images published to ghcr.io/drewstreib/xipe-go
 - **Security**: SBOM generation and vulnerability scanning
 - **Quality**: Automated testing and linting with golangci-lint
 
-### Multi-Architecture Build Notes
+### Build Architecture Notes
 - **Ko Configuration**: Uses `--bare` flag to prevent module path appending
-- **Architecture Support**: Properly builds native binaries for both AMD64 and ARM64
+- **Architecture Support**: Currently ARM64 only (AMD64 commented out for speed)
 - **Image Naming**: Final images published as `ghcr.io/drewstreib/xipe-go:latest`
 - **Docker Compose**: Uses the clean image name without module path
+- **Re-enabling AMD64**: Uncomment platform in `.ko.yaml` and add `linux/amd64` to build commands
 
 ### Troubleshooting Multi-Arch Builds
 If experiencing "exec format error" on ARM64 machines:

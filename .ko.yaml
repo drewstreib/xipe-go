@@ -12,6 +12,7 @@ builds:
 defaultBaseImage: gcr.io/distroless/static-debian12:nonroot
 
 # Default platforms to build for
+# Note: AMD64 commented out to speed up builds - uncomment if needed
 defaultPlatforms:
-- linux/amd64
+# - linux/amd64
 - linux/arm64

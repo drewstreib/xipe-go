@@ -72,8 +72,9 @@ jobs:
         KO_DOCKER_REPO: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         COSIGN_EXPERIMENTAL: 1
       run: |
-        # Build for multiple architectures with proper manifest list
-        ko build --platform=linux/amd64,linux/arm64 \
+        # Build for ARM64 only (uncomment amd64 in platform flag if needed)
+        # Note: AMD64 build disabled to speed up CI - add back with --platform=linux/amd64,linux/arm64
+        ko build --platform=linux/arm64 \
           --image-refs=image-refs.txt \
           --bare \
           .
