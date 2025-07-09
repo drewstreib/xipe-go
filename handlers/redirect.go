@@ -62,6 +62,8 @@ func (h *Handlers) RedirectHandler(c *gin.Context) {
 		"originalUrl": redirect.Val,
 		"redirectUrl": redirect.Val,
 		"fromSuccess": fromSuccess,
+		"created":     redirect.Created,
+		"expires":     redirect.Ettl,
 	})
 }
 

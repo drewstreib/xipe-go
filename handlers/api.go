@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/drewstreib/xipe-go/db"
 	"github.com/drewstreib/xipe-go/utils"
@@ -97,11 +98,19 @@ func (h *Handlers) URLPostHandler(c *gin.Context) {
 			return
 		}
 
+		// Get the client IP (Gin's ClientIP handles X-Forwarded-For, X-Real-IP, etc.)
+		clientIP := c.ClientIP()
+
+		// Get current timestamp
+		createdTime := time.Now().Unix()
+
 		redirect := &db.RedirectRecord{
-			Code: code,
-			Typ:  "R",
-			Val:  decodedURL,
-			Ettl: ettl,
+			Code:    code,
+			Typ:     "R",
+			Val:     decodedURL,
+			Ettl:    ettl,
+			Created: createdTime,
+			IP:      clientIP,
 		}
 
 		log.Printf("Attempting to store redirect - Code: %s, URL: %s", code, decodedURL)

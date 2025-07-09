@@ -74,6 +74,8 @@ Attributes:
   - typ: string (always "R" for redirects)
   - val: string (target URL)
   - ettl: number (optional, TTL in epoch seconds)
+  - created: number (creation timestamp in epoch seconds)
+  - ip: string (creator's IP address)
 
 TTL Configuration:
   - Enable TTL on 'ettl' attribute in DynamoDB

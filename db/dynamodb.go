@@ -30,14 +30,18 @@ type DynamoDBClient struct {
 // CachedRedirect holds the redirect URL and original DynamoDB TTL
 type CachedRedirect struct {
 	URL       string
-	DynamoTTL int64 // Original DynamoDB TTL timestamp
+	DynamoTTL int64  // Original DynamoDB TTL timestamp
+	Created   int64  // Creation timestamp
+	IP        string // Creator IP address
 }
 
 type RedirectRecord struct {
-	Code string `dynamodbav:"code"`
-	Typ  string `dynamodbav:"typ"`
-	Val  string `dynamodbav:"val"`
-	Ettl int64  `dynamodbav:"ettl,omitempty"`
+	Code    string `dynamodbav:"code"`
+	Typ     string `dynamodbav:"typ"`
+	Val     string `dynamodbav:"val"`
+	Ettl    int64  `dynamodbav:"ettl,omitempty"`
+	Created int64  `dynamodbav:"created"`
+	IP      string `dynamodbav:"ip"`
 }
 
 func NewDynamoDBClient() (DBInterface, error) {
@@ -118,10 +122,12 @@ func (d *DynamoDBClient) GetRedirect(code string) (*RedirectRecord, error) {
 			// Cache hit with valid TTL, return cached value
 			log.Printf("Cache hit for code %s", code)
 			return &RedirectRecord{
-				Code: code,
-				Typ:  "R",
-				Val:  cached.URL,
-				Ettl: cached.DynamoTTL,
+				Code:    code,
+				Typ:     "R",
+				Val:     cached.URL,
+				Ettl:    cached.DynamoTTL,
+				Created: cached.Created,
+				IP:      cached.IP,
 			}, nil
 		}
 	}
@@ -153,6 +159,8 @@ func (d *DynamoDBClient) GetRedirect(code string) (*RedirectRecord, error) {
 	cached := &CachedRedirect{
 		URL:       record.Val,
 		DynamoTTL: record.Ettl,
+		Created:   record.Created,
+		IP:        record.IP,
 	}
 	d.cache.Add(code, cached)
 	log.Printf("Cached redirect for code %s", code)

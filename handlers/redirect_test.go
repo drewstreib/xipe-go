@@ -29,9 +29,12 @@ func TestRedirectHandler(t *testing.T) {
 			code: "test",
 			setupMock: func(m *db.MockDB) {
 				m.On("GetRedirect", "test").Return(&db.RedirectRecord{
-					Code: "test",
-					Typ:  "R",
-					Val:  "https://example.com",
+					Code:    "test",
+					Typ:     "R",
+					Val:     "https://example.com",
+					Created: 1234567890,
+					Ettl:    1234567890,
+					IP:      "192.168.1.1",
 				}, nil)
 			},
 			expectedStatus: http.StatusOK,
@@ -117,9 +120,12 @@ func TestCatchAllHandler(t *testing.T) {
 			path: "/test",
 			setupMock: func(m *db.MockDB) {
 				m.On("GetRedirect", "test").Return(&db.RedirectRecord{
-					Code: "test",
-					Typ:  "R",
-					Val:  "https://example.com",
+					Code:    "test",
+					Typ:     "R",
+					Val:     "https://example.com",
+					Created: 1234567890,
+					Ettl:    1234567890,
+					IP:      "192.168.1.1",
 				}, nil)
 			},
 			expectedStatus: http.StatusOK,
@@ -131,9 +137,12 @@ func TestCatchAllHandler(t *testing.T) {
 			path: "/test5",
 			setupMock: func(m *db.MockDB) {
 				m.On("GetRedirect", "test5").Return(&db.RedirectRecord{
-					Code: "test5",
-					Typ:  "R",
-					Val:  "https://example.com",
+					Code:    "test5",
+					Typ:     "R",
+					Val:     "https://example.com",
+					Created: 1234567890,
+					Ettl:    1234567890,
+					IP:      "192.168.1.1",
 				}, nil)
 			},
 			expectedStatus: http.StatusOK,
@@ -145,9 +154,12 @@ func TestCatchAllHandler(t *testing.T) {
 			path: "/test66",
 			setupMock: func(m *db.MockDB) {
 				m.On("GetRedirect", "test66").Return(&db.RedirectRecord{
-					Code: "test66",
-					Typ:  "R",
-					Val:  "https://example.com",
+					Code:    "test66",
+					Typ:     "R",
+					Val:     "https://example.com",
+					Created: 1234567890,
+					Ettl:    1234567890,
+					IP:      "192.168.1.1",
 				}, nil)
 			},
 			expectedStatus: http.StatusOK,
