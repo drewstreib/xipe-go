@@ -76,6 +76,7 @@ jobs:
         ko build --platform=linux/amd64,linux/arm64 \
           --image-refs=image-refs.txt \
           --tags=latest,main,main-${{ github.sha }} \
+          --base-import-paths \
           .
           
         # Output the built image reference
