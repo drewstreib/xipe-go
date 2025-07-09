@@ -1,10 +1,13 @@
 package db
 
 import (
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"context"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
 type DBInterface interface {
@@ -13,7 +16,7 @@ type DBInterface interface {
 }
 
 type DynamoDBClient struct {
-	client *dynamodb.DynamoDB
+	client *dynamodb.Client
 	table  string
 }
 
@@ -27,18 +30,19 @@ type RedirectRecord struct {
 var DB DBInterface
 
 func Init() {
-	sess := session.Must(session.NewSession(&aws.Config{
-		Region: aws.String("us-east-1"),
-	}))
+	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion("us-east-1"))
+	if err != nil {
+		panic(err)
+	}
 
 	DB = &DynamoDBClient{
-		client: dynamodb.New(sess),
+		client: dynamodb.NewFromConfig(cfg),
 		table:  "xipe_redirects",
 	}
 }
 
 func (d *DynamoDBClient) PutRedirect(redirect *RedirectRecord) error {
-	av, err := dynamodbattribute.MarshalMap(redirect)
+	av, err := attributevalue.MarshalMap(redirect)
 	if err != nil {
 		return err
 	}
@@ -49,17 +53,15 @@ func (d *DynamoDBClient) PutRedirect(redirect *RedirectRecord) error {
 		ConditionExpression: aws.String("attribute_not_exists(code)"),
 	}
 
-	_, err = d.client.PutItem(input)
+	_, err = d.client.PutItem(context.TODO(), input)
 	return err
 }
 
 func (d *DynamoDBClient) GetRedirect(code string) (*RedirectRecord, error) {
-	result, err := d.client.GetItem(&dynamodb.GetItemInput{
+	result, err := d.client.GetItem(context.TODO(), &dynamodb.GetItemInput{
 		TableName: aws.String(d.table),
-		Key: map[string]*dynamodb.AttributeValue{
-			"code": {
-				S: aws.String(code),
-			},
+		Key: map[string]types.AttributeValue{
+			"code": &types.AttributeValueMemberS{Value: code},
 		},
 	})
 
@@ -72,7 +74,7 @@ func (d *DynamoDBClient) GetRedirect(code string) (*RedirectRecord, error) {
 	}
 
 	var record RedirectRecord
-	err = dynamodbattribute.UnmarshalMap(result.Item, &record)
+	err = attributevalue.UnmarshalMap(result.Item, &record)
 	if err != nil {
 		return nil, err
 	}

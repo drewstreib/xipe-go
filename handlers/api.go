@@ -7,8 +7,7 @@ import (
 	"xipe/db"
 	"xipe/utils"
 
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/gin-gonic/gin"
 )
 
@@ -111,9 +110,6 @@ func isDuplicateKeyError(err error) bool {
 	if err == nil {
 		return false
 	}
-	var awsErr awserr.Error
-	if errors.As(err, &awsErr) {
-		return awsErr.Code() == dynamodb.ErrCodeConditionalCheckFailedException
-	}
-	return false
+	var ccf *types.ConditionalCheckFailedException
+	return errors.As(err, &ccf)
 }
