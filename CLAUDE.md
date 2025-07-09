@@ -9,6 +9,7 @@ xipe (zippy) is a high-performance URL shortener and pastebin service for xi.pe,
 - **Language**: Go 1.24.3
 - **Web Framework**: Gin (github.com/gin-gonic/gin)
 - **Database**: AWS DynamoDB
+- **Cache**: HashiCorp golang-lru/v2/expirable (LRU cache with TTL)
 - **Testing**: testify/assert, testify/mock
 
 ### Project Structure
@@ -139,6 +140,8 @@ ko apply -f config/
 - **Port**: 8080 (hardcoded in main.go)
 - **AWS Region**: us-east-1 (hardcoded in db/dynamodb.go)
 - **Table Name**: xipe_redirects (hardcoded in db/dynamodb.go)
+- **Cache Size**: 10000 (configurable via CACHE_SIZE environment variable)
+- **Cache TTL**: 1 hour (hardcoded)
 - **DynamoDB Requirements**:
   - Create table with 'code' as primary key (String)
   - Enable TTL on 'ettl' attribute
@@ -153,9 +156,11 @@ ko apply -f config/
 - Configuration via environment variables
 
 ## Performance Considerations
-- DynamoDB session reuse for connection pooling
-- Lightweight Gin framework for minimal overhead
-- Simple key-value lookups for fast redirects
+- **In-Memory LRU Cache**: 10K item cache with 1-hour TTL reduces DynamoDB load
+- **Cache Logic**: Honors DynamoDB TTL by checking expiration before serving cached results
+- **DynamoDB session reuse** for connection pooling
+- **Lightweight Gin framework** for minimal overhead
+- **Simple key-value lookups** for fast redirects
 - Regex validation cached at compile time
 
 ## Security Notes

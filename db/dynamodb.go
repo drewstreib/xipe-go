@@ -3,12 +3,16 @@ package db
 import (
 	"context"
 	"log"
+	"os"
+	"strconv"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/hashicorp/golang-lru/v2/expirable"
 )
 
 type DBInterface interface {
@@ -19,6 +23,13 @@ type DBInterface interface {
 type DynamoDBClient struct {
 	client *dynamodb.Client
 	table  string
+	cache  *expirable.LRU[string, *CachedRedirect]
+}
+
+// CachedRedirect holds the redirect URL and original DynamoDB TTL
+type CachedRedirect struct {
+	URL       string
+	DynamoTTL int64 // Original DynamoDB TTL timestamp
 }
 
 type RedirectRecord struct {
@@ -50,9 +61,24 @@ func NewDynamoDBClient() (DBInterface, error) {
 		// Don't log the actual keys for security
 	}
 
+	// Initialize cache with configurable size
+	cacheSize := 10000 // Default
+	if envSize := os.Getenv("CACHE_SIZE"); envSize != "" {
+		if size, err := strconv.Atoi(envSize); err == nil && size > 0 {
+			cacheSize = size
+		}
+	}
+
+	// Cache TTL is 1 hour
+	cacheTTL := time.Hour
+	cache := expirable.NewLRU[string, *CachedRedirect](cacheSize, nil, cacheTTL)
+
+	log.Printf("Initialized LRU cache with size: %d, TTL: %v", cacheSize, cacheTTL)
+
 	client := &DynamoDBClient{
 		client: dynamodb.NewFromConfig(cfg),
 		table:  "xipe_redirects",
+		cache:  cache,
 	}
 	log.Printf("DynamoDB client initialized successfully for table: %s", "xipe_redirects")
 	return client, nil
@@ -80,6 +106,27 @@ func (d *DynamoDBClient) PutRedirect(redirect *RedirectRecord) error {
 }
 
 func (d *DynamoDBClient) GetRedirect(code string) (*RedirectRecord, error) {
+	// Check cache first
+	if cached, found := d.cache.Get(code); found {
+		// Check if the DynamoDB TTL is still valid
+		if cached.DynamoTTL > 0 && time.Now().Unix() > cached.DynamoTTL {
+			// DynamoDB item has expired, remove from cache and fall through to DB
+			d.cache.Remove(code)
+			log.Printf("Cache hit for code %s but DynamoDB TTL expired, evicting from cache", code)
+		} else {
+			// Cache hit with valid TTL, return cached value
+			log.Printf("Cache hit for code %s", code)
+			return &RedirectRecord{
+				Code: code,
+				Typ:  "R",
+				Val:  cached.URL,
+				Ettl: cached.DynamoTTL,
+			}, nil
+		}
+	}
+
+	// Cache miss or expired, query DynamoDB
+	log.Printf("Cache miss for code %s, querying DynamoDB", code)
 	result, err := d.client.GetItem(context.TODO(), &dynamodb.GetItemInput{
 		TableName: aws.String(d.table),
 		Key: map[string]types.AttributeValue{
@@ -100,6 +147,14 @@ func (d *DynamoDBClient) GetRedirect(code string) (*RedirectRecord, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Cache the result for 1 hour
+	cached := &CachedRedirect{
+		URL:       record.Val,
+		DynamoTTL: record.Ettl,
+	}
+	d.cache.Add(code, cached)
+	log.Printf("Cached redirect for code %s", code)
 
 	return &record, nil
 }
