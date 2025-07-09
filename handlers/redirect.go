@@ -3,7 +3,7 @@ package handlers
 import (
 	"net/http"
 	"regexp"
-	"xipe/db"
+	"github.com/drewstreib/xipe-go/db"
 
 	"github.com/gin-gonic/gin"
 )

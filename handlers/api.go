@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"xipe/db"
-	"xipe/utils"
+	"github.com/drewstreib/xipe-go/db"
+	"github.com/drewstreib/xipe-go/utils"
 
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/gin-gonic/gin"

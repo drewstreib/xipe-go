@@ -1,4 +1,4 @@
-module xipe
+module github.com/drewstreib/xipe-go
 
 go 1.24.3
 

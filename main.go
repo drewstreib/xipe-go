@@ -4,8 +4,8 @@ import (
 	"embed"
 	"html/template"
 	"log"
-	"xipe/db"
-	"xipe/handlers"
+	"github.com/drewstreib/xipe-go/db"
+	"github.com/drewstreib/xipe-go/handlers"
 
 	"github.com/gin-gonic/gin"
 )

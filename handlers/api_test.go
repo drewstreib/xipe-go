@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"testing"
-	"xipe/db"
+	"github.com/drewstreib/xipe-go/db"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
