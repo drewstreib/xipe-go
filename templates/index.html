@@ -115,20 +115,14 @@
         <div class="layout">
             <div class="left-column">
                 <div class="section">
-                    <h2>URL Shortener</h2>
+                    <h2>URL Shortener API</h2>
                     <p>Shorten URLs with JSON API or use the form on the right:</p>
-                    <code>POST /api/urlpost</code> with <code>{"ttl":"1d","url":"https://example.com"}</code>
-                    <p>TTL options: <code>1d</code> (4 chars), <code>1w</code> (5 chars), <code>1m</code> (6 chars)</p>
-                    <p>Access at: <code>xi.pe/[code]</code></p>
-                </div>
-
-                <div class="section">
-                    <h2>API Usage</h2>
                     <ul>
-                        <li><strong>Shorten:</strong> <code>POST /api/urlpost</code> (JSON body)</li>
+                        <li><strong>Shorten:</strong> <code>POST /api/urlpost</code> with <code>{"ttl":"1d","url":"https://example.com"}</code></li>
                         <li><strong>Access:</strong> <code>/[code]</code></li>
                         <li><strong>Info:</strong> <code>/[code]?action=info</code></li>
                     </ul>
+                    <p>TTL options: <code>1d</code> (4 chars), <code>1w</code> (5 chars), <code>1m</code> (6 chars)</p>
                 </div>
 
             </div>
