@@ -39,7 +39,7 @@ func TestStatsHandler(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	c.Request = httptest.NewRequest("GET", "/stats", nil)
+	c.Request = httptest.NewRequest("GET", "/api/stats", nil)
 
 	h.StatsHandler(c)
 

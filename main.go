@@ -31,11 +31,11 @@ func main() {
 	r.SetHTMLTemplate(tmpl)
 
 	r.GET("/", h.RootHandler)
-	r.GET("/stats", h.StatsHandler)
 
 	api := r.Group("/api")
 	{
 		api.GET("/urlpost", h.URLPostHandler)
+		api.GET("/stats", h.StatsHandler)
 	}
 
 	r.GET("/:code", h.CatchAllHandler)
