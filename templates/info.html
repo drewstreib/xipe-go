@@ -113,11 +113,30 @@
         .footer a:hover {
             text-decoration: underline;
         }
+        .success-message {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border-left: 4px solid #28a745;
+        }
+        .success-message strong {
+            color: #155724;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1 class="info">ℹ️ URL Information</h1>
+        
+        {{if .fromSuccess}}
+        <div class="success-message">
+            <strong>✅ URL Successfully Shortened!</strong><br>
+            Your URL has been successfully shortened and is ready to use.
+        </div>
+        {{end}}
         
         <p>Here's the information for this short URL:</p>
         

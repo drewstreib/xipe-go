@@ -55,11 +55,15 @@ func (h *Handlers) RedirectHandler(c *gin.Context) {
 		}
 		fullURL := scheme + "://" + host + "/" + code
 
+		// Check if this is from a successful creation
+		fromSuccess := c.Query("from") == "success"
+
 		c.HTML(http.StatusOK, "info.html", gin.H{
 			"code":        code,
 			"url":         fullURL,
 			"originalUrl": redirect.Val,
 			"redirectUrl": redirect.Val,
+			"fromSuccess": fromSuccess,
 		})
 		return
 	}

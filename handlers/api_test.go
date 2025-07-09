@@ -20,6 +20,7 @@ func TestURLPostHandler(t *testing.T) {
 	tests := []struct {
 		name           string
 		query          string
+		userAgent      string
 		setupMock      func(*db.MockDB)
 		expectedStatus int
 		expectedBody   map[string]interface{}
@@ -28,6 +29,7 @@ func TestURLPostHandler(t *testing.T) {
 		{
 			name:           "Missing ttl parameter",
 			query:          "?url=https://example.com",
+			userAgent:      "curl/7.68.0",
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: map[string]interface{}{
@@ -39,6 +41,7 @@ func TestURLPostHandler(t *testing.T) {
 		{
 			name:           "Missing url parameter",
 			query:          "?ttl=1d",
+			userAgent:      "curl/7.68.0",
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: map[string]interface{}{
@@ -50,6 +53,7 @@ func TestURLPostHandler(t *testing.T) {
 		{
 			name:           "Invalid ttl format",
 			query:          "?ttl=2d&url=https://example.com",
+			userAgent:      "curl/7.68.0",
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: map[string]interface{}{
@@ -61,6 +65,7 @@ func TestURLPostHandler(t *testing.T) {
 		{
 			name:           "URL without http/https prefix",
 			query:          "?ttl=1d&url=example.com",
+			userAgent:      "curl/7.68.0",
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusForbidden,
 			expectedBody: map[string]interface{}{
@@ -72,6 +77,7 @@ func TestURLPostHandler(t *testing.T) {
 		{
 			name:           "Invalid URL format",
 			query:          "?ttl=1d&url=" + url.QueryEscape("http://invalid url with spaces"),
+			userAgent:      "curl/7.68.0",
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: map[string]interface{}{
@@ -81,36 +87,51 @@ func TestURLPostHandler(t *testing.T) {
 			checkBody: true,
 		},
 		{
-			name:  "Successful URL storage with 1d ttl",
-			query: "?ttl=1d&url=" + url.QueryEscape("https://example.com"),
+			name:      "Successful URL storage with 1d ttl (browser)",
+			query:     "?ttl=1d&url=" + url.QueryEscape("https://example.com"),
+			userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
 			setupMock: func(m *db.MockDB) {
 				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
 					return r.Typ == "R" && r.Val == "https://example.com" && len(r.Code) == 4
 				})).Return(nil)
 			},
-			expectedStatus: http.StatusOK,
-			checkBody:      false, // Don't check body since code is random
+			expectedStatus: http.StatusSeeOther, // HTML requests now redirect
+			checkBody:      false,               // Don't check body since it's a redirect
 		},
 		{
-			name:  "Successful URL storage with 1w ttl",
-			query: "?ttl=1w&url=" + url.QueryEscape("https://example.com"),
+			name:      "Successful URL storage with 1w ttl (browser)",
+			query:     "?ttl=1w&url=" + url.QueryEscape("https://example.com"),
+			userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
 			setupMock: func(m *db.MockDB) {
 				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
 					return r.Typ == "R" && r.Val == "https://example.com" && len(r.Code) == 5
 				})).Return(nil)
 			},
-			expectedStatus: http.StatusOK,
+			expectedStatus: http.StatusSeeOther, // HTML requests now redirect
 			checkBody:      false,
 		},
 		{
-			name:  "Successful URL storage with 1m ttl",
-			query: "?ttl=1m&url=" + url.QueryEscape("https://example.com"),
+			name:      "Successful URL storage with 1m ttl (browser)",
+			query:     "?ttl=1m&url=" + url.QueryEscape("https://example.com"),
+			userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
 			setupMock: func(m *db.MockDB) {
 				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
 					return r.Typ == "R" && r.Val == "https://example.com" && len(r.Code) == 6
 				})).Return(nil)
 			},
-			expectedStatus: http.StatusOK,
+			expectedStatus: http.StatusSeeOther, // HTML requests now redirect
+			checkBody:      false,
+		},
+		{
+			name:      "API client gets JSON response (not redirect)",
+			query:     "?ttl=1d&url=" + url.QueryEscape("https://example.com"),
+			userAgent: "curl/7.68.0",
+			setupMock: func(m *db.MockDB) {
+				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
+					return r.Typ == "R" && r.Val == "https://example.com" && len(r.Code) == 4
+				})).Return(nil)
+			},
+			expectedStatus: http.StatusOK, // API clients get JSON
 			checkBody:      false,
 		},
 	}
@@ -125,7 +146,7 @@ func TestURLPostHandler(t *testing.T) {
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
 			c.Request = httptest.NewRequest("GET", "/api/urlpost"+tt.query, nil)
-			c.Request.Header.Set("User-Agent", "curl/7.68.0") // Ensure JSON responses in tests
+			c.Request.Header.Set("User-Agent", tt.userAgent)
 
 			h.URLPostHandler(c)
 

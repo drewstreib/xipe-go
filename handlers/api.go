@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -91,15 +92,20 @@ func (h *Handlers) URLPostHandler(c *gin.Context) {
 			}
 			fullURL := scheme + "://" + host + "/" + code
 
+			// Build redirect URL to info page with success parameter
+			redirectPath := fmt.Sprintf("/%s?action=info&from=success", code)
+
+			// Preserve format parameter if present
+			if format := c.Query("format"); format != "" {
+				redirectPath += "&format=" + url.QueryEscape(format)
+			}
+
 			// Return response based on client type
 			if utils.ShouldReturnHTML(c) {
-				c.HTML(http.StatusOK, "success.html", gin.H{
-					"url":         fullURL,
-					"originalUrl": decodedURL,
-					"code":        code,
-					"ttl":         ttl,
-				})
+				// For HTML clients, redirect to info page
+				c.Redirect(http.StatusSeeOther, redirectPath)
 			} else {
+				// For API clients, return JSON with the full URL
 				c.JSON(http.StatusOK, gin.H{
 					"status": "ok",
 					"url":    fullURL,
