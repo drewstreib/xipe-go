@@ -28,9 +28,7 @@ type RedirectRecord struct {
 	Ettl int64  `dynamodbav:"ettl,omitempty"`
 }
 
-var DB DBInterface
-
-func Init() {
+func NewDynamoDBClient() (DBInterface, error) {
 	log.Println("Initializing DynamoDB client...")
 
 	// Log some environment info for debugging
@@ -40,7 +38,7 @@ func Init() {
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion("us-east-1"))
 	if err != nil {
 		log.Printf("Failed to load AWS config: %v", err)
-		panic(err)
+		return nil, err
 	}
 
 	// Try to get credentials to verify they're working
@@ -52,11 +50,12 @@ func Init() {
 		// Don't log the actual keys for security
 	}
 
-	DB = &DynamoDBClient{
+	client := &DynamoDBClient{
 		client: dynamodb.NewFromConfig(cfg),
 		table:  "xipe_redirects",
 	}
 	log.Printf("DynamoDB client initialized successfully for table: %s", "xipe_redirects")
+	return client, nil
 }
 
 func (d *DynamoDBClient) PutRedirect(redirect *RedirectRecord) error {

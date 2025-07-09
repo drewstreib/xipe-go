@@ -4,8 +4,6 @@ import (
 	"net/http"
 	"regexp"
 
-	"github.com/drewstreib/xipe-go/db"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,7 +12,7 @@ func isValidCode(code string) bool {
 	return matched
 }
 
-func RedirectHandler(c *gin.Context) {
+func (h *Handlers) RedirectHandler(c *gin.Context) {
 	code := c.Param("code")
 	action := c.Query("action")
 
@@ -27,7 +25,7 @@ func RedirectHandler(c *gin.Context) {
 		return
 	}
 
-	redirect, err := db.DB.GetRedirect(code)
+	redirect, err := h.DB.GetRedirect(code)
 	if err != nil {
 		c.HTML(http.StatusInternalServerError, "error.html", gin.H{
 			"status":      "error",
@@ -69,13 +67,13 @@ func RedirectHandler(c *gin.Context) {
 	c.Redirect(http.StatusMovedPermanently, redirect.Val)
 }
 
-func CatchAllHandler(c *gin.Context) {
+func (h *Handlers) CatchAllHandler(c *gin.Context) {
 	path := c.Request.URL.Path[1:]
 
 	codePattern := regexp.MustCompile("^[a-zA-Z0-9]{4,6}$")
 	if codePattern.MatchString(path) {
 		c.Params = append(c.Params, gin.Param{Key: "code", Value: path})
-		RedirectHandler(c)
+		h.RedirectHandler(c)
 		return
 	}
 

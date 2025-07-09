@@ -15,7 +15,14 @@ import (
 var templatesFS embed.FS
 
 func main() {
-	db.Init()
+	dbClient, err := db.NewDynamoDBClient()
+	if err != nil {
+		log.Fatal("Failed to create DynamoDB client:", err)
+	}
+
+	h := &handlers.Handlers{
+		DB: dbClient,
+	}
 
 	r := gin.Default()
 
@@ -23,15 +30,15 @@ func main() {
 	tmpl := template.Must(template.New("").ParseFS(templatesFS, "templates/*"))
 	r.SetHTMLTemplate(tmpl)
 
-	r.GET("/", handlers.RootHandler)
-	r.GET("/stats", handlers.StatsHandler)
+	r.GET("/", h.RootHandler)
+	r.GET("/stats", h.StatsHandler)
 
 	api := r.Group("/api")
 	{
-		api.GET("/urlpost", handlers.URLPostHandler)
+		api.GET("/urlpost", h.URLPostHandler)
 	}
 
-	r.GET("/:code", handlers.CatchAllHandler)
+	r.GET("/:code", h.CatchAllHandler)
 
 	log.Println("Server starting on :8080")
 	if err := r.Run(":8080"); err != nil {

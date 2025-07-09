@@ -108,14 +108,15 @@ func TestURLPostHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockDB := new(db.MockDB)
 			tt.setupMock(mockDB)
-			db.DB = mockDB
+
+			h := &Handlers{DB: mockDB}
 
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
 			c.Request = httptest.NewRequest("GET", "/api/urlpost"+tt.query, nil)
 			c.Request.Header.Set("User-Agent", "curl/7.68.0") // Ensure JSON responses in tests
 
-			URLPostHandler(c)
+			h.URLPostHandler(c)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 

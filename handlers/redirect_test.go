@@ -72,7 +72,8 @@ func TestRedirectHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockDB := new(db.MockDB)
 			tt.setupMock(mockDB)
-			db.DB = mockDB
+
+			h := &Handlers{DB: mockDB}
 
 			w := httptest.NewRecorder()
 			c, router := gin.CreateTestContext(w)
@@ -80,7 +81,7 @@ func TestRedirectHandler(t *testing.T) {
 			c.Request = httptest.NewRequest("GET", "/"+tt.code, nil)
 			c.Params = []gin.Param{{Key: "code", Value: tt.code}}
 
-			RedirectHandler(c)
+			h.RedirectHandler(c)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
@@ -183,14 +184,15 @@ func TestCatchAllHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockDB := new(db.MockDB)
 			tt.setupMock(mockDB)
-			db.DB = mockDB
+
+			h := &Handlers{DB: mockDB}
 
 			w := httptest.NewRecorder()
 			c, router := gin.CreateTestContext(w)
 			router.LoadHTMLGlob("../templates/*") // Load templates for HTML responses
 			c.Request = httptest.NewRequest("GET", tt.path, nil)
 
-			CatchAllHandler(c)
+			h.CatchAllHandler(c)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 

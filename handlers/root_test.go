@@ -13,13 +13,15 @@ import (
 func TestRootHandler(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
+	h := &Handlers{DB: nil} // No DB needed for root handler
+
 	w := httptest.NewRecorder()
 	c, router := gin.CreateTestContext(w)
 
 	router.LoadHTMLGlob("../templates/*")
 	c.Request = httptest.NewRequest("GET", "/", nil)
 
-	RootHandler(c)
+	h.RootHandler(c)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Header().Get("Content-Type"), "text/html")
@@ -28,11 +30,13 @@ func TestRootHandler(t *testing.T) {
 func TestStatsHandler(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
+	h := &Handlers{DB: nil} // No DB needed for stats handler
+
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest("GET", "/stats", nil)
 
-	StatsHandler(c)
+	h.StatsHandler(c)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 

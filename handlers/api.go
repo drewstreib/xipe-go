@@ -13,7 +13,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func URLPostHandler(c *gin.Context) {
+type Handlers struct {
+	DB db.DBInterface
+}
+
+func (h *Handlers) URLPostHandler(c *gin.Context) {
 	ttl := c.Query("ttl")
 	rawURL := c.Query("url")
 
@@ -66,7 +70,7 @@ func URLPostHandler(c *gin.Context) {
 		}
 
 		log.Printf("Attempting to store redirect - Code: %s, URL: %s", code, decodedURL)
-		insertErr = db.DB.PutRedirect(redirect)
+		insertErr = h.DB.PutRedirect(redirect)
 		if insertErr == nil {
 			log.Printf("Successfully stored redirect - Code: %s", code)
 			// Success! Build the full URL
