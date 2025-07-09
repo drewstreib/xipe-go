@@ -194,17 +194,17 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions.
 - **Quality**: Automated testing and linting with golangci-lint
 
 ### Build Architecture Notes
-- **Ko Configuration**: Uses `--bare` flag to prevent module path appending
+- **Ko Configuration**: Uses `--base-import-paths` flag for clean module naming
 - **Architecture Support**: Currently ARM64 only (AMD64 commented out for speed)
-- **Image Naming**: Final images published as `ghcr.io/drewstreib/xipe-go:latest`
-- **Docker Compose**: Uses the clean image name without module path
+- **Image Naming**: Final images published as `ghcr.io/drewstreib/xipe-go/xipe:latest`
+- **Docker Compose**: Uses the full image path including module name
 - **Re-enabling AMD64**: Uncomment platform in `.ko.yaml` and add `linux/amd64` to build commands
 
 ### Troubleshooting Multi-Arch Builds
 If experiencing "exec format error" on ARM64 machines:
 1. Ensure `.ko.yaml` does NOT hardcode `GOARCH=amd64` in env section
-2. Verify `--bare` flag is used in GitHub Actions ko build
-3. Check manifest with: `docker manifest inspect ghcr.io/drewstreib/xipe-go:latest`
+2. Verify `--base-import-paths` flag is used in GitHub Actions ko build
+3. Check manifest with: `docker manifest inspect ghcr.io/drewstreib/xipe-go/xipe:latest`
 4. Force pull for your architecture if needed
 
 ## API Examples

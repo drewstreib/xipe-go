@@ -76,19 +76,9 @@ jobs:
         # Note: AMD64 build disabled to speed up CI - add back with --platform=linux/amd64,linux/arm64
         ko build --platform=linux/arm64 \
           --image-refs=image-refs.txt \
-          --bare \
+          --base-import-paths \
+          --tags=latest,main,main-${{ github.sha }} \
           .
-          
-        # Tag the images after build
-        IMAGE_REF=$(cat image-refs.txt)
-        docker tag ${IMAGE_REF} ${KO_DOCKER_REPO}:latest
-        docker tag ${IMAGE_REF} ${KO_DOCKER_REPO}:main
-        docker tag ${IMAGE_REF} ${KO_DOCKER_REPO}:main-${{ github.sha }}
-        
-        # Push all tags
-        docker push ${KO_DOCKER_REPO}:latest
-        docker push ${KO_DOCKER_REPO}:main
-        docker push ${KO_DOCKER_REPO}:main-${{ github.sha }}
           
         # Output the built image reference
         cat image-refs.txt
