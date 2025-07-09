@@ -53,6 +53,13 @@ func (h *Handlers) URLPostHandler(c *gin.Context) {
 		return
 	}
 
+	// Check URL against Cloudflare family DNS filter
+	urlCheckResult := utils.URLCheck(decodedURL)
+	if !urlCheckResult.Allowed {
+		utils.RespondWithError(c, urlCheckResult.Status, "error", urlCheckResult.Reason)
+		return
+	}
+
 	// Calculate TTL and code length
 	ettl, codeLength, err := utils.CalculateTTL(ttl)
 	if err != nil {
