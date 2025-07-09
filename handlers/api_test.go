@@ -59,8 +59,19 @@ func TestURLPostHandler(t *testing.T) {
 			checkBody: true,
 		},
 		{
+			name:           "URL without http/https prefix",
+			query:          "?ttl=1d&url=example.com",
+			setupMock:      func(m *db.MockDB) {},
+			expectedStatus: http.StatusForbidden,
+			expectedBody: map[string]interface{}{
+				"status":      "error",
+				"description": "URL must start with http:// or https://",
+			},
+			checkBody: true,
+		},
+		{
 			name:           "Invalid URL format",
-			query:          "?ttl=1d&url=not-a-url",
+			query:          "?ttl=1d&url=" + url.QueryEscape("http://invalid url with spaces"),
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: map[string]interface{}{

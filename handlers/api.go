@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/drewstreib/xipe-go/db"
 	"github.com/drewstreib/xipe-go/utils"
@@ -36,6 +37,12 @@ func (h *Handlers) URLPostHandler(c *gin.Context) {
 	decodedURL, err := url.QueryUnescape(rawURL)
 	if err != nil {
 		utils.RespondWithError(c, http.StatusBadRequest, "error", "invalid URL encoding")
+		return
+	}
+
+	// Check if URL starts with http:// or https://
+	if !strings.HasPrefix(decodedURL, "http://") && !strings.HasPrefix(decodedURL, "https://") {
+		utils.RespondWithError(c, http.StatusForbidden, "error", "URL must start with http:// or https://")
 		return
 	}
 
