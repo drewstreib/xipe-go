@@ -2,11 +2,12 @@ package main
 
 import (
 	"embed"
-	"github.com/gin-gonic/gin"
 	"html/template"
 	"log"
 	"xipe/db"
 	"xipe/handlers"
+
+	"github.com/gin-gonic/gin"
 )
 
 //go:embed templates/*

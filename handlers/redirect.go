@@ -1,10 +1,11 @@
 package handlers
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"regexp"
 	"xipe/db"
+
+	"github.com/gin-gonic/gin"
 )
 
 func isValidCode(code string) bool {
