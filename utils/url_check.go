@@ -51,7 +51,7 @@ func URLCheck(targetURL string) URLCheckResult {
 	}
 
 	// Query Cloudflare Family DNS over HTTPS
-	dnsURL := fmt.Sprintf("https://family.cloudflare-dns.com/dns-query?name=%s&type=A", hostname)
+	dnsURL := fmt.Sprintf("https://family.cloudflare-dns.com/dns-query?name=%s&type=A", url.QueryEscape(hostname))
 
 	client := &http.Client{
 		Timeout: 10 * time.Second,

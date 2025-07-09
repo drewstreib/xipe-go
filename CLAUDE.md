@@ -35,7 +35,9 @@ xipe-go/
 ## Key Features
 
 ### 1. URL Shortening
-- **Endpoint**: `/api/urlpost?ttl=<1d|1w|1m>&url=<url_encoded_target>`
+- **Endpoint**: `POST /api/urlpost`
+- **Method**: POST (required)
+- **Input Format**: JSON body (default) or URL-encoded form data with `?input=urlencoded`
 - **TTL Options**:
   - `1d`: 4-char code, expires in 24 hours
   - `1w`: 5-char code, expires in 1 week  
@@ -253,17 +255,36 @@ The most common CI failures are due to formatting issues. To prevent these:
 **Pro tip**: The pre-commit hooks will automatically format your code and run tests, preventing most CI failures.
 
 ## API Examples
+
+### JSON Format (Default)
 ```bash
-# Create short URL with 1-day TTL (4 char code)
-curl "http://localhost:8080/api/urlpost?ttl=1d&url=https%3A%2F%2Fexample.com"
-# Response: {"status":"success","code":"Ab3d","url":"https://example.com","ttl":"1d"}
+# Create short URL with 1-day TTL (4 char code) - JSON body
+curl -X POST "http://localhost:8080/api/urlpost" \
+  -H "Content-Type: application/json" \
+  -d '{"ttl":"1d","url":"https://example.com"}'
+# Response: {"status":"ok","url":"http://localhost:8080/Ab3d"}
 
 # Create short URL with 1-week TTL (5 char code)
-curl "http://localhost:8080/api/urlpost?ttl=1w&url=https%3A%2F%2Fexample.com"
+curl -X POST "http://localhost:8080/api/urlpost" \
+  -H "Content-Type: application/json" \
+  -d '{"ttl":"1w","url":"https://example.com"}'
 
 # Create short URL with 1-month TTL (6 char code)
-curl "http://localhost:8080/api/urlpost?ttl=1m&url=https%3A%2F%2Fexample.com"
+curl -X POST "http://localhost:8080/api/urlpost" \
+  -H "Content-Type: application/json" \
+  -d '{"ttl":"1m","url":"https://example.com"}'
+```
 
+### URL-Encoded Form Data (Legacy)
+```bash
+# Create short URL using form data (for HTML forms)
+curl -X POST "http://localhost:8080/api/urlpost?input=urlencoded" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "ttl=1d&url=https%3A%2F%2Fexample.com"
+```
+
+### Using Short URLs
+```bash
 # Use short URL
 curl -L "http://localhost:8080/Ab3d"
 ```
@@ -282,8 +303,13 @@ curl -L "http://localhost:8080/Ab3d"
 - Single table design for simplicity
 - Consider read/write capacity based on traffic
 
+### Input Formats
+- **JSON (Default)**: `POST /api/urlpost` with `{"ttl":"1d","url":"https://example.com"}` in body
+- **URL-encoded**: `POST /api/urlpost?input=urlencoded` with `ttl=1d&url=https%3A%2F%2Fexample.com` in body
+- **Required Fields**: `ttl` (1d|1w|1m) and `url` (http/https URLs only)
+
 ### Error Handling
-- 400: Invalid parameters (ttl, url format, missing hostname)
+- 400: Invalid parameters (ttl, url format, missing hostname, malformed JSON)
 - 403: URL blocked by content filter
 - 404: Code not found or expired
 - 500: Database errors

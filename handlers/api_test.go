@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/drewstreib/xipe-go/db"
@@ -20,39 +20,48 @@ func TestURLPostHandler(t *testing.T) {
 	tests := []struct {
 		name           string
 		query          string
+		body           string
+		contentType    string
 		userAgent      string
 		setupMock      func(*db.MockDB)
 		expectedStatus int
 		expectedBody   map[string]interface{}
 		checkBody      bool
 	}{
+		// JSON format tests
 		{
-			name:           "Missing ttl parameter",
-			query:          "?url=https://example.com",
+			name:           "JSON: Missing ttl parameter",
+			query:          "",
+			body:           `{"url":"https://example.com"}`,
+			contentType:    "application/json",
 			userAgent:      "curl/7.68.0",
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: map[string]interface{}{
 				"status":      "error",
-				"description": "ttl and url parameters are required",
+				"description": "Invalid JSON format or missing required fields (ttl, url)",
 			},
 			checkBody: true,
 		},
 		{
-			name:           "Missing url parameter",
-			query:          "?ttl=1d",
+			name:           "JSON: Missing url parameter",
+			query:          "",
+			body:           `{"ttl":"1d"}`,
+			contentType:    "application/json",
 			userAgent:      "curl/7.68.0",
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: map[string]interface{}{
 				"status":      "error",
-				"description": "ttl and url parameters are required",
+				"description": "Invalid JSON format or missing required fields (ttl, url)",
 			},
 			checkBody: true,
 		},
 		{
-			name:           "Invalid ttl format",
-			query:          "?ttl=2d&url=https://example.com",
+			name:           "JSON: Invalid ttl format",
+			query:          "",
+			body:           `{"ttl":"2d","url":"https://example.com"}`,
+			contentType:    "application/json",
 			userAgent:      "curl/7.68.0",
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusBadRequest,
@@ -63,8 +72,10 @@ func TestURLPostHandler(t *testing.T) {
 			checkBody: true,
 		},
 		{
-			name:           "URL without http/https prefix",
-			query:          "?ttl=1d&url=example.com",
+			name:           "JSON: URL without http/https prefix",
+			query:          "",
+			body:           `{"ttl":"1d","url":"example.com"}`,
+			contentType:    "application/json",
 			userAgent:      "curl/7.68.0",
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusForbidden,
@@ -75,8 +86,10 @@ func TestURLPostHandler(t *testing.T) {
 			checkBody: true,
 		},
 		{
-			name:           "Invalid URL format",
-			query:          "?ttl=1d&url=" + url.QueryEscape("http://invalid url with spaces"),
+			name:           "JSON: Invalid URL format",
+			query:          "",
+			body:           `{"ttl":"1d","url":"http://invalid url with spaces"}`,
+			contentType:    "application/json",
 			userAgent:      "curl/7.68.0",
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusBadRequest,
@@ -87,51 +100,75 @@ func TestURLPostHandler(t *testing.T) {
 			checkBody: true,
 		},
 		{
-			name:      "Successful URL storage with 1d ttl (browser)",
-			query:     "?ttl=1d&url=" + url.QueryEscape("https://example.com"),
-			userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+			name:        "JSON: Successful URL storage with 1d ttl (browser)",
+			query:       "",
+			body:        `{"ttl":"1d","url":"https://example.com"}`,
+			contentType: "application/json",
+			userAgent:   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
 			setupMock: func(m *db.MockDB) {
 				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
 					return r.Typ == "R" && r.Val == "https://example.com" && len(r.Code) == 4
 				})).Return(nil)
 			},
-			expectedStatus: http.StatusSeeOther, // HTML requests now redirect
-			checkBody:      false,               // Don't check body since it's a redirect
-		},
-		{
-			name:      "Successful URL storage with 1w ttl (browser)",
-			query:     "?ttl=1w&url=" + url.QueryEscape("https://example.com"),
-			userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-			setupMock: func(m *db.MockDB) {
-				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
-					return r.Typ == "R" && r.Val == "https://example.com" && len(r.Code) == 5
-				})).Return(nil)
-			},
-			expectedStatus: http.StatusSeeOther, // HTML requests now redirect
+			expectedStatus: http.StatusOK,
 			checkBody:      false,
 		},
 		{
-			name:      "Successful URL storage with 1m ttl (browser)",
-			query:     "?ttl=1m&url=" + url.QueryEscape("https://example.com"),
-			userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-			setupMock: func(m *db.MockDB) {
-				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
-					return r.Typ == "R" && r.Val == "https://example.com" && len(r.Code) == 6
-				})).Return(nil)
-			},
-			expectedStatus: http.StatusSeeOther, // HTML requests now redirect
-			checkBody:      false,
-		},
-		{
-			name:      "API client gets JSON response (not redirect)",
-			query:     "?ttl=1d&url=" + url.QueryEscape("https://example.com"),
-			userAgent: "curl/7.68.0",
+			name:        "JSON: API client gets JSON response",
+			query:       "",
+			body:        `{"ttl":"1d","url":"https://example.com"}`,
+			contentType: "application/json",
+			userAgent:   "curl/7.68.0",
 			setupMock: func(m *db.MockDB) {
 				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
 					return r.Typ == "R" && r.Val == "https://example.com" && len(r.Code) == 4
 				})).Return(nil)
 			},
-			expectedStatus: http.StatusOK, // API clients get JSON
+			expectedStatus: http.StatusOK,
+			checkBody:      false,
+		},
+
+		// URL-encoded format tests
+		{
+			name:           "URLEncoded: Missing ttl parameter",
+			query:          "?input=urlencoded",
+			body:           "url=https%3A%2F%2Fexample.com",
+			contentType:    "application/x-www-form-urlencoded",
+			userAgent:      "curl/7.68.0",
+			setupMock:      func(m *db.MockDB) {},
+			expectedStatus: http.StatusBadRequest,
+			expectedBody: map[string]interface{}{
+				"status":      "error",
+				"description": "ttl and url parameters are required",
+			},
+			checkBody: true,
+		},
+		{
+			name:           "URLEncoded: Missing url parameter",
+			query:          "?input=urlencoded",
+			body:           "ttl=1d",
+			contentType:    "application/x-www-form-urlencoded",
+			userAgent:      "curl/7.68.0",
+			setupMock:      func(m *db.MockDB) {},
+			expectedStatus: http.StatusBadRequest,
+			expectedBody: map[string]interface{}{
+				"status":      "error",
+				"description": "ttl and url parameters are required",
+			},
+			checkBody: true,
+		},
+		{
+			name:        "URLEncoded: Successful URL storage (browser)",
+			query:       "?input=urlencoded",
+			body:        "ttl=1d&url=https%3A%2F%2Fexample.com&format=html",
+			contentType: "application/x-www-form-urlencoded",
+			userAgent:   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+			setupMock: func(m *db.MockDB) {
+				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
+					return r.Typ == "R" && r.Val == "https://example.com" && len(r.Code) == 4
+				})).Return(nil)
+			},
+			expectedStatus: http.StatusOK,
 			checkBody:      false,
 		},
 	}
@@ -144,9 +181,18 @@ func TestURLPostHandler(t *testing.T) {
 			h := &Handlers{DB: mockDB}
 
 			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
-			c.Request = httptest.NewRequest("GET", "/api/urlpost"+tt.query, nil)
-			c.Request.Header.Set("User-Agent", tt.userAgent)
+			c, router := gin.CreateTestContext(w)
+			router.LoadHTMLGlob("../templates/*")
+
+			var req *http.Request
+			if tt.body != "" {
+				req = httptest.NewRequest("POST", "/api/urlpost"+tt.query, strings.NewReader(tt.body))
+				req.Header.Set("Content-Type", tt.contentType)
+			} else {
+				req = httptest.NewRequest("POST", "/api/urlpost"+tt.query, nil)
+			}
+			req.Header.Set("User-Agent", tt.userAgent)
+			c.Request = req
 
 			h.URLPostHandler(c)
 

@@ -20,8 +20,28 @@ type Handlers struct {
 }
 
 func (h *Handlers) URLPostHandler(c *gin.Context) {
-	ttl := c.Query("ttl")
-	rawURL := c.Query("url")
+	var ttl, rawURL string
+
+	// Check if input format is specified as urlencoded
+	if c.Query("input") == "urlencoded" {
+		// Read from form body for URL-encoded data
+		ttl = c.PostForm("ttl")
+		rawURL = c.PostForm("url")
+	} else {
+		// Default: expect JSON body
+		var requestBody struct {
+			TTL string `json:"ttl" binding:"required"`
+			URL string `json:"url" binding:"required"`
+		}
+
+		if err := c.ShouldBindJSON(&requestBody); err != nil {
+			utils.RespondWithError(c, http.StatusBadRequest, "error", "Invalid JSON format or missing required fields (ttl, url)")
+			return
+		}
+
+		ttl = requestBody.TTL
+		rawURL = requestBody.URL
+	}
 
 	if ttl == "" || rawURL == "" {
 		utils.RespondWithError(c, http.StatusBadRequest, "error", "ttl and url parameters are required")

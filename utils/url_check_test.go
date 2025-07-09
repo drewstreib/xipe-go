@@ -49,6 +49,13 @@ func TestURLCheck(t *testing.T) {
 			shouldAllow:    true,
 			reasonContains: "allowed",
 		},
+		{
+			name:           "URL with potentially malicious hostname characters",
+			url:            "https://example.com&malicious=param",
+			expectedStatus: 503,
+			shouldAllow:    false,
+			reasonContains: "DNS resolution failed",
+		},
 	}
 
 	for _, tt := range tests {
