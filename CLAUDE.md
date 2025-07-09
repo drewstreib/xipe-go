@@ -23,6 +23,10 @@ xipe-go/
 ├── db/                 # Database layer
 │   ├── dynamodb.go     # DynamoDB implementation
 │   └── mock.go         # Mock DB for testing
+├── utils/              # Utility functions
+│   ├── codegen.go      # Code generation utilities
+│   ├── response.go     # HTTP response utilities
+│   └── url_check.go    # URL content filtering
 ├── templates/          # HTML templates
 │   └── index.html      # Landing page
 └── tests files (*_test.go)
@@ -39,6 +43,7 @@ xipe-go/
 - **Code Generation**: Cryptographically random alphanumeric
 - **Retry Logic**: Up to 5 attempts on collision (returns 529 on failure)
 - **Storage**: DynamoDB table "xipe_redirects" with conditional writes
+- **Content Filtering**: DNS-based URL filtering using Cloudflare family DNS
 
 ### 2. URL Redirection
 - **Pattern**: `/[a-zA-Z0-9]{4,6}`
@@ -46,10 +51,17 @@ xipe-go/
 - **Fallthrough**: Catches all unmatched routes
 - **Not Found**: Returns 404 if code doesn't exist or has expired
 
-### 3. Static Website
+### 3. URL Content Filtering
+- **Method**: DNS over HTTPS queries to Cloudflare family DNS
+- **Endpoint**: `https://family.cloudflare-dns.com/dns-query`
+- **Detection**: URLs returning 0.0.0.0 are blocked (malicious/inappropriate content)
+- **Error Handling**: 503 for DNS unavailable, 403 for blocked content
+- **Timeout**: 10-second timeout for DNS queries
+
+### 4. Static Website
 - **Endpoint**: `/`
 - **Content**: Usage instructions and service information
-- **Stats**: `/stats` endpoint for service metrics
+- **Stats**: `/api/stats` endpoint for service metrics
 
 ## Database Schema
 ```
@@ -165,6 +177,8 @@ ko apply -f config/
 
 ## Security Notes
 - Input validation on all user-provided keys
+- URL content filtering via Cloudflare family DNS
+- Protocol validation (requires http:// or https://)
 - No user authentication (planned for future)
 - SQL injection not possible (NoSQL database)
 - XSS protection through Go's html/template
@@ -269,13 +283,24 @@ curl -L "http://localhost:8080/Ab3d"
 - Consider read/write capacity based on traffic
 
 ### Error Handling
-- 400: Invalid parameters (ttl, url format)
+- 400: Invalid parameters (ttl, url format, missing hostname)
+- 403: URL blocked by content filter
 - 404: Code not found or expired
 - 500: Database errors
+- 503: DNS service unavailable
 - 529: Unable to generate unique code (very rare)
 
 ### Security Considerations
 - No user input in redirect codes (prevents enumeration)
 - URL validation prevents open redirect vulnerabilities
+- DNS-based content filtering blocks malicious URLs
 - TTL limits abuse potential
 - Consider rate limiting for production
+
+### URL Content Filtering
+- **Implementation**: `utils.URLCheck()` function in `utils/url_check.go`
+- **DNS Provider**: Cloudflare family DNS (family.cloudflare-dns.com)
+- **Query Method**: DNS over HTTPS with JSON responses
+- **Blocking Logic**: URLs resolving to 0.0.0.0 are considered blocked
+- **Performance**: 10-second timeout prevents hanging requests
+- **Error Handling**: Graceful degradation on DNS service unavailability
