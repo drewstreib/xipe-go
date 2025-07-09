@@ -1,0 +1,43 @@
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - typecheck
+    - unused
+    - gofmt
+    - goimports
+    - misspell
+    - revive
+    - gosec
+    - unconvert
+    - unparam
+    - whitespace
+
+linters-settings:
+  gosec:
+    excludes:
+      - G404 # Use of weak random number generator - we use crypto/rand where needed
+  revive:
+    rules:
+      - name: exported
+        disabled: true # Allow unexported in some cases
+      - name: var-naming
+        disabled: true # Allow short variable names in tests
+
+issues:
+  exclude-dirs:
+    - vendor
+  exclude-files:
+    - ".*_test.go" # Relax some rules for test files
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gosec
+        - unparam

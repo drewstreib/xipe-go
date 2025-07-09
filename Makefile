@@ -37,6 +37,20 @@ ko-publish:
 ko-apply:
 	ko apply -f config/
 
+.PHONY: ko-multiarch
+ko-multiarch:
+	ko build --platform=linux/amd64,linux/arm64 .
+
 .PHONY: docker-build
 docker-build:
 	ko build --local --preserve-import-paths --platform=linux/amd64 .
+
+# Linting and formatting
+.PHONY: lint
+lint:
+	golangci-lint run
+
+.PHONY: fmt
+fmt:
+	go fmt ./...
+	goimports -w .

@@ -80,11 +80,14 @@ make test       # Run all tests
 make run        # Start the server
 make build      # Build binary
 make deps       # Download dependencies
+make lint       # Run linting
+make fmt        # Format code
 
 # Ko build commands
-make ko-build   # Build container image locally
-make ko-publish # Build and publish to registry
-make ko-apply   # Deploy to Kubernetes
+make ko-build     # Build container image locally
+make ko-publish   # Build and publish to registry
+make ko-multiarch # Build for multiple architectures
+make ko-apply     # Deploy to Kubernetes
 ```
 
 ## Container Building with Ko
@@ -149,9 +152,17 @@ ko apply -f config/
 
 ## Deployment Requirements
 - AWS credentials with DynamoDB access
-- DynamoDB table "xipe-urls" must exist
-- Table must have "key" as primary key
+- DynamoDB table "xipe_redirects" must exist with:
+  - Primary key: "code" (String)
+  - TTL enabled on "ettl" attribute
 - Go 1.24.3 or later
+
+## CI/CD Pipeline
+- **GitHub Actions**: Automated builds on main branch pushes
+- **Multi-architecture**: Builds for linux/amd64 and linux/arm64
+- **Container Registry**: Images published to ghcr.io/drewstreib/xipe-go
+- **Security**: SBOM generation and vulnerability scanning
+- **Quality**: Automated testing and linting with golangci-lint
 
 ## API Examples
 ```bash
