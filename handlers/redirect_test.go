@@ -25,7 +25,7 @@ func TestRedirectHandler(t *testing.T) {
 		expectedBody   map[string]interface{}
 	}{
 		{
-			name: "Valid code - successful redirect",
+			name: "Valid code - shows info page",
 			code: "test",
 			setupMock: func(m *db.MockDB) {
 				m.On("GetRedirect", "test").Return(&db.RedirectRecord{
@@ -34,9 +34,9 @@ func TestRedirectHandler(t *testing.T) {
 					Val:  "https://example.com",
 				}, nil)
 			},
-			expectedStatus: http.StatusMovedPermanently,
-			expectedHeader: "https://example.com",
-			expectedBody:   nil,
+			expectedStatus: http.StatusOK,
+			expectedHeader: "",
+			expectedBody:   nil, // Returns HTML info page
 		},
 		{
 			name: "Valid code - not found",
@@ -122,9 +122,9 @@ func TestCatchAllHandler(t *testing.T) {
 					Val:  "https://example.com",
 				}, nil)
 			},
-			expectedStatus: http.StatusMovedPermanently,
-			expectedHeader: "https://example.com",
-			expectedBody:   nil,
+			expectedStatus: http.StatusOK,
+			expectedHeader: "",
+			expectedBody:   nil, // Returns HTML info page
 		},
 		{
 			name: "Valid 5-char code",
@@ -136,9 +136,9 @@ func TestCatchAllHandler(t *testing.T) {
 					Val:  "https://example.com",
 				}, nil)
 			},
-			expectedStatus: http.StatusMovedPermanently,
-			expectedHeader: "https://example.com",
-			expectedBody:   nil,
+			expectedStatus: http.StatusOK,
+			expectedHeader: "",
+			expectedBody:   nil, // Returns HTML info page
 		},
 		{
 			name: "Valid 6-char code",
@@ -150,9 +150,9 @@ func TestCatchAllHandler(t *testing.T) {
 					Val:  "https://example.com",
 				}, nil)
 			},
-			expectedStatus: http.StatusMovedPermanently,
-			expectedHeader: "https://example.com",
-			expectedBody:   nil,
+			expectedStatus: http.StatusOK,
+			expectedHeader: "",
+			expectedBody:   nil, // Returns HTML info page
 		},
 		{
 			name:           "Invalid path - too short",

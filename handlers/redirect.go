@@ -14,7 +14,6 @@ func isValidCode(code string) bool {
 
 func (h *Handlers) RedirectHandler(c *gin.Context) {
 	code := c.Param("code")
-	action := c.Query("action")
 
 	if !isValidCode(code) {
 		// Always return HTML for redirect errors since this is browser navigation
@@ -42,33 +41,28 @@ func (h *Handlers) RedirectHandler(c *gin.Context) {
 		return
 	}
 
-	// If action=info, show info page instead of redirecting
-	if action == "info" {
-		// Build the full URL for display
-		scheme := "https"
-		if c.Request.Header.Get("X-Forwarded-Proto") == "" && c.Request.TLS == nil {
-			scheme = "http"
-		}
-		host := c.Request.Host
-		if host == "" {
-			host = "xi.pe"
-		}
-		fullURL := scheme + "://" + host + "/" + code
-
-		// Check if this is from a successful creation
-		fromSuccess := c.Query("from") == "success"
-
-		c.HTML(http.StatusOK, "info.html", gin.H{
-			"code":        code,
-			"url":         fullURL,
-			"originalUrl": redirect.Val,
-			"redirectUrl": redirect.Val,
-			"fromSuccess": fromSuccess,
-		})
-		return
+	// Default behavior: show info page (no automatic redirects for security)
+	// Build the full URL for display
+	scheme := "https"
+	if c.Request.Header.Get("X-Forwarded-Proto") == "" && c.Request.TLS == nil {
+		scheme = "http"
 	}
+	host := c.Request.Host
+	if host == "" {
+		host = "xi.pe"
+	}
+	fullURL := scheme + "://" + host + "/" + code
 
-	c.Redirect(http.StatusMovedPermanently, redirect.Val)
+	// Check if this is from a successful creation
+	fromSuccess := c.Query("from") == "success"
+
+	c.HTML(http.StatusOK, "info.html", gin.H{
+		"code":        code,
+		"url":         fullURL,
+		"originalUrl": redirect.Val,
+		"redirectUrl": redirect.Val,
+		"fromSuccess": fromSuccess,
+	})
 }
 
 func (h *Handlers) CatchAllHandler(c *gin.Context) {

@@ -120,7 +120,7 @@ func (h *Handlers) URLPostHandler(c *gin.Context) {
 			fullURL := scheme + "://" + host + "/" + code
 
 			// Build redirect URL to info page with success parameter
-			redirectPath := fmt.Sprintf("/%s?action=info&from=success", code)
+			redirectPath := fmt.Sprintf("/%s?from=success", code)
 
 			// Preserve format parameter if present
 			if format := c.Query("format"); format != "" {
