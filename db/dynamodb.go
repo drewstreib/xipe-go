@@ -22,10 +22,10 @@ type DynamoDBClient struct {
 }
 
 type RedirectRecord struct {
-	Code string `json:"code"`
-	Typ  string `json:"typ"`
-	Val  string `json:"val"`
-	Ettl int64  `json:"ettl,omitempty"`
+	Code string `dynamodbav:"code"`
+	Typ  string `dynamodbav:"typ"`
+	Val  string `dynamodbav:"val"`
+	Ettl int64  `dynamodbav:"ettl,omitempty"`
 }
 
 var DB DBInterface
