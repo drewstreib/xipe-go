@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"net/url"
 	"xipe/db"
@@ -63,8 +64,10 @@ func URLPostHandler(c *gin.Context) {
 			Ettl: ettl,
 		}
 
+		log.Printf("Attempting to store redirect - Code: %s, URL: %s", code, decodedURL)
 		insertErr = db.DB.PutRedirect(redirect)
 		if insertErr == nil {
+			log.Printf("Successfully stored redirect - Code: %s", code)
 			// Success! Build the full URL
 			scheme := "https"
 			if c.Request.Header.Get("X-Forwarded-Proto") == "" && c.Request.TLS == nil {
@@ -96,9 +99,11 @@ func URLPostHandler(c *gin.Context) {
 		// Check if error is due to duplicate key
 		if !isDuplicateKeyError(insertErr) {
 			// Some other error occurred
+			log.Printf("DynamoDB error (not duplicate key): %v", insertErr)
 			utils.RespondWithError(c, http.StatusInternalServerError, "error", "failed to store URL")
 			return
 		}
+		log.Printf("Duplicate key error, retrying with new code. Error: %v", insertErr)
 		// Continue to next attempt if duplicate key
 	}
 

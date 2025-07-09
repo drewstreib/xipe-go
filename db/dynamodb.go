@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"log"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -30,8 +31,15 @@ type RedirectRecord struct {
 var DB DBInterface
 
 func Init() {
+	log.Println("Initializing DynamoDB client...")
+	
+	// Log some environment info for debugging
+	log.Printf("AWS Region: us-east-1")
+	log.Printf("DynamoDB Table: xipe_redirects")
+	
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion("us-east-1"))
 	if err != nil {
+		log.Printf("Failed to load AWS config: %v", err)
 		panic(err)
 	}
 
@@ -39,11 +47,14 @@ func Init() {
 		client: dynamodb.NewFromConfig(cfg),
 		table:  "xipe_redirects",
 	}
+	log.Printf("DynamoDB client initialized successfully for table: %s", "xipe_redirects")
 }
 
 func (d *DynamoDBClient) PutRedirect(redirect *RedirectRecord) error {
+	log.Printf("PutRedirect called with code: %s, table: %s", redirect.Code, d.table)
 	av, err := attributevalue.MarshalMap(redirect)
 	if err != nil {
+		log.Printf("Failed to marshal redirect record: %v", err)
 		return err
 	}
 
@@ -54,6 +65,9 @@ func (d *DynamoDBClient) PutRedirect(redirect *RedirectRecord) error {
 	}
 
 	_, err = d.client.PutItem(context.TODO(), input)
+	if err != nil {
+		log.Printf("DynamoDB PutItem failed: %v", err)
+	}
 	return err
 }
 
