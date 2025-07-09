@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/drewstreib/xipe-go/db"
+
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
@@ -30,7 +32,10 @@ func TestRootHandler(t *testing.T) {
 func TestStatsHandler(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	h := &Handlers{DB: nil} // No DB needed for stats handler
+	mockDB := new(db.MockDB)
+	mockDB.On("GetCacheSize").Return(5)
+
+	h := &Handlers{DB: mockDB}
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -47,6 +52,7 @@ func TestStatsHandler(t *testing.T) {
 	assert.Equal(t, "ok", response["status"])
 	stats, ok := response["stats"].(map[string]interface{})
 	assert.True(t, ok)
-	assert.Equal(t, float64(0), stats["total_urls"])
-	assert.Equal(t, float64(0), stats["total_pastes"])
+	assert.Equal(t, float64(5), stats["cached_items"])
+
+	mockDB.AssertExpectations(t)
 }

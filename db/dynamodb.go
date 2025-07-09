@@ -18,6 +18,7 @@ import (
 type DBInterface interface {
 	PutRedirect(redirect *RedirectRecord) error
 	GetRedirect(code string) (*RedirectRecord, error)
+	GetCacheSize() int
 }
 
 type DynamoDBClient struct {
@@ -157,4 +158,8 @@ func (d *DynamoDBClient) GetRedirect(code string) (*RedirectRecord, error) {
 	log.Printf("Cached redirect for code %s", code)
 
 	return &record, nil
+}
+
+func (d *DynamoDBClient) GetCacheSize() int {
+	return d.cache.Len()
 }

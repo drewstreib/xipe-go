@@ -16,8 +16,7 @@ func (h *Handlers) StatsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status": "ok",
 		"stats": gin.H{
-			"total_urls":   0,
-			"total_pastes": 0,
+			"cached_items": h.DB.GetCacheSize(),
 		},
 	})
 }

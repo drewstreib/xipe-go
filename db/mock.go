@@ -20,3 +20,8 @@ func (m *MockDB) GetRedirect(code string) (*RedirectRecord, error) {
 	}
 	return args.Get(0).(*RedirectRecord), args.Error(1)
 }
+
+func (m *MockDB) GetCacheSize() int {
+	args := m.Called()
+	return args.Int(0)
+}
