@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Information - xi.pe</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .info {
+            color: #17a2b8;
+            margin-bottom: 20px;
+        }
+        .url-container {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .url-input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 4px;
+            font-size: 16px;
+            background-color: #f8f9fa;
+        }
+        .copy-btn {
+            padding: 12px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .copy-btn:hover {
+            background-color: #0056b3;
+        }
+        .copy-btn:active {
+            background-color: #004085;
+        }
+        .details {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .redirect-container {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #e7f3ff;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+        }
+        .redirect-url {
+            word-break: break-all;
+            color: #0066cc;
+            text-decoration: underline;
+        }
+        .actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .action-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            font-size: 14px;
+            display: inline-block;
+        }
+        .redirect-btn {
+            background-color: #28a745;
+            color: white;
+        }
+        .redirect-btn:hover {
+            background-color: #1e7e34;
+        }
+        .back-btn {
+            background-color: #6c757d;
+            color: white;
+        }
+        .back-btn:hover {
+            background-color: #545b62;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="info">ℹ️ URL Information</h1>
+        
+        <p>Here's the information for this short URL:</p>
+        
+        <div class="url-container">
+            <input type="text" class="url-input" id="shortUrl" value="{{.url}}" readonly>
+            <button class="copy-btn" onclick="copyToClipboard()">Copy</button>
+        </div>
+        
+        <div class="redirect-container">
+            <strong>This URL redirects to:</strong><br>
+            <span class="redirect-url">{{.redirectUrl}}</span>
+        </div>
+        
+        <div class="details">
+            <strong>Short Code:</strong> {{.code}}<br>
+            <strong>Short URL:</strong> {{.url}}<br>
+            <strong>Target URL:</strong> {{.originalUrl}}
+        </div>
+        
+        <div class="actions">
+            <a href="{{.redirectUrl}}" class="action-btn redirect-btn" target="_blank">Visit Target URL →</a>
+            <a href="/" class="action-btn back-btn">← Back to Home</a>
+        </div>
+    </div>
+
+    <script>
+        function copyToClipboard() {
+            const urlInput = document.getElementById('shortUrl');
+            urlInput.select();
+            urlInput.setSelectionRange(0, 99999); // For mobile devices
+            
+            try {
+                navigator.clipboard.writeText(urlInput.value).then(() => {
+                    const btn = document.querySelector('.copy-btn');
+                    const originalText = btn.textContent;
+                    btn.textContent = 'Copied!';
+                    btn.style.backgroundColor = '#28a745';
+                    
+                    setTimeout(() => {
+                        btn.textContent = originalText;
+                        btn.style.backgroundColor = '#007bff';
+                    }, 2000);
+                });
+            } catch (err) {
+                // Fallback for older browsers
+                document.execCommand('copy');
+                const btn = document.querySelector('.copy-btn');
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                btn.style.backgroundColor = '#28a745';
+                
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.backgroundColor = '#007bff';
+                }, 2000);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -7,7 +7,7 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
             background-color: #f5f5f5;
@@ -21,6 +21,17 @@
         h1 {
             color: #333;
             text-align: center;
+            margin-bottom: 30px;
+        }
+        .layout {
+            display: flex;
+            gap: 30px;
+        }
+        .left-column {
+            flex: 2;
+        }
+        .right-column {
+            flex: 1;
         }
         .section {
             margin: 30px 0;
@@ -28,49 +39,143 @@
             background-color: #f9f9f9;
             border-radius: 5px;
         }
+        .form-section {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #f0f8ff;
+            border-radius: 5px;
+            border: 1px solid #d0d0d0;
+        }
         code {
             background-color: #e9ecef;
             padding: 2px 4px;
             border-radius: 3px;
             font-family: monospace;
         }
+        .form-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="url"], select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .test-button {
+            background-color: #28a745;
+        }
+        .test-button:hover {
+            background-color: #1e7e34;
+        }
+        @media (max-width: 768px) {
+            .layout {
+                flex-direction: column;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>xi.pe - URL Shortener & Pastebin</h1>
+        <h1>xi.pe - "zippy" URL Shortener</h1>
         
-        <div class="section">
-            <h2>URL Shortener</h2>
-            <p>Shorten your URLs with our simple API:</p>
-            <code>GET /api/urlpost?ttl=1d&url=https://example.com</code>
-            <p>TTL options:</p>
-            <ul>
-                <li><code>1d</code> - 1 day (4 character code)</li>
-                <li><code>1w</code> - 1 week (5 character code)</li>
-                <li><code>1m</code> - 1 month (6 character code)</li>
-            </ul>
-            <p>Then access your shortened URL at: <code>xi.pe/[code]</code></p>
-        </div>
+        <div class="layout">
+            <div class="left-column">
+                <div class="section">
+                    <h2>URL Shortener</h2>
+                    <p>Shorten your URLs with our simple API or use the form on the right:</p>
+                    <code>GET /api/urlpost?ttl=1d&url=https://example.com</code>
+                    <p>TTL options:</p>
+                    <ul>
+                        <li><code>1d</code> - 1 day (4 character code)</li>
+                        <li><code>1w</code> - 1 week (5 character code)</li>
+                        <li><code>1m</code> - 1 month (6 character code)</li>
+                    </ul>
+                    <p>Then access your shortened URL at: <code>xi.pe/[code]</code></p>
+                </div>
 
-        <div class="section">
-            <h2>API Usage</h2>
-            <ul>
-                <li><strong>Shorten URL:</strong> <code>/api/urlpost?ttl=[1d|1w|1m]&url=[encoded_url]</code></li>
-                <li><strong>Access URL:</strong> <code>/[code]</code> (4-6 alphanumeric characters)</li>
-                <li><strong>Statistics:</strong> <code>/stats</code></li>
-            </ul>
-        </div>
+                <div class="section">
+                    <h2>API Usage</h2>
+                    <ul>
+                        <li><strong>Shorten URL:</strong> <code>/api/urlpost?ttl=[1d|1w|1m]&url=[encoded_url]</code></li>
+                        <li><strong>Access URL:</strong> <code>/[code]</code> (4-6 alphanumeric characters)</li>
+                        <li><strong>Test URL:</strong> <code>/[code]?action=info</code> (view info without redirecting)</li>
+                        <li><strong>Statistics:</strong> <code>/stats</code></li>
+                    </ul>
+                </div>
 
-        <div class="section">
-            <h2>Coming Soon</h2>
-            <ul>
-                <li>User registration and API keys</li>
-                <li>Pastebin functionality</li>
-                <li>Usage analytics</li>
-                <li>Custom domains</li>
-            </ul>
+                <div class="section">
+                    <h2>Coming Soon</h2>
+                    <ul>
+                        <li>User registration and API keys</li>
+                        <li>Pastebin functionality</li>
+                        <li>Usage analytics</li>
+                        <li>Custom domains</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="right-column">
+                <div class="form-section">
+                    <h3>Create Short URL</h3>
+                    <form action="/api/urlpost" method="GET">
+                        <div class="form-group">
+                            <label for="url">URL to shorten:</label>
+                            <input type="url" id="url" name="url" placeholder="https://example.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="ttl">Expiration:</label>
+                            <select id="ttl" name="ttl">
+                                <option value="1d" selected>1 day (4 chars)</option>
+                                <option value="1w">1 week (5 chars)</option>
+                                <option value="1m">1 month (6 chars)</option>
+                            </select>
+                        </div>
+                        <button type="submit">Shorten URL</button>
+                    </form>
+                </div>
+
+                <div class="form-section">
+                    <h3>Test Short URL</h3>
+                    <form id="testForm">
+                        <div class="form-group">
+                            <label for="testCode">Short code to test:</label>
+                            <input type="text" id="testCode" name="code" placeholder="Ab3d" pattern="[a-zA-Z0-9]{4,6}" required>
+                            <small style="color: #666;">Enter 4-6 character code</small>
+                        </div>
+                        <button type="submit" class="test-button">Test URL</button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
+
+    <script>
+        document.getElementById('testForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const code = document.getElementById('testCode').value;
+            if (code) {
+                window.location.href = '/' + code + '?action=info';
+            }
+        });
+    </script>
 </body>
 </html>

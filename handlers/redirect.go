@@ -15,6 +15,7 @@ func isValidCode(code string) bool {
 
 func RedirectHandler(c *gin.Context) {
 	code := c.Param("code")
+	action := c.Query("action")
 
 	if !isValidCode(code) {
 		// Always return HTML for redirect errors since this is browser navigation
@@ -38,6 +39,28 @@ func RedirectHandler(c *gin.Context) {
 		c.HTML(http.StatusNotFound, "error.html", gin.H{
 			"status":      "error",
 			"description": "Short URL not found or has expired",
+		})
+		return
+	}
+
+	// If action=info, show info page instead of redirecting
+	if action == "info" {
+		// Build the full URL for display
+		scheme := "https"
+		if c.Request.Header.Get("X-Forwarded-Proto") == "" && c.Request.TLS == nil {
+			scheme = "http"
+		}
+		host := c.Request.Host
+		if host == "" {
+			host = "xi.pe"
+		}
+		fullURL := scheme + "://" + host + "/" + code
+
+		c.HTML(http.StatusOK, "info.html", gin.H{
+			"code":        code,
+			"url":         fullURL,
+			"originalUrl": redirect.Val,
+			"redirectUrl": redirect.Val,
 		})
 		return
 	}
