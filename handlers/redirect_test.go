@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -92,7 +93,7 @@ func TestRedirectHandler(t *testing.T) {
 
 			if tt.expectedBody != nil {
 				var response map[string]interface{}
-				err := c.ShouldBindJSON(&response)
+				err := json.Unmarshal(w.Body.Bytes(), &response)
 				assert.NoError(t, err)
 				assert.Equal(t, tt.expectedBody, response)
 			}
@@ -207,7 +208,7 @@ func TestCatchAllHandler(t *testing.T) {
 
 			if tt.expectedBody != nil {
 				var response map[string]interface{}
-				err := c.ShouldBindJSON(&response)
+				err := json.Unmarshal(w.Body.Bytes(), &response)
 				assert.NoError(t, err)
 				assert.Equal(t, tt.expectedBody, response)
 			}

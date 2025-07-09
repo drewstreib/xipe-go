@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -113,7 +114,7 @@ func TestURLPostHandler(t *testing.T) {
 			
 			if tt.checkBody && tt.expectedBody != nil {
 				var response map[string]interface{}
-				err := c.ShouldBindJSON(&response)
+				err := json.Unmarshal(w.Body.Bytes(), &response)
 				assert.NoError(t, err)
 				assert.Equal(t, tt.expectedBody, response)
 			}

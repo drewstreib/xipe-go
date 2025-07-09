@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -35,7 +36,7 @@ func TestStatsHandler(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	
 	var response map[string]interface{}
-	err := c.ShouldBindJSON(&response)
+	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
 	
 	assert.Equal(t, "ok", response["status"])
