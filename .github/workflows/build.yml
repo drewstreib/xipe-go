@@ -86,7 +86,7 @@ jobs:
     - name: Generate SBOM
       uses: anchore/sbom-action@v0.17.7
       with:
-        image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+        image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/xipe-go:latest
         format: spdx-json
         output-file: sbom.spdx.json
         
