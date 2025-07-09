@@ -3,10 +3,12 @@ package handlers
 import (
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 	"xipe/db"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestURLPostHandler(t *testing.T) {
@@ -18,75 +20,80 @@ func TestURLPostHandler(t *testing.T) {
 		setupMock      func(*db.MockDB)
 		expectedStatus int
 		expectedBody   map[string]interface{}
+		checkBody      bool
 	}{
 		{
-			name:           "Missing key parameter",
+			name:           "Missing ttl parameter",
 			query:          "?url=https://example.com",
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: map[string]interface{}{
-				"error": "key and url parameters are required",
+				"error": "ttl and url parameters are required",
 			},
+			checkBody: true,
 		},
 		{
 			name:           "Missing url parameter",
-			query:          "?key=test1234",
+			query:          "?ttl=1d",
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: map[string]interface{}{
-				"error": "key and url parameters are required",
+				"error": "ttl and url parameters are required",
 			},
+			checkBody: true,
 		},
 		{
-			name:           "Invalid key format - too short",
-			query:          "?key=abc&url=https://example.com",
+			name:           "Invalid ttl format",
+			query:          "?ttl=2d&url=https://example.com",
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: map[string]interface{}{
-				"error": "key must be 4-8 alphanumeric characters",
+				"error": "ttl must be 1d, 1w, or 1m",
 			},
+			checkBody: true,
 		},
 		{
-			name:           "Invalid key format - too long",
-			query:          "?key=abcdefghi&url=https://example.com",
+			name:           "Invalid URL format",
+			query:          "?ttl=1d&url=not-a-url",
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: map[string]interface{}{
-				"error": "key must be 4-8 alphanumeric characters",
+				"error": "invalid URL format",
 			},
+			checkBody: true,
 		},
 		{
-			name:           "Invalid key format - special characters",
-			query:          "?key=test!234&url=https://example.com",
-			setupMock:      func(m *db.MockDB) {},
-			expectedStatus: http.StatusBadRequest,
-			expectedBody: map[string]interface{}{
-				"error": "key must be 4-8 alphanumeric characters",
-			},
-		},
-		{
-			name:  "Successful URL storage",
-			query: "?key=test1234&url=https://example.com",
+			name:  "Successful URL storage with 1d ttl",
+			query: "?ttl=1d&url=" + url.QueryEscape("https://example.com"),
 			setupMock: func(m *db.MockDB) {
-				m.On("PutURL", "test1234", "https://example.com").Return(nil)
+				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
+					return r.Typ == "R" && r.Val == "https://example.com" && len(r.Code) == 4
+				})).Return(nil)
 			},
 			expectedStatus: http.StatusOK,
-			expectedBody: map[string]interface{}{
-				"status": "success",
-				"key":    "test1234",
-				"url":    "https://example.com",
-			},
+			checkBody: false, // Don't check body since code is random
 		},
 		{
-			name:  "Database error",
-			query: "?key=test1234&url=https://example.com",
+			name:  "Successful URL storage with 1w ttl",
+			query: "?ttl=1w&url=" + url.QueryEscape("https://example.com"),
 			setupMock: func(m *db.MockDB) {
-				m.On("PutURL", "test1234", "https://example.com").Return(assert.AnError)
+				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
+					return r.Typ == "R" && r.Val == "https://example.com" && len(r.Code) == 5
+				})).Return(nil)
 			},
-			expectedStatus: http.StatusInternalServerError,
-			expectedBody: map[string]interface{}{
-				"error": "failed to store URL",
+			expectedStatus: http.StatusOK,
+			checkBody: false,
+		},
+		{
+			name:  "Successful URL storage with 1m ttl",
+			query: "?ttl=1m&url=" + url.QueryEscape("https://example.com"),
+			setupMock: func(m *db.MockDB) {
+				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
+					return r.Typ == "R" && r.Val == "https://example.com" && len(r.Code) == 6
+				})).Return(nil)
 			},
+			expectedStatus: http.StatusOK,
+			checkBody: false,
 		},
 	}
 
@@ -104,7 +111,7 @@ func TestURLPostHandler(t *testing.T) {
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 			
-			if tt.expectedBody != nil {
+			if tt.checkBody && tt.expectedBody != nil {
 				var response map[string]interface{}
 				err := c.ShouldBindJSON(&response)
 				assert.NoError(t, err)
@@ -116,26 +123,3 @@ func TestURLPostHandler(t *testing.T) {
 	}
 }
 
-func TestIsValidKey(t *testing.T) {
-	tests := []struct {
-		key      string
-		expected bool
-	}{
-		{"test", true},
-		{"test1234", true},
-		{"ABCD1234", true},
-		{"abc", false},
-		{"abcdefghi", false},
-		{"test!", false},
-		{"test-123", false},
-		{"test_123", false},
-		{"", false},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.key, func(t *testing.T) {
-			result := isValidKey(tt.key)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
-}

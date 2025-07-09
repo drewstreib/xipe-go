@@ -1,0 +1,18 @@
+# ko build configuration for xipe
+builds:
+- id: xipe
+  main: .
+  env:
+  - CGO_ENABLED=0
+  - GOOS=linux
+  - GOARCH=amd64
+  ldflags:
+  - -s -w
+
+# Base image for the container
+defaultBaseImage: gcr.io/distroless/static-debian12:nonroot
+
+# Default platforms to build for
+defaultPlatforms:
+- linux/amd64
+- linux/arm64

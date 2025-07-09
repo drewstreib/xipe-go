@@ -1,17 +1,25 @@
 package main
 
 import (
+	"embed"
+	"html/template"
 	"log"
 	"xipe/db"
 	"xipe/handlers"
 	"github.com/gin-gonic/gin"
 )
 
+//go:embed templates/*
+var templatesFS embed.FS
+
 func main() {
 	db.Init()
 
 	r := gin.Default()
-	r.LoadHTMLGlob("templates/*")
+	
+	// Load templates from embedded filesystem
+	tmpl := template.Must(template.New("").ParseFS(templatesFS, "templates/*"))
+	r.SetHTMLTemplate(tmpl)
 
 	r.GET("/", handlers.RootHandler)
 	r.GET("/stats", handlers.StatsHandler)
@@ -21,7 +29,7 @@ func main() {
 		api.GET("/urlpost", handlers.URLPostHandler)
 	}
 
-	r.GET("/:key", handlers.CatchAllHandler)
+	r.GET("/:code", handlers.CatchAllHandler)
 
 	log.Println("Server starting on :8080")
 	r.Run(":8080")

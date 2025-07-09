@@ -30,14 +30,20 @@ xipe-go/
 ## Key Features
 
 ### 1. URL Shortening
-- **Endpoint**: `/api/urlpost?key=<4-8 chars>&url=<target_url>`
-- **Key Format**: 4-8 alphanumeric characters (a-z, A-Z, 0-9)
-- **Storage**: DynamoDB table "xipe-urls"
+- **Endpoint**: `/api/urlpost?ttl=<1d|1w|1m>&url=<url_encoded_target>`
+- **TTL Options**:
+  - `1d`: 4-char code, expires in 24 hours
+  - `1w`: 5-char code, expires in 1 week  
+  - `1m`: 6-char code, expires in 1 month
+- **Code Generation**: Cryptographically random alphanumeric
+- **Retry Logic**: Up to 5 attempts on collision (returns 529 on failure)
+- **Storage**: DynamoDB table "xipe_redirects" with conditional writes
 
 ### 2. URL Redirection
-- **Pattern**: `/[a-zA-Z0-9]{4,8}`
+- **Pattern**: `/[a-zA-Z0-9]{4,6}`
 - **Behavior**: 301 permanent redirect to stored URL
 - **Fallthrough**: Catches all unmatched routes
+- **Not Found**: Returns 404 if code doesn't exist or has expired
 
 ### 3. Static Website
 - **Endpoint**: `/`
@@ -46,11 +52,17 @@ xipe-go/
 
 ## Database Schema
 ```
-DynamoDB Table: xipe-urls
-Primary Key: key (string)
+DynamoDB Table: xipe_redirects
+Primary Key: code (string)
 Attributes:
-  - key: string (4-8 chars)
-  - url: string (target URL)
+  - code: string (4-6 chars, auto-generated)
+  - typ: string (always "R" for redirects)
+  - val: string (target URL)
+  - ettl: number (optional, TTL in epoch seconds)
+
+TTL Configuration:
+  - Enable TTL on 'ettl' attribute in DynamoDB
+  - Items automatically expire after TTL timestamp
 ```
 
 ## Testing Strategy
@@ -68,12 +80,52 @@ make test       # Run all tests
 make run        # Start the server
 make build      # Build binary
 make deps       # Download dependencies
+
+# Ko build commands
+make ko-build   # Build container image locally
+make ko-publish # Build and publish to registry
+make ko-apply   # Deploy to Kubernetes
+```
+
+## Container Building with Ko
+
+This project uses [ko](https://ko.build/) for building minimal container images without Dockerfiles. Ko automatically:
+- Builds a minimal container with just the Go binary
+- Uses distroless base images for security
+- Embeds static files via Go's embed directive
+- Supports multi-platform builds (amd64/arm64)
+
+### Prerequisites for Ko
+```bash
+# Install ko
+go install github.com/google/ko@latest
+
+# Set default container registry (optional)
+export KO_DOCKER_REPO=gcr.io/my-project
+# or
+export KO_DOCKER_REPO=docker.io/myuser
+```
+
+### Building Images
+```bash
+# Build locally (for testing)
+ko build --local .
+
+# Build and push to registry
+ko build .
+
+# Deploy to Kubernetes
+ko apply -f config/
 ```
 
 ## Configuration
 - **Port**: 8080 (hardcoded in main.go)
 - **AWS Region**: us-east-1 (hardcoded in db/dynamodb.go)
-- **Table Name**: xipe-urls (hardcoded in db/dynamodb.go)
+- **Table Name**: xipe_redirects (hardcoded in db/dynamodb.go)
+- **DynamoDB Requirements**:
+  - Create table with 'code' as primary key (String)
+  - Enable TTL on 'ettl' attribute
+  - Recommended: On-demand billing for unpredictable traffic
 
 ## Future Enhancements
 - User registration and API keys
@@ -103,9 +155,42 @@ make deps       # Download dependencies
 
 ## API Examples
 ```bash
-# Create short URL
-curl "http://localhost:8080/api/urlpost?key=test1234&url=https://example.com"
+# Create short URL with 1-day TTL (4 char code)
+curl "http://localhost:8080/api/urlpost?ttl=1d&url=https%3A%2F%2Fexample.com"
+# Response: {"status":"success","code":"Ab3d","url":"https://example.com","ttl":"1d"}
+
+# Create short URL with 1-week TTL (5 char code)
+curl "http://localhost:8080/api/urlpost?ttl=1w&url=https%3A%2F%2Fexample.com"
+
+# Create short URL with 1-month TTL (6 char code)
+curl "http://localhost:8080/api/urlpost?ttl=1m&url=https%3A%2F%2Fexample.com"
 
 # Use short URL
-curl -L "http://localhost:8080/test1234"
+curl -L "http://localhost:8080/Ab3d"
 ```
+
+## Implementation Notes
+
+### Code Generation
+- Uses crypto/rand for secure random generation
+- Character set: a-z, A-Z, 0-9 (62 characters)
+- Collision handling: Retries with new random code
+- No sequential or predictable patterns
+
+### DynamoDB Optimization
+- Conditional writes prevent race conditions
+- TTL reduces storage costs via automatic cleanup
+- Single table design for simplicity
+- Consider read/write capacity based on traffic
+
+### Error Handling
+- 400: Invalid parameters (ttl, url format)
+- 404: Code not found or expired
+- 500: Database errors
+- 529: Unable to generate unique code (very rare)
+
+### Security Considerations
+- No user input in redirect codes (prevents enumeration)
+- URL validation prevents open redirect vulnerabilities
+- TTL limits abuse potential
+- Consider rate limiting for production

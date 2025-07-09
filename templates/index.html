@@ -43,15 +43,21 @@
         <div class="section">
             <h2>URL Shortener</h2>
             <p>Shorten your URLs with our simple API:</p>
-            <code>POST /api/urlpost?key=abcd1234&url=https://example.com</code>
-            <p>Then access your shortened URL at: <code>xi.pe/abcd1234</code></p>
+            <code>GET /api/urlpost?ttl=1d&url=https://example.com</code>
+            <p>TTL options:</p>
+            <ul>
+                <li><code>1d</code> - 1 day (4 character code)</li>
+                <li><code>1w</code> - 1 week (5 character code)</li>
+                <li><code>1m</code> - 1 month (6 character code)</li>
+            </ul>
+            <p>Then access your shortened URL at: <code>xi.pe/[code]</code></p>
         </div>
 
         <div class="section">
             <h2>API Usage</h2>
             <ul>
-                <li><strong>Shorten URL:</strong> <code>/api/urlpost?key=yourkey&url=yoururl</code></li>
-                <li><strong>Access URL:</strong> <code>/yourkey</code> (4-8 alphanumeric characters)</li>
+                <li><strong>Shorten URL:</strong> <code>/api/urlpost?ttl=[1d|1w|1m]&url=[encoded_url]</code></li>
+                <li><strong>Access URL:</strong> <code>/[code]</code> (4-6 alphanumeric characters)</li>
                 <li><strong>Statistics:</strong> <code>/stats</code></li>
             </ul>
         </div>

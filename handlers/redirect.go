@@ -7,17 +7,22 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RedirectHandler(c *gin.Context) {
-	key := c.Param("key")
+func isValidCode(code string) bool {
+	matched, _ := regexp.MatchString("^[a-zA-Z0-9]{4,6}$", code)
+	return matched
+}
 
-	if !isValidKey(key) {
+func RedirectHandler(c *gin.Context) {
+	code := c.Param("code")
+
+	if !isValidCode(code) {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid key format",
+			"error": "invalid code format",
 		})
 		return
 	}
 
-	url, err := db.DB.GetURL(key)
+	redirect, err := db.DB.GetRedirect(code)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "failed to retrieve URL",
@@ -25,23 +30,22 @@ func RedirectHandler(c *gin.Context) {
 		return
 	}
 
-	if url == "" {
+	if redirect == nil {
 		c.JSON(http.StatusNotFound, gin.H{
-			"error": "key not found",
+			"error": "not found",
 		})
 		return
 	}
 
-	c.Redirect(http.StatusMovedPermanently, url)
+	c.Redirect(http.StatusMovedPermanently, redirect.Val)
 }
 
 func CatchAllHandler(c *gin.Context) {
 	path := c.Request.URL.Path[1:]
 	
-	keyPattern := regexp.MustCompile("^[a-zA-Z0-9]{4,8}$")
-	if keyPattern.MatchString(path) {
-		c.Param("key")
-		c.Set("key", path)
+	codePattern := regexp.MustCompile("^[a-zA-Z0-9]{4,6}$")
+	if codePattern.MatchString(path) {
+		c.Params = append(c.Params, gin.Param{Key: "code", Value: path})
 		RedirectHandler(c)
 		return
 	}

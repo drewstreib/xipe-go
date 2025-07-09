@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: xipe
+  labels:
+    app: xipe
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: xipe
+  template:
+    metadata:
+      labels:
+        app: xipe
+    spec:
+      containers:
+      - name: xipe
+        image: ko://xipe
+        ports:
+        - containerPort: 8080
+        env:
+        - name: AWS_REGION
+          value: "us-east-1"
+        - name: DYNAMODB_TABLE
+          value: "xipe-urls"
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /stats
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /stats
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: xipe
+spec:
+  selector:
+    app: xipe
+  ports:
+  - port: 80
+    targetPort: 8080
+  type: LoadBalancer

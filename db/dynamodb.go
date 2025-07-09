@@ -8,8 +8,8 @@ import (
 )
 
 type DBInterface interface {
-	PutURL(key, url string) error
-	GetURL(key string) (string, error)
+	PutRedirect(redirect *RedirectRecord) error
+	GetRedirect(code string) (*RedirectRecord, error)
 }
 
 type DynamoDBClient struct {
@@ -17,9 +17,11 @@ type DynamoDBClient struct {
 	table  string
 }
 
-type URLRecord struct {
-	Key string `json:"key"`
-	URL string `json:"url"`
+type RedirectRecord struct {
+	Code string `json:"code"`
+	Typ  string `json:"typ"`
+	Val  string `json:"val"`
+	Ettl int64  `json:"ettl,omitempty"`
 }
 
 var DB DBInterface
@@ -31,17 +33,12 @@ func Init() {
 
 	DB = &DynamoDBClient{
 		client: dynamodb.New(sess),
-		table:  "xipe-urls",
+		table:  "xipe_redirects",
 	}
 }
 
-func (d *DynamoDBClient) PutURL(key, url string) error {
-	record := URLRecord{
-		Key: key,
-		URL: url,
-	}
-
-	av, err := dynamodbattribute.MarshalMap(record)
+func (d *DynamoDBClient) PutRedirect(redirect *RedirectRecord) error {
+	av, err := dynamodbattribute.MarshalMap(redirect)
 	if err != nil {
 		return err
 	}
@@ -49,35 +46,36 @@ func (d *DynamoDBClient) PutURL(key, url string) error {
 	input := &dynamodb.PutItemInput{
 		Item:      av,
 		TableName: aws.String(d.table),
+		ConditionExpression: aws.String("attribute_not_exists(code)"),
 	}
 
 	_, err = d.client.PutItem(input)
 	return err
 }
 
-func (d *DynamoDBClient) GetURL(key string) (string, error) {
+func (d *DynamoDBClient) GetRedirect(code string) (*RedirectRecord, error) {
 	result, err := d.client.GetItem(&dynamodb.GetItemInput{
 		TableName: aws.String(d.table),
 		Key: map[string]*dynamodb.AttributeValue{
-			"key": {
-				S: aws.String(key),
+			"code": {
+				S: aws.String(code),
 			},
 		},
 	})
 
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if result.Item == nil {
-		return "", nil
+		return nil, nil
 	}
 
-	var record URLRecord
+	var record RedirectRecord
 	err = dynamodbattribute.UnmarshalMap(result.Item, &record)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return record.URL, nil
+	return &record, nil
 }
