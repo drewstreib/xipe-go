@@ -36,7 +36,7 @@ func RedirectHandler(c *gin.Context) {
 
 	if redirect == nil {
 		c.HTML(http.StatusNotFound, "error.html", gin.H{
-			"status":      "error", 
+			"status":      "error",
 			"description": "Short URL not found or has expired",
 		})
 		return

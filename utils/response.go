@@ -9,7 +9,7 @@ import (
 // ShouldReturnHTML determines if the response should be HTML based on User-Agent
 func ShouldReturnHTML(c *gin.Context) bool {
 	userAgent := strings.ToLower(c.GetHeader("User-Agent"))
-	
+
 	// Check for common browser user agents
 	if strings.Contains(userAgent, "mozilla") ||
 		strings.Contains(userAgent, "chrome") ||
@@ -19,7 +19,7 @@ func ShouldReturnHTML(c *gin.Context) bool {
 		strings.Contains(userAgent, "opera") {
 		return true
 	}
-	
+
 	// Check for command-line tools that should get JSON
 	if strings.Contains(userAgent, "curl") ||
 		strings.Contains(userAgent, "wget") ||
@@ -27,7 +27,7 @@ func ShouldReturnHTML(c *gin.Context) bool {
 		strings.Contains(userAgent, "insomnia") {
 		return false
 	}
-	
+
 	// Default to JSON for unknown agents
 	return false
 }

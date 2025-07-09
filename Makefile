@@ -55,3 +55,13 @@ lint:
 fmt:
 	go fmt ./...
 	goimports -w .
+
+.PHONY: pre-commit
+pre-commit: fmt test lint
+	@echo "Pre-commit checks passed"
+
+.PHONY: install-hooks
+install-hooks:
+	@command -v pre-commit >/dev/null 2>&1 || { echo "Installing pre-commit..."; pip install pre-commit; }
+	pre-commit install
+	@echo "Pre-commit hooks installed"

@@ -82,13 +82,27 @@ make build      # Build binary
 make deps       # Download dependencies
 make lint       # Run linting
 make fmt        # Format code
+make pre-commit # Run all pre-commit checks (fmt + test + lint)
 
 # Ko build commands
 make ko-build     # Build container image locally
 make ko-publish   # Build and publish to registry
 make ko-multiarch # Build for multiple architectures
 make ko-apply     # Deploy to Kubernetes
+
+# Development setup
+make install-hooks # Install pre-commit hooks
 ```
+
+## Pre-commit Hooks
+To prevent CI failures, install pre-commit hooks:
+```bash
+make install-hooks
+```
+
+This will automatically run `gofmt`, `goimports`, and tests before each commit.
+
+**IMPORTANT**: Always run `make pre-commit` before committing to ensure CI passes.
 
 ## Container Building with Ko
 
@@ -206,6 +220,18 @@ If experiencing "exec format error" on ARM64 machines:
 2. Verify `--base-import-paths` flag is used in GitHub Actions ko build
 3. Check manifest with: `docker manifest inspect ghcr.io/drewstreib/xipe-go/xipe:latest`
 4. Force pull for your architecture if needed
+
+### Common CI Failure Prevention
+The most common CI failures are due to formatting issues. To prevent these:
+
+1. **Install pre-commit hooks**: `make install-hooks`
+2. **Always run before committing**: `make pre-commit`
+3. **Or run individual checks**:
+   - `make fmt` - Fix formatting
+   - `make test` - Run tests
+   - `make lint` - Run linting
+
+**Pro tip**: The pre-commit hooks will automatically format your code and run tests, preventing most CI failures.
 
 ## API Examples
 ```bash

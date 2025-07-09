@@ -55,7 +55,7 @@ func TestRedirectHandler(t *testing.T) {
 			},
 			expectedStatus: http.StatusInternalServerError,
 			expectedHeader: "",
-			expectedBody: nil, // Now returns HTML, don't check body
+			expectedBody:   nil, // Now returns HTML, don't check body
 		},
 		{
 			name:           "Invalid code format",
@@ -63,7 +63,7 @@ func TestRedirectHandler(t *testing.T) {
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedHeader: "",
-			expectedBody: nil, // Now returns HTML, don't check body
+			expectedBody:   nil, // Now returns HTML, don't check body
 		},
 	}
 
@@ -158,7 +158,7 @@ func TestCatchAllHandler(t *testing.T) {
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusNotFound,
 			expectedHeader: "",
-			expectedBody: nil, // Now returns HTML, don't check body
+			expectedBody:   nil, // Now returns HTML, don't check body
 		},
 		{
 			name:           "Invalid path - too long",
@@ -166,7 +166,7 @@ func TestCatchAllHandler(t *testing.T) {
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusNotFound,
 			expectedHeader: "",
-			expectedBody: nil, // Now returns HTML, don't check body
+			expectedBody:   nil, // Now returns HTML, don't check body
 		},
 		{
 			name:           "Invalid path - special characters",
@@ -174,7 +174,7 @@ func TestCatchAllHandler(t *testing.T) {
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusNotFound,
 			expectedHeader: "",
-			expectedBody: nil, // Now returns HTML, don't check body
+			expectedBody:   nil, // Now returns HTML, don't check body
 		},
 	}
 

@@ -107,7 +107,6 @@ func URLPostHandler(c *gin.Context) {
 	utils.RespondWithError(c, 529, "error", "Could not allocate URL in the target namespace.")
 }
 
-
 func isDuplicateKeyError(err error) bool {
 	if err == nil {
 		return false

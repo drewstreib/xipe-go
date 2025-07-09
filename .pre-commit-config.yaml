@@ -1,0 +1,37 @@
+# Pre-commit hooks for xipe-go
+# Install with: pre-commit install
+
+repos:
+  - repo: local
+    hooks:
+      - id: gofmt
+        name: gofmt
+        entry: gofmt
+        language: system
+        args: [-w]
+        files: \.go$
+        pass_filenames: true
+        
+      - id: goimports
+        name: goimports
+        entry: goimports
+        language: system
+        args: [-w]
+        files: \.go$
+        pass_filenames: true
+        
+      - id: go-test
+        name: go test
+        entry: go
+        language: system
+        args: [test, ./...]
+        files: \.go$
+        pass_filenames: false
+        
+      - id: go-mod-tidy
+        name: go mod tidy
+        entry: go
+        language: system
+        args: [mod, tidy]
+        files: go\.(mod|sum)$
+        pass_filenames: false

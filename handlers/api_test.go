@@ -30,7 +30,7 @@ func TestURLPostHandler(t *testing.T) {
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: map[string]interface{}{
-				"status": "error",
+				"status":      "error",
 				"description": "ttl and url parameters are required",
 			},
 			checkBody: true,
@@ -41,7 +41,7 @@ func TestURLPostHandler(t *testing.T) {
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: map[string]interface{}{
-				"status": "error",
+				"status":      "error",
 				"description": "ttl and url parameters are required",
 			},
 			checkBody: true,
@@ -52,7 +52,7 @@ func TestURLPostHandler(t *testing.T) {
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: map[string]interface{}{
-				"status": "error",
+				"status":      "error",
 				"description": "ttl must be 1d, 1w, or 1m",
 			},
 			checkBody: true,
@@ -63,7 +63,7 @@ func TestURLPostHandler(t *testing.T) {
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: map[string]interface{}{
-				"status": "error",
+				"status":      "error",
 				"description": "invalid URL format",
 			},
 			checkBody: true,
