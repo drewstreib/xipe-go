@@ -30,7 +30,8 @@ func TestURLPostHandler(t *testing.T) {
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: map[string]interface{}{
-				"error": "ttl and url parameters are required",
+				"status": "error",
+				"description": "ttl and url parameters are required",
 			},
 			checkBody: true,
 		},
@@ -40,7 +41,8 @@ func TestURLPostHandler(t *testing.T) {
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: map[string]interface{}{
-				"error": "ttl and url parameters are required",
+				"status": "error",
+				"description": "ttl and url parameters are required",
 			},
 			checkBody: true,
 		},
@@ -50,7 +52,8 @@ func TestURLPostHandler(t *testing.T) {
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: map[string]interface{}{
-				"error": "ttl must be 1d, 1w, or 1m",
+				"status": "error",
+				"description": "ttl must be 1d, 1w, or 1m",
 			},
 			checkBody: true,
 		},
@@ -60,7 +63,8 @@ func TestURLPostHandler(t *testing.T) {
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: map[string]interface{}{
-				"error": "invalid URL format",
+				"status": "error",
+				"description": "invalid URL format",
 			},
 			checkBody: true,
 		},
@@ -108,6 +112,7 @@ func TestURLPostHandler(t *testing.T) {
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
 			c.Request = httptest.NewRequest("GET", "/api/urlpost"+tt.query, nil)
+			c.Request.Header.Set("User-Agent", "curl/7.68.0") // Ensure JSON responses in tests
 
 			URLPostHandler(c)
 

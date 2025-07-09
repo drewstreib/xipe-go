@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortened Successfully - xi.pe</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .success {
+            color: #28a745;
+            margin-bottom: 20px;
+        }
+        .url-container {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .url-input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 4px;
+            font-size: 16px;
+            background-color: #f8f9fa;
+        }
+        .copy-btn {
+            padding: 12px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .copy-btn:hover {
+            background-color: #0056b3;
+        }
+        .copy-btn:active {
+            background-color: #004085;
+        }
+        .details {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .back-link {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .back-link a {
+            color: #007bff;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="success">✓ URL Shortened Successfully</h1>
+        
+        <p>Your URL has been shortened and is ready to use:</p>
+        
+        <div class="url-container">
+            <input type="text" class="url-input" id="shortUrl" value="{{.url}}" readonly>
+            <button class="copy-btn" onclick="copyToClipboard()">Copy</button>
+        </div>
+        
+        <div class="details">
+            <strong>Original URL:</strong> {{.originalUrl}}<br>
+            <strong>Short Code:</strong> {{.code}}<br>
+            <strong>TTL:</strong> {{.ttl}}
+        </div>
+        
+        <div class="back-link">
+            <a href="/">← Create another short URL</a>
+        </div>
+    </div>
+
+    <script>
+        function copyToClipboard() {
+            const urlInput = document.getElementById('shortUrl');
+            urlInput.select();
+            urlInput.setSelectionRange(0, 99999); // For mobile devices
+            
+            try {
+                navigator.clipboard.writeText(urlInput.value).then(() => {
+                    const btn = document.querySelector('.copy-btn');
+                    const originalText = btn.textContent;
+                    btn.textContent = 'Copied!';
+                    btn.style.backgroundColor = '#28a745';
+                    
+                    setTimeout(() => {
+                        btn.textContent = originalText;
+                        btn.style.backgroundColor = '#007bff';
+                    }, 2000);
+                });
+            } catch (err) {
+                // Fallback for older browsers
+                document.execCommand('copy');
+                const btn = document.querySelector('.copy-btn');
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                btn.style.backgroundColor = '#28a745';
+                
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.backgroundColor = '#007bff';
+                }, 2000);
+            }
+        }
+    </script>
+</body>
+</html>

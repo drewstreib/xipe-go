@@ -17,43 +17,33 @@ func URLPostHandler(c *gin.Context) {
 	rawURL := c.Query("url")
 
 	if ttl == "" || rawURL == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "ttl and url parameters are required",
-		})
+		utils.RespondWithError(c, http.StatusBadRequest, "error", "ttl and url parameters are required")
 		return
 	}
 
 	// Validate TTL
 	if ttl != "1d" && ttl != "1w" && ttl != "1m" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "ttl must be 1d, 1w, or 1m",
-		})
+		utils.RespondWithError(c, http.StatusBadRequest, "error", "ttl must be 1d, 1w, or 1m")
 		return
 	}
 
 	// Decode and validate URL
 	decodedURL, err := url.QueryUnescape(rawURL)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid URL encoding",
-		})
+		utils.RespondWithError(c, http.StatusBadRequest, "error", "invalid URL encoding")
 		return
 	}
 
 	_, err = url.ParseRequestURI(decodedURL)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid URL format",
-		})
+		utils.RespondWithError(c, http.StatusBadRequest, "error", "invalid URL format")
 		return
 	}
 
 	// Calculate TTL and code length
 	ettl, codeLength, err := utils.CalculateTTL(ttl)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "failed to calculate TTL",
-		})
+		utils.RespondWithError(c, http.StatusInternalServerError, "error", "failed to calculate TTL")
 		return
 	}
 
@@ -63,9 +53,7 @@ func URLPostHandler(c *gin.Context) {
 	for attempts := 0; attempts < 5; attempts++ {
 		code, err = utils.GenerateCode(codeLength)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "failed to generate code",
-			})
+			utils.RespondWithError(c, http.StatusInternalServerError, "error", "failed to generate code")
 			return
 		}
 
@@ -78,32 +66,47 @@ func URLPostHandler(c *gin.Context) {
 
 		insertErr = db.DB.PutRedirect(redirect)
 		if insertErr == nil {
-			// Success!
-			c.JSON(http.StatusOK, gin.H{
-				"status": "success",
-				"code":   code,
-				"url":    decodedURL,
-				"ttl":    ttl,
-			})
+			// Success! Build the full URL
+			scheme := "https"
+			if c.Request.Header.Get("X-Forwarded-Proto") == "" && c.Request.TLS == nil {
+				scheme = "http"
+			}
+			host := c.Request.Host
+			if host == "" {
+				host = "xi.pe"
+			}
+			fullURL := scheme + "://" + host + "/" + code
+
+			// Return response based on client type
+			if utils.ShouldReturnHTML(c) {
+				c.HTML(http.StatusOK, "success.html", gin.H{
+					"url":         fullURL,
+					"originalUrl": decodedURL,
+					"code":        code,
+					"ttl":         ttl,
+				})
+			} else {
+				c.JSON(http.StatusOK, gin.H{
+					"status": "ok",
+					"url":    fullURL,
+				})
+			}
 			return
 		}
 
 		// Check if error is due to duplicate key
 		if !isDuplicateKeyError(insertErr) {
 			// Some other error occurred
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "failed to store URL",
-			})
+			utils.RespondWithError(c, http.StatusInternalServerError, "error", "failed to store URL")
 			return
 		}
 		// Continue to next attempt if duplicate key
 	}
 
 	// All attempts failed
-	c.JSON(529, gin.H{
-		"error": "could not find appropriate insertion slot",
-	})
+	utils.RespondWithError(c, 529, "error", "Could not allocate URL in the target namespace.")
 }
+
 
 func isDuplicateKeyError(err error) bool {
 	if err == nil {

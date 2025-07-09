@@ -17,23 +17,27 @@ func RedirectHandler(c *gin.Context) {
 	code := c.Param("code")
 
 	if !isValidCode(code) {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid code format",
+		// Always return HTML for redirect errors since this is browser navigation
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"status":      "error",
+			"description": "Invalid code format",
 		})
 		return
 	}
 
 	redirect, err := db.DB.GetRedirect(code)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "failed to retrieve URL",
+		c.HTML(http.StatusInternalServerError, "error.html", gin.H{
+			"status":      "error",
+			"description": "Failed to retrieve URL",
 		})
 		return
 	}
 
 	if redirect == nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "not found",
+		c.HTML(http.StatusNotFound, "error.html", gin.H{
+			"status":      "error", 
+			"description": "Short URL not found or has expired",
 		})
 		return
 	}
@@ -51,7 +55,9 @@ func CatchAllHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusNotFound, gin.H{
-		"error": "not found",
+	// Always return HTML for catch-all since this is browser navigation
+	c.HTML(http.StatusNotFound, "error.html", gin.H{
+		"status":      "error",
+		"description": "Page not found",
 	})
 }

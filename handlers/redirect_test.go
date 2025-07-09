@@ -45,9 +45,7 @@ func TestRedirectHandler(t *testing.T) {
 			},
 			expectedStatus: http.StatusNotFound,
 			expectedHeader: "",
-			expectedBody: map[string]interface{}{
-				"error": "not found",
-			},
+			expectedBody:   nil, // Now returns HTML, don't check body
 		},
 		{
 			name: "Database error",
@@ -57,9 +55,7 @@ func TestRedirectHandler(t *testing.T) {
 			},
 			expectedStatus: http.StatusInternalServerError,
 			expectedHeader: "",
-			expectedBody: map[string]interface{}{
-				"error": "failed to retrieve URL",
-			},
+			expectedBody: nil, // Now returns HTML, don't check body
 		},
 		{
 			name:           "Invalid code format",
@@ -67,9 +63,7 @@ func TestRedirectHandler(t *testing.T) {
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedHeader: "",
-			expectedBody: map[string]interface{}{
-				"error": "invalid code format",
-			},
+			expectedBody: nil, // Now returns HTML, don't check body
 		},
 	}
 
@@ -80,7 +74,8 @@ func TestRedirectHandler(t *testing.T) {
 			db.DB = mockDB
 
 			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
+			c, router := gin.CreateTestContext(w)
+			router.LoadHTMLGlob("../templates/*") // Load templates for HTML responses
 			c.Request = httptest.NewRequest("GET", "/"+tt.code, nil)
 			c.Params = []gin.Param{{Key: "code", Value: tt.code}}
 
@@ -163,9 +158,7 @@ func TestCatchAllHandler(t *testing.T) {
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusNotFound,
 			expectedHeader: "",
-			expectedBody: map[string]interface{}{
-				"error": "not found",
-			},
+			expectedBody: nil, // Now returns HTML, don't check body
 		},
 		{
 			name:           "Invalid path - too long",
@@ -173,9 +166,7 @@ func TestCatchAllHandler(t *testing.T) {
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusNotFound,
 			expectedHeader: "",
-			expectedBody: map[string]interface{}{
-				"error": "not found",
-			},
+			expectedBody: nil, // Now returns HTML, don't check body
 		},
 		{
 			name:           "Invalid path - special characters",
@@ -183,9 +174,7 @@ func TestCatchAllHandler(t *testing.T) {
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusNotFound,
 			expectedHeader: "",
-			expectedBody: map[string]interface{}{
-				"error": "not found",
-			},
+			expectedBody: nil, // Now returns HTML, don't check body
 		},
 	}
 
@@ -196,7 +185,8 @@ func TestCatchAllHandler(t *testing.T) {
 			db.DB = mockDB
 
 			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
+			c, router := gin.CreateTestContext(w)
+			router.LoadHTMLGlob("../templates/*") // Load templates for HTML responses
 			c.Request = httptest.NewRequest("GET", tt.path, nil)
 
 			CatchAllHandler(c)
