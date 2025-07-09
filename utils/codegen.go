@@ -34,7 +34,7 @@ func CalculateTTL(duration string) (int64, int, error) {
 	case "1w":
 		expiry = now.Add(7 * 24 * time.Hour)
 		codeLength = 5
-	case "1m":
+	case "1mo":
 		expiry = now.AddDate(0, 1, 0)
 		codeLength = 6
 	default:

@@ -41,7 +41,7 @@ xipe-go/
 - **TTL Options**:
   - `1d`: 4-char code, expires in 24 hours
   - `1w`: 5-char code, expires in 1 week  
-  - `1m`: 6-char code, expires in 1 month
+  - `1mo`: 6-char code, expires in 1 month
 - **Code Generation**: Cryptographically random alphanumeric
 - **Retry Logic**: Up to 5 attempts on collision (returns 529 on failure)
 - **Storage**: DynamoDB table "xipe_redirects" with conditional writes
@@ -274,7 +274,7 @@ curl -X POST "http://localhost:8080/api/urlpost" \
 # Create short URL with 1-month TTL (6 char code)
 curl -X POST "http://localhost:8080/api/urlpost" \
   -H "Content-Type: application/json" \
-  -d '{"ttl":"1m","url":"https://example.com"}'
+  -d '{"ttl":"1mo","url":"https://example.com"}'
 ```
 
 ### URL-Encoded Form Data (Legacy)
@@ -308,7 +308,7 @@ curl -L "http://localhost:8080/Ab3d"
 ### Input Formats
 - **JSON (Default)**: `POST /api/urlpost` with `{"ttl":"1d","url":"https://example.com"}` in body
 - **URL-encoded**: `POST /api/urlpost?input=urlencoded` with `ttl=1d&url=https%3A%2F%2Fexample.com` in body
-- **Required Fields**: `ttl` (1d|1w|1m) and `url` (http/https URLs only)
+- **Required Fields**: `ttl` (1d|1w|1mo) and `url` (http/https URLs only)
 
 ### Error Handling
 - 400: Invalid parameters (ttl, url format, missing hostname, malformed JSON)

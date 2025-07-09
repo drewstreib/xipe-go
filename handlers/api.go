@@ -50,8 +50,8 @@ func (h *Handlers) URLPostHandler(c *gin.Context) {
 	}
 
 	// Validate TTL
-	if ttl != "1d" && ttl != "1w" && ttl != "1m" {
-		utils.RespondWithError(c, http.StatusBadRequest, "error", "ttl must be 1d, 1w, or 1m")
+	if ttl != "1d" && ttl != "1w" && ttl != "1mo" {
+		utils.RespondWithError(c, http.StatusBadRequest, "error", "ttl must be 1d, 1w, or 1mo")
 		return
 	}
 

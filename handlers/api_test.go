@@ -67,7 +67,7 @@ func TestURLPostHandler(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: map[string]interface{}{
 				"status":      "error",
-				"description": "ttl must be 1d, 1w, or 1m",
+				"description": "ttl must be 1d, 1w, or 1mo",
 			},
 			checkBody: true,
 		},

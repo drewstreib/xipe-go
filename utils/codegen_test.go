@@ -68,7 +68,7 @@ func TestCalculateTTL(t *testing.T) {
 		},
 		{
 			name:        "1 month TTL",
-			duration:    "1m",
+			duration:    "1mo",
 			expectedLen: 6,
 			minDiff:     28 * 24 * time.Hour,
 			maxDiff:     32 * 24 * time.Hour,
