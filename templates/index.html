@@ -159,9 +159,9 @@
                     <h3>Test Short URL</h3>
                     <form id="testForm">
                         <div class="form-group">
-                            <label for="testCode">Short code to test:</label>
-                            <input type="text" id="testCode" name="code" placeholder="Ab3d" pattern="[a-zA-Z0-9]{4,6}" required>
-                            <small style="color: #666;">Enter 4-6 character code</small>
+                            <label for="testCode">Short code or URL to test:</label>
+                            <input type="text" id="testCode" name="code" placeholder="Ab3d or https://xi.pe/Ab3d" required>
+                            <small style="color: #666;">Enter 4-6 character code or full xi.pe URL</small>
                         </div>
                         <button type="submit" class="test-button">Test URL</button>
                     </form>
@@ -173,8 +173,30 @@
     <script>
         document.getElementById('testForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            const code = document.getElementById('testCode').value;
-            if (code) {
+            const input = document.getElementById('testCode').value.trim();
+            if (input) {
+                let code = input;
+                
+                // Check if it's a full URL
+                const urlPatterns = [
+                    /^https?:\/\/xi\.pe\/([a-zA-Z0-9]{4,6})$/,
+                    /^xi\.pe\/([a-zA-Z0-9]{4,6})$/
+                ];
+                
+                for (const pattern of urlPatterns) {
+                    const match = input.match(pattern);
+                    if (match) {
+                        code = match[1];
+                        break;
+                    }
+                }
+                
+                // If it's still not a valid code format, check if it's just the code
+                if (!/^[a-zA-Z0-9]{4,6}$/.test(code)) {
+                    alert('Please enter a valid 4-6 character code or xi.pe URL');
+                    return;
+                }
+                
                 window.location.href = '/' + code + '?action=info&format=html';
             }
         });
