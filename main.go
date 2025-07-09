@@ -2,11 +2,11 @@ package main
 
 import (
 	"embed"
+	"github.com/gin-gonic/gin"
 	"html/template"
 	"log"
 	"xipe/db"
 	"xipe/handlers"
-	"github.com/gin-gonic/gin"
 )
 
 //go:embed templates/*
@@ -16,7 +16,7 @@ func main() {
 	db.Init()
 
 	r := gin.Default()
-	
+
 	// Load templates from embedded filesystem
 	tmpl := template.Must(template.New("").ParseFS(templatesFS, "templates/*"))
 	r.SetHTMLTemplate(tmpl)
@@ -32,5 +32,7 @@ func main() {
 	r.GET("/:code", handlers.CatchAllHandler)
 
 	log.Println("Server starting on :8080")
-	r.Run(":8080")
+	if err := r.Run(":8080"); err != nil {
+		log.Fatal("Failed to start server:", err)
+	}
 }

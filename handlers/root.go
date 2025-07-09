@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"net/http"
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 func RootHandler(c *gin.Context) {
@@ -15,7 +15,7 @@ func StatsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status": "ok",
 		"stats": gin.H{
-			"total_urls": 0,
+			"total_urls":   0,
 			"total_pastes": 0,
 		},
 	})

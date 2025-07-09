@@ -44,8 +44,8 @@ func (d *DynamoDBClient) PutRedirect(redirect *RedirectRecord) error {
 	}
 
 	input := &dynamodb.PutItemInput{
-		Item:      av,
-		TableName: aws.String(d.table),
+		Item:                av,
+		TableName:           aws.String(d.table),
 		ConditionExpression: aws.String("attribute_not_exists(code)"),
 	}
 

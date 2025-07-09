@@ -1,9 +1,9 @@
 package utils
 
 import (
+	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestGenerateCode(t *testing.T) {
@@ -21,7 +21,7 @@ func TestGenerateCode(t *testing.T) {
 			code, err := GenerateCode(tt.length)
 			assert.NoError(t, err)
 			assert.Len(t, code, tt.length)
-			
+
 			// Verify all characters are alphanumeric
 			for _, c := range code {
 				assert.True(t, (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9'))
@@ -45,11 +45,11 @@ func TestCalculateTTL(t *testing.T) {
 	now := time.Now()
 
 	tests := []struct {
-		name         string
-		duration     string
-		expectedLen  int
-		minDiff      time.Duration
-		maxDiff      time.Duration
+		name        string
+		duration    string
+		expectedLen int
+		minDiff     time.Duration
+		maxDiff     time.Duration
 	}{
 		{
 			name:        "1 day TTL",

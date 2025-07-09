@@ -1,10 +1,10 @@
 package handlers
 
 import (
+	"github.com/gin-gonic/gin"
 	"net/http"
 	"regexp"
 	"xipe/db"
-	"github.com/gin-gonic/gin"
 )
 
 func isValidCode(code string) bool {
@@ -42,7 +42,7 @@ func RedirectHandler(c *gin.Context) {
 
 func CatchAllHandler(c *gin.Context) {
 	path := c.Request.URL.Path[1:]
-	
+
 	codePattern := regexp.MustCompile("^[a-zA-Z0-9]{4,6}$")
 	if codePattern.MatchString(path) {
 		c.Params = append(c.Params, gin.Param{Key: "code", Value: path})

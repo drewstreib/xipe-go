@@ -3,12 +3,12 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"xipe/db"
-	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestRedirectHandler(t *testing.T) {
@@ -16,7 +16,7 @@ func TestRedirectHandler(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		code            string
+		code           string
 		setupMock      func(*db.MockDB)
 		expectedStatus int
 		expectedHeader string
@@ -24,12 +24,12 @@ func TestRedirectHandler(t *testing.T) {
 	}{
 		{
 			name: "Valid code - successful redirect",
-			code:  "test",
+			code: "test",
 			setupMock: func(m *db.MockDB) {
 				m.On("GetRedirect", "test").Return(&db.RedirectRecord{
 					Code: "test",
-					Typ: "R",
-					Val: "https://example.com",
+					Typ:  "R",
+					Val:  "https://example.com",
 				}, nil)
 			},
 			expectedStatus: http.StatusMovedPermanently,
@@ -38,7 +38,7 @@ func TestRedirectHandler(t *testing.T) {
 		},
 		{
 			name: "Valid code - not found",
-			code:  "nope",
+			code: "nope",
 			setupMock: func(m *db.MockDB) {
 				m.On("GetRedirect", "nope").Return(nil, nil)
 			},
@@ -50,7 +50,7 @@ func TestRedirectHandler(t *testing.T) {
 		},
 		{
 			name: "Database error",
-			code:  "test",
+			code: "test",
 			setupMock: func(m *db.MockDB) {
 				m.On("GetRedirect", "test").Return(nil, errors.New("db error"))
 			},
@@ -62,7 +62,7 @@ func TestRedirectHandler(t *testing.T) {
 		},
 		{
 			name:           "Invalid code format",
-			code:            "test!",
+			code:           "test!",
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedHeader: "",
@@ -120,8 +120,8 @@ func TestCatchAllHandler(t *testing.T) {
 			setupMock: func(m *db.MockDB) {
 				m.On("GetRedirect", "test").Return(&db.RedirectRecord{
 					Code: "test",
-					Typ: "R",
-					Val: "https://example.com",
+					Typ:  "R",
+					Val:  "https://example.com",
 				}, nil)
 			},
 			expectedStatus: http.StatusMovedPermanently,
@@ -134,8 +134,8 @@ func TestCatchAllHandler(t *testing.T) {
 			setupMock: func(m *db.MockDB) {
 				m.On("GetRedirect", "test5").Return(&db.RedirectRecord{
 					Code: "test5",
-					Typ: "R",
-					Val: "https://example.com",
+					Typ:  "R",
+					Val:  "https://example.com",
 				}, nil)
 			},
 			expectedStatus: http.StatusMovedPermanently,
@@ -148,8 +148,8 @@ func TestCatchAllHandler(t *testing.T) {
 			setupMock: func(m *db.MockDB) {
 				m.On("GetRedirect", "test66").Return(&db.RedirectRecord{
 					Code: "test66",
-					Typ: "R",
-					Val: "https://example.com",
+					Typ:  "R",
+					Val:  "https://example.com",
 				}, nil)
 			},
 			expectedStatus: http.StatusMovedPermanently,
@@ -157,9 +157,9 @@ func TestCatchAllHandler(t *testing.T) {
 			expectedBody:   nil,
 		},
 		{
-			name: "Invalid path - too short",
-			path: "/abc",
-			setupMock: func(m *db.MockDB) {},
+			name:           "Invalid path - too short",
+			path:           "/abc",
+			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusNotFound,
 			expectedHeader: "",
 			expectedBody: map[string]interface{}{
@@ -167,9 +167,9 @@ func TestCatchAllHandler(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid path - too long",
-			path: "/abcdefg",
-			setupMock: func(m *db.MockDB) {},
+			name:           "Invalid path - too long",
+			path:           "/abcdefg",
+			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusNotFound,
 			expectedHeader: "",
 			expectedBody: map[string]interface{}{
@@ -177,9 +177,9 @@ func TestCatchAllHandler(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid path - special characters",
-			path: "/test!234",
-			setupMock: func(m *db.MockDB) {},
+			name:           "Invalid path - special characters",
+			path:           "/test!234",
+			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusNotFound,
 			expectedHeader: "",
 			expectedBody: map[string]interface{}{

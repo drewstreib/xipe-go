@@ -2,14 +2,14 @@ package handlers
 
 import (
 	"encoding/json"
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
 	"xipe/db"
-	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
 func TestURLPostHandler(t *testing.T) {
@@ -72,7 +72,7 @@ func TestURLPostHandler(t *testing.T) {
 				})).Return(nil)
 			},
 			expectedStatus: http.StatusOK,
-			checkBody: false, // Don't check body since code is random
+			checkBody:      false, // Don't check body since code is random
 		},
 		{
 			name:  "Successful URL storage with 1w ttl",
@@ -83,7 +83,7 @@ func TestURLPostHandler(t *testing.T) {
 				})).Return(nil)
 			},
 			expectedStatus: http.StatusOK,
-			checkBody: false,
+			checkBody:      false,
 		},
 		{
 			name:  "Successful URL storage with 1m ttl",
@@ -94,7 +94,7 @@ func TestURLPostHandler(t *testing.T) {
 				})).Return(nil)
 			},
 			expectedStatus: http.StatusOK,
-			checkBody: false,
+			checkBody:      false,
 		},
 	}
 
@@ -111,7 +111,7 @@ func TestURLPostHandler(t *testing.T) {
 			URLPostHandler(c)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
-			
+
 			if tt.checkBody && tt.expectedBody != nil {
 				var response map[string]interface{}
 				err := json.Unmarshal(w.Body.Bytes(), &response)
@@ -123,4 +123,3 @@ func TestURLPostHandler(t *testing.T) {
 		})
 	}
 }
-

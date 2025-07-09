@@ -2,11 +2,11 @@ package handlers
 
 import (
 	"encoding/json"
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestRootHandler(t *testing.T) {
@@ -14,7 +14,7 @@ func TestRootHandler(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	c, router := gin.CreateTestContext(w)
-	
+
 	router.LoadHTMLGlob("../templates/*")
 	c.Request = httptest.NewRequest("GET", "/", nil)
 
@@ -34,11 +34,11 @@ func TestStatsHandler(t *testing.T) {
 	StatsHandler(c)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	
+
 	var response map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
-	
+
 	assert.Equal(t, "ok", response["status"])
 	stats, ok := response["stats"].(map[string]interface{})
 	assert.True(t, ok)
