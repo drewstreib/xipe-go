@@ -150,12 +150,29 @@ ko apply -f config/
 - SQL injection not possible (NoSQL database)
 - XSS protection through Go's html/template
 
-## Deployment Requirements
+## Deployment
+
+### Quick Start with Docker
+```bash
+# Authenticate with GHCR (if you have gh CLI)
+gh auth token | docker login ghcr.io -u $(gh api user --jq .login) --password-stdin
+
+# Pull and run with Docker Compose
+git clone https://github.com/drewstreib/xipe-go.git
+cd xipe-go
+cp .env.example .env  # Edit with your AWS credentials
+docker-compose up -d
+```
+
+### Requirements
 - AWS credentials with DynamoDB access
 - DynamoDB table "xipe_redirects" must exist with:
   - Primary key: "code" (String)
   - TTL enabled on "ettl" attribute
-- Go 1.24.3 or later
+- Docker/Docker Compose for containerized deployment
+- Go 1.24.3 or later for building from source
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions.
 
 ## CI/CD Pipeline
 - **GitHub Actions**: Automated builds on main branch pushes

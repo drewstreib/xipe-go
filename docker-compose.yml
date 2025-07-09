@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  xipe:
+    image: ghcr.io/drewstreib/xipe-go:latest
+    container_name: xipe-shortener
+    ports:
+      - "8080:8080"
+    environment:
+      # AWS Configuration (required)
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      # Optional: Use IAM roles instead of keys when running on EC2
+      # - AWS_ROLE_ARN=${AWS_ROLE_ARN}
+      
+      # DynamoDB Configuration
+      - DYNAMODB_TABLE=xipe_redirects
+      
+      # Optional: Override default endpoint for local DynamoDB
+      # - AWS_ENDPOINT_URL=http://dynamodb-local:8000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/stats"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Local DynamoDB for development
+  # Uncomment this section for local development without AWS
+  # dynamodb-local:
+  #   image: amazon/dynamodb-local:latest
+  #   container_name: xipe-dynamodb
+  #   ports:
+  #     - "8000:8000"
+  #   command: ["-jar", "DynamoDBLocal.jar", "-sharedDb", "-dbPath", "./data"]
+  #   volumes:
+  #     - dynamodb_data:/home/dynamodblocal/data
+  #   working_dir: /home/dynamodblocal
+
+# Uncomment for local DynamoDB development
+# volumes:
+#   dynamodb_data:
