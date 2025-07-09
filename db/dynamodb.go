@@ -43,6 +43,15 @@ func Init() {
 		panic(err)
 	}
 
+	// Try to get credentials to verify they're working
+	creds, err := cfg.Credentials.Retrieve(context.TODO())
+	if err != nil {
+		log.Printf("Failed to retrieve AWS credentials: %v", err)
+	} else {
+		log.Printf("AWS credentials retrieved successfully - Source: %s", creds.Source)
+		// Don't log the actual keys for security
+	}
+
 	DB = &DynamoDBClient{
 		client: dynamodb.NewFromConfig(cfg),
 		table:  "xipe_redirects",
