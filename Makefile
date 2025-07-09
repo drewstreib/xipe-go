@@ -27,11 +27,11 @@ deps:
 # Ko build targets
 .PHONY: ko-build
 ko-build:
-	ko build --local --preserve-import-paths .
+	ko build --local --bare .
 
 .PHONY: ko-publish
 ko-publish:
-	ko build --preserve-import-paths .
+	ko build --bare .
 
 .PHONY: ko-apply
 ko-apply:
@@ -39,11 +39,11 @@ ko-apply:
 
 .PHONY: ko-multiarch
 ko-multiarch:
-	ko build --platform=linux/amd64,linux/arm64 .
+	ko build --platform=linux/amd64,linux/arm64 --bare .
 
 .PHONY: docker-build
 docker-build:
-	ko build --local --preserve-import-paths --platform=linux/amd64 .
+	ko build --local --bare --platform=linux/amd64 .
 
 # Linting and formatting
 .PHONY: lint

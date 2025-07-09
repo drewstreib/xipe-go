@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   xipe:
-    image: ghcr.io/drewstreib/xipe-go/xipe:latest
+    image: ghcr.io/drewstreib/xipe-go:latest
     container_name: xipe-shortener
     ports:
       - "8080:8080"
