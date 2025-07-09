@@ -32,11 +32,11 @@ var DB DBInterface
 
 func Init() {
 	log.Println("Initializing DynamoDB client...")
-	
+
 	// Log some environment info for debugging
 	log.Printf("AWS Region: us-east-1")
 	log.Printf("DynamoDB Table: xipe_redirects")
-	
+
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion("us-east-1"))
 	if err != nil {
 		log.Printf("Failed to load AWS config: %v", err)
