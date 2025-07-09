@@ -312,7 +312,7 @@ curl -L "http://localhost:8080/Ab3d"
 
 ### Error Handling
 - 400: Invalid parameters (ttl, url format, missing hostname, malformed JSON)
-- 403: URL blocked by content filter
+- 403: URL blocked by content filter, URL too long (4KB max), or missing protocol
 - 404: Code not found or expired
 - 500: Database errors
 - 503: DNS service unavailable

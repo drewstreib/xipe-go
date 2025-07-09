@@ -100,6 +100,20 @@ func TestURLPostHandler(t *testing.T) {
 			checkBody: true,
 		},
 		{
+			name:           "JSON: URL too long (exceeds 4KB)",
+			query:          "",
+			body:           `{"ttl":"1d","url":"https://example.com/` + strings.Repeat("a", 4100) + `"}`,
+			contentType:    "application/json",
+			userAgent:      "curl/7.68.0",
+			setupMock:      func(m *db.MockDB) {},
+			expectedStatus: http.StatusForbidden,
+			expectedBody: map[string]interface{}{
+				"status":      "error",
+				"description": "URL too long (4KB max)",
+			},
+			checkBody: true,
+		},
+		{
 			name:        "JSON: Successful URL storage with 1d ttl (browser)",
 			query:       "",
 			body:        `{"ttl":"1d","url":"https://example.com"}`,

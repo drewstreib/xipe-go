@@ -175,7 +175,7 @@ Create a shortened URL.
 
 **Error Responses**:
 - `400` - Invalid parameters
-- `403` - URL blocked by content filter
+- `403` - URL blocked by content filter, URL too long (4KB max), or missing protocol
 - `500` - Internal server error
 - `503` - DNS service unavailable
 - `529` - Unable to generate unique code

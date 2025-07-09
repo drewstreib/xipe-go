@@ -62,6 +62,12 @@ func (h *Handlers) URLPostHandler(c *gin.Context) {
 		return
 	}
 
+	// Check URL length (4KB max)
+	if len(decodedURL) > 4096 {
+		utils.RespondWithError(c, http.StatusForbidden, "error", "URL too long (4KB max)")
+		return
+	}
+
 	// Check if URL starts with http:// or https://
 	if !strings.HasPrefix(decodedURL, "http://") && !strings.HasPrefix(decodedURL, "https://") {
 		utils.RespondWithError(c, http.StatusForbidden, "error", "URL must start with http:// or https://")
