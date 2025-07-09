@@ -53,7 +53,7 @@ lint:
 
 .PHONY: fmt
 fmt:
-	go fmt ./...
+	gofmt -w .
 	goimports -w .
 
 .PHONY: pre-commit
