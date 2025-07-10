@@ -4,6 +4,7 @@ import (
 	"embed"
 	"html/template"
 	"log"
+	"net/http"
 
 	"github.com/drewstreib/xipe-go/db"
 	"github.com/drewstreib/xipe-go/handlers"
@@ -13,6 +14,9 @@ import (
 
 //go:embed templates/*
 var templatesFS embed.FS
+
+//go:embed static/*
+var staticFS embed.FS
 
 func main() {
 	dbClient, err := db.NewDynamoDBClient()
@@ -81,6 +85,32 @@ func main() {
 		api.POST("/post", h.PostHandler)
 		api.GET("/stats", h.StatsHandler)
 	}
+
+	// Serve static files
+	r.GET("/favicon.ico", func(c *gin.Context) {
+		c.FileFromFS("static/favicon.ico", http.FS(staticFS))
+	})
+	r.GET("/favicon-16x16.png", func(c *gin.Context) {
+		c.FileFromFS("static/favicon-16x16.png", http.FS(staticFS))
+	})
+	r.GET("/favicon-32x32.png", func(c *gin.Context) {
+		c.FileFromFS("static/favicon-32x32.png", http.FS(staticFS))
+	})
+	r.GET("/apple-touch-icon.png", func(c *gin.Context) {
+		c.FileFromFS("static/apple-touch-icon.png", http.FS(staticFS))
+	})
+	r.GET("/android-chrome-192x192.png", func(c *gin.Context) {
+		c.FileFromFS("static/android-chrome-192x192.png", http.FS(staticFS))
+	})
+	r.GET("/android-chrome-512x512.png", func(c *gin.Context) {
+		c.FileFromFS("static/android-chrome-512x512.png", http.FS(staticFS))
+	})
+	r.GET("/site.webmanifest", func(c *gin.Context) {
+		c.FileFromFS("static/site.webmanifest", http.FS(staticFS))
+	})
+	r.GET("/about.txt", func(c *gin.Context) {
+		c.FileFromFS("static/about.txt", http.FS(staticFS))
+	})
 
 	r.GET("/:code", h.CatchAllHandler)
 

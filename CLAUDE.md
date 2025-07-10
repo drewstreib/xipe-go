@@ -28,16 +28,20 @@ xipe-go/
 │   ├── response.go     # HTTP response utilities
 │   └── url_check.go    # URL content filtering
 ├── templates/          # HTML templates
-│   └── index.html      # Landing page
-└── tests files (*_test.go)
+│   ├── index.html      # Landing page
+│   ├── info.html       # URL redirect info page
+│   └── data.html       # Pastebin data display page
+└── test files (*_test.go)
 ```
 
 ## Key Features
 
-### 1. URL Shortening
-- **Endpoint**: `POST /api/urlpost`
+### 1. URL Shortening & Pastebin Service
+- **Endpoint**: `POST /api/post` (previously /api/urlpost)
+- **Method**: POST (required)
 - **Method**: POST (required)
 - **Input Format**: JSON body (default) or URL-encoded form data with `?input=urlencoded`
+- **Supports**: Both URL shortening and pastebin/data storage
 - **TTL Options**:
   - `1d`: 4-char code, expires in 24 hours
   - `1w`: 5-char code, expires in 1 week  
@@ -46,10 +50,18 @@ xipe-go/
 - **Retry Logic**: Up to 5 attempts on collision (returns 529 on failure)
 - **Storage**: DynamoDB table "xipe_redirects" with conditional writes
 - **Content Filtering**: DNS-based URL filtering using Cloudflare family DNS
+- **Pastebin Features**:
+  - Store up to 10KB of text data (vs 4KB for URLs)
+  - Syntax highlighting with highlight.js
+  - Dynamic line numbers toggle
+  - Optional syntax highlighting toggle
+  - Clean copy functionality regardless of display mode
 
-### 2. URL Redirection
+### 2. URL Redirection & Data Display
 - **Pattern**: `/[a-zA-Z0-9]{4,6}`
-- **Behavior**: 301 permanent redirect to stored URL
+- **Behavior**: 
+  - For URLs (typ="R"): Shows info page with target URL and metadata
+  - For Data (typ="D"): Shows data page with syntax highlighting and copy options
 - **Fallthrough**: Catches all unmatched routes
 - **Not Found**: Returns 404 if code doesn't exist or has expired
 
@@ -71,7 +83,7 @@ DynamoDB Table: xipe_redirects
 Primary Key: code (string)
 Attributes:
   - code: string (4-6 chars, auto-generated)
-  - typ: string (always "R" for redirects)
+  - typ: string ("R" for redirects, "D" for data/pastebin)
   - val: string (target URL)
   - ettl: number (optional, TTL in epoch seconds)
   - created: number (creation timestamp in epoch seconds)
@@ -165,7 +177,7 @@ ko apply -f config/
 
 ## Future Enhancements
 - User registration and API keys
-- Pastebin functionality
+- ✅ Pastebin functionality (completed)
 - Usage analytics
 - Custom domains
 - Rate limiting
@@ -186,6 +198,8 @@ ko apply -f config/
 - No user authentication (planned for future)
 - SQL injection not possible (NoSQL database)
 - XSS protection through Go's html/template
+- Content Security Policy (CSP) headers with 'unsafe-inline' for required functionality
+- Proper HTML escaping for pastebin data display
 
 ## Deployment
 
@@ -260,29 +274,30 @@ The most common CI failures are due to formatting issues. To prevent these:
 
 ### JSON Format (Default)
 ```bash
-# Create short URL with 1-day TTL (4 char code) - JSON body
-curl -X POST "http://localhost:8080/api/urlpost" \
+# Create short URL with 1-day TTL (4 char code)
+curl -X POST "http://localhost:8080/api/post" \
   -H "Content-Type: application/json" \
   -d '{"ttl":"1d","url":"https://example.com"}'
 # Response: {"status":"ok","url":"http://localhost:8080/Ab3d"}
 
-# Create short URL with 1-week TTL (5 char code)
-curl -X POST "http://localhost:8080/api/urlpost" \
+# Store pastebin data
+curl -X POST "http://localhost:8080/api/post" \
   -H "Content-Type: application/json" \
-  -d '{"ttl":"1w","url":"https://example.com"}'
-
-# Create short URL with 1-month TTL (6 char code)
-curl -X POST "http://localhost:8080/api/urlpost" \
-  -H "Content-Type: application/json" \
-  -d '{"ttl":"1mo","url":"https://example.com"}'
+  -d '{"ttl":"1d","data":"Hello, world!"}'
+# Response: {"status":"ok","url":"http://localhost:8080/XyZ9"}
 ```
 
 ### URL-Encoded Form Data (Legacy)
 ```bash
 # Create short URL using form data (for HTML forms)
-curl -X POST "http://localhost:8080/api/urlpost?input=urlencoded" \
+curl -X POST "http://localhost:8080/api/post?input=urlencoded" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "ttl=1d&url=https%3A%2F%2Fexample.com"
+
+# Store data using form data
+curl -X POST "http://localhost:8080/api/post?input=urlencoded" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "ttl=1d&data=Hello%20world%21"
 ```
 
 ### Using Short URLs
@@ -306,13 +321,14 @@ curl -L "http://localhost:8080/Ab3d"
 - Consider read/write capacity based on traffic
 
 ### Input Formats
-- **JSON (Default)**: `POST /api/urlpost` with `{"ttl":"1d","url":"https://example.com"}` in body
-- **URL-encoded**: `POST /api/urlpost?input=urlencoded` with `ttl=1d&url=https%3A%2F%2Fexample.com` in body
-- **Required Fields**: `ttl` (1d|1w|1mo) and `url` (http/https URLs only)
+- **JSON (Default)**: `POST /api/post` with `{"ttl":"1d","url":"https://example.com"}` or `{"ttl":"1d","data":"content"}` in body
+- **URL-encoded**: `POST /api/post?input=urlencoded` with form data
+- **Required Fields**: `ttl` (1d|1w|1mo) and either `url` or `data` (not both)
+- **Size Limits**: 4KB for URLs, 10KB for data
 
 ### Error Handling
 - 400: Invalid parameters (ttl, url format, missing hostname, malformed JSON)
-- 403: URL blocked by content filter, URL too long (4KB max), or missing protocol
+- 403: URL blocked by content filter, URL too long (4KB max), data too long (10KB max), or missing protocol
 - 404: Code not found or expired
 - 500: Database errors
 - 503: DNS service unavailable
@@ -332,3 +348,11 @@ curl -L "http://localhost:8080/Ab3d"
 - **Blocking Logic**: URLs resolving to 0.0.0.0 are considered blocked
 - **Performance**: 10-second timeout prevents hanging requests
 - **Error Handling**: Graceful degradation on DNS service unavailability
+
+### Pastebin Display Features
+- **Syntax Highlighting**: Uses highlight.js for code syntax highlighting
+- **Line Numbers**: Optional line numbers with highlightjs-line-numbers.js plugin
+- **Display Modes**: 4 combinations - plain/highlighted × with/without line numbers
+- **Copy Functionality**: Always copies original plain text regardless of display formatting
+- **Text Trimming**: Client-side trimming to 10KB with proper UTF-8 byte counting
+- **Line Ending Handling**: Accounts for \n → \r\n conversion during form submission
