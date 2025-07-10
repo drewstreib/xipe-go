@@ -126,10 +126,21 @@
 </head>
 <body>
     <div class="container">
-        <h1>xi.pe - "zippy" text share & URL shortener</h1>
+        <h1>xi.pe - "zippy" Snippet Sharing</h1>
         
         <div class="layout">
             <div class="left-column">
+                
+                <div class="section">
+                    <h2>Snippet Sharing API</h2>
+                    <p>Store text snippets with JSON API or use the form on the right:</p>
+                    <ul>
+                        <li><strong>Store:</strong> <code>POST /api/post</code> with <code>{"ttl":"1d","data":"your text here"}</code></li>
+                        <li><strong>Access:</strong> <code>/[code]</code> (shows data page with stored text)</li>
+                    </ul>
+                    <p>Data limit: 10KB max. Same TTL options as URL shortener.</p>
+                </div>
+
                 <div class="section">
                     <h2>URL Shortener API</h2>
                     <p>Shorten URLs with JSON API or use the form on the right:</p>
@@ -140,41 +151,12 @@
                     <p>TTL options: <code>1d</code> (4 chars), <code>1w</code> (5 chars), <code>1mo</code> (6 chars)</p>
                 </div>
 
-                <div class="section">
-                    <h2>Text Sharing Service</h2>
-                    <p>Store text snippets with JSON API or use the form on the right:</p>
-                    <ul>
-                        <li><strong>Store:</strong> <code>POST /api/post</code> with <code>{"ttl":"1d","data":"your text here"}</code></li>
-                        <li><strong>Access:</strong> <code>/[code]</code> (shows data page with stored text)</li>
-                    </ul>
-                    <p>Data limit: 10KB max. Same TTL options as URL shortener.</p>
-                </div>
-
             </div>
 
             <div class="right-column">
+                
                 <div class="form-section">
-                    <h3>Create Short URL</h3>
-                    <form action="/api/post?input=urlencoded" method="POST">
-                        <div class="form-group">
-                            <label for="url">URL to shorten:</label>
-                            <input type="url" id="url" name="url" placeholder="https://example.com" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="ttl">Expiration:</label>
-                            <select id="ttl" name="ttl">
-                                <option value="1d" selected>1 day (4 chars)</option>
-                                <option value="1w">1 week (5 chars)</option>
-                                <option value="1mo">1 month (6 chars)</option>
-                            </select>
-                        </div>
-                        <input type="hidden" name="format" value="html">
-                        <button type="submit">Shorten URL</button>
-                    </form>
-                </div>
-
-                <div class="form-section">
-                    <h3>Share Text Snippets</h3>
+                    <h3>Share Snippet</h3>
                     <form action="/api/post?input=urlencoded" method="POST">
                         <div class="form-group">
                             <label for="data">Text to share:</label>
@@ -196,6 +178,27 @@
                         <button type="button" onclick="submitDataForm()">Store Data</button>
                     </form>
                 </div>
+
+                <div class="form-section">
+                    <h3>Create Short URL</h3>
+                    <form action="/api/post?input=urlencoded" method="POST">
+                        <div class="form-group">
+                            <label for="url">URL to shorten:</label>
+                            <input type="url" id="url" name="url" placeholder="https://example.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="ttl">Expiration:</label>
+                            <select id="ttl" name="ttl">
+                                <option value="1d" selected>1 day (4 chars)</option>
+                                <option value="1w">1 week (5 chars)</option>
+                                <option value="1mo">1 month (6 chars)</option>
+                            </select>
+                        </div>
+                        <input type="hidden" name="format" value="html">
+                        <button type="submit">Shorten URL</button>
+                    </form>
+                </div>
+
 
             </div>
         </div>
