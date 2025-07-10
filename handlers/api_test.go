@@ -168,7 +168,7 @@ func TestPostHandler(t *testing.T) {
 			expectedStatus: http.StatusForbidden,
 			expectedBody: map[string]interface{}{
 				"status":      "error",
-				"description": "Data too long (10KB max)",
+				"description": "Data too long (10241 bytes, 10KB max)",
 			},
 			checkBody: true,
 		},

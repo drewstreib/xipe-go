@@ -98,8 +98,10 @@ func (h *Handlers) PostHandler(c *gin.Context) {
 		}
 
 		// Check data length (10KB max)
-		if len(processedData) > 10240 {
-			utils.RespondWithError(c, http.StatusForbidden, "error", "Data too long (10KB max)")
+		dataLen := len(processedData)
+		log.Printf("DEBUG: processedData length = %d bytes", dataLen)
+		if dataLen > 10240 {
+			utils.RespondWithError(c, http.StatusForbidden, "error", fmt.Sprintf("Data too long (%d bytes, 10KB max)", dataLen))
 			return
 		}
 
