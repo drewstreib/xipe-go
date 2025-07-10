@@ -283,8 +283,6 @@
             let dataValue = textarea.value;
             const originalLength = getUTF8ByteLength(dataValue);
             
-            console.log('Original data length:', originalLength, 'bytes');
-            console.log('Checkbox checked:', trimCheckbox.checked);
             
             // If trim checkbox is checked, trim based on server byte length (UTF-8 + line endings)
             if (trimCheckbox && trimCheckbox.checked) {
@@ -296,26 +294,15 @@
                     const newServerBytes = getServerByteLength(dataValue);
                     const lineCount = (dataValue.match(/\n/g) || []).length;
                     
-                    // Debug: show all the measurements in alert
-                    const debugInfo = 'TRIM DEBUG:\n' +
-                        'Original server bytes: ' + originalServerBytes + '\n' +
-                        'Trimmed server bytes: ' + newServerBytes + '\n' +
-                        'Trimmed UTF-8 bytes: ' + newLength + '\n' +
-                        'Line count: ' + lineCount + '\n' +
-                        'Character count: ' + dataValue.length;
-                    
-                    alert(debugInfo);
+                    alert('Text trimmed from ' + originalServerBytes + ' bytes to ' + newServerBytes + ' bytes');
                     
                     // Force trigger change event to ensure form recognizes the new value
                     textarea.dispatchEvent(new Event('change', { bubbles: true }));
-                } else {
-                    console.log('No trimming needed, already under limit');
                 }
             }
             
             // Add a small delay to ensure textarea value is updated before submit
             setTimeout(function() {
-                console.log('Final textarea length before submit:', getUTF8ByteLength(textarea.value), 'bytes');
                 form.submit();
             }, 10);
         }
