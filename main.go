@@ -26,6 +26,50 @@ func main() {
 
 	r := gin.Default()
 
+	// Security headers middleware
+	r.Use(func(c *gin.Context) {
+		// Content Security Policy - prevent XSS and script injection
+		// Allow highlight.js from cdnjs, inline styles for templates, and self for everything else
+		c.Header("Content-Security-Policy",
+			"default-src 'self'; "+
+				"script-src 'self' https://cdnjs.cloudflare.com; "+
+				"style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "+
+				"font-src 'self'; "+
+				"img-src 'self' data:; "+
+				"connect-src 'self'; "+
+				"object-src 'none'; "+
+				"base-uri 'self'; "+
+				"form-action 'self'; "+
+				"frame-ancestors 'none'")
+
+		// Prevent clickjacking
+		c.Header("X-Frame-Options", "DENY")
+
+		// XSS protection
+		c.Header("X-XSS-Protection", "1; mode=block")
+
+		// Content type sniffing protection
+		c.Header("X-Content-Type-Options", "nosniff")
+
+		// Referrer policy - don't leak URLs to external sites
+		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
+
+		// CORS - restrictive by default
+		c.Header("Access-Control-Allow-Origin", "")
+		c.Header("Access-Control-Allow-Methods", "GET, POST")
+		c.Header("Access-Control-Allow-Headers", "Content-Type")
+		c.Header("Access-Control-Max-Age", "86400")
+
+		// Prevent caching of sensitive pages
+		if c.Request.URL.Path != "/" {
+			c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
+			c.Header("Pragma", "no-cache")
+			c.Header("Expires", "0")
+		}
+
+		c.Next()
+	})
+
 	// Load templates from embedded filesystem
 	tmpl := template.Must(template.New("").ParseFS(templatesFS, "templates/*"))
 	r.SetHTMLTemplate(tmpl)
