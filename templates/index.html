@@ -247,11 +247,22 @@
             const trimCheckbox = document.getElementById('trim-text');
             
             let dataValue = textarea.value;
+            const originalLength = getUTF8ByteLength(dataValue);
+            
+            console.log('Original data length:', originalLength, 'bytes');
+            console.log('Checkbox checked:', trimCheckbox.checked);
             
             // If trim checkbox is checked, trim the data to 10KB (10240 bytes)
-            if (trimCheckbox.checked) {
-                dataValue = trimToByteLength(dataValue, 10240);
-                textarea.value = dataValue; // Update the textarea with trimmed content
+            if (trimCheckbox && trimCheckbox.checked) {
+                if (originalLength > 10240) {
+                    dataValue = trimToByteLength(dataValue, 10240);
+                    textarea.value = dataValue; // Update the textarea with trimmed content
+                    const newLength = getUTF8ByteLength(dataValue);
+                    console.log('Trimmed to:', newLength, 'bytes');
+                    alert('Text trimmed from ' + originalLength + ' bytes to ' + newLength + ' bytes');
+                } else {
+                    console.log('No trimming needed, already under limit');
+                }
             }
             
             // Submit the form normally
