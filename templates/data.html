@@ -86,7 +86,7 @@
         }
         .copy-data-header-btn {
             padding: 8px 16px;
-            background-color: #28a745;
+            background-color: #007bff;
             color: white;
             border: none;
             border-radius: 4px;
@@ -94,7 +94,7 @@
             font-size: 14px;
         }
         .copy-data-header-btn:hover {
-            background-color: #1e7e34;
+            background-color: #0056b3;
         }
         .data-content-wrapper {
             padding: 0 15px 15px 15px;
@@ -291,11 +291,11 @@
                     const btn = document.querySelector('.copy-data-header-btn');
                     const originalText = btn.textContent;
                     btn.textContent = 'Copied!';
-                    btn.style.backgroundColor = '#1e7e34';
+                    btn.style.backgroundColor = '#28a745';
                     
                     setTimeout(() => {
                         btn.textContent = originalText;
-                        btn.style.backgroundColor = '#28a745';
+                        btn.style.backgroundColor = '#007bff';
                     }, 2000);
                 });
             } catch (err) {
@@ -310,11 +310,11 @@
                 const btn = document.querySelector('.copy-data-header-btn');
                 const originalText = btn.textContent;
                 btn.textContent = 'Copied!';
-                btn.style.backgroundColor = '#1e7e34';
+                btn.style.backgroundColor = '#28a745';
                 
                 setTimeout(() => {
                     btn.textContent = originalText;
-                    btn.style.backgroundColor = '#28a745';
+                    btn.style.backgroundColor = '#007bff';
                 }, 2000);
             }
         }
