@@ -32,7 +32,7 @@ func main() {
 		// Allow highlight.js from cdnjs, inline styles for templates, and self for everything else
 		c.Header("Content-Security-Policy",
 			"default-src 'self'; "+
-				"script-src 'self' https://cdnjs.cloudflare.com; "+
+				"script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "+
 				"style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "+
 				"font-src 'self'; "+
 				"img-src 'self' data:; "+
