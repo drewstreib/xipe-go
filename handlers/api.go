@@ -81,20 +81,29 @@ func (h *Handlers) PostHandler(c *gin.Context) {
 		// Handle data post
 		recordType = "D"
 
-		// Decode data
-		decodedData, err := url.QueryUnescape(rawData)
-		if err != nil {
-			utils.RespondWithError(c, http.StatusBadRequest, "error", "invalid data encoding")
-			return
+		// For data posts, use the raw data as-is (already URL-decoded by Gin for form data)
+		// Only URL decode if this came from JSON and might be manually encoded
+		var processedData string
+		if c.Query("input") == "urlencoded" {
+			// Form data is already URL-decoded by Gin
+			processedData = rawData
+		} else {
+			// JSON data might be manually URL-encoded, try to decode
+			if decodedData, err := url.QueryUnescape(rawData); err == nil {
+				processedData = decodedData
+			} else {
+				// If decoding fails, use as-is (probably wasn't URL-encoded)
+				processedData = rawData
+			}
 		}
 
 		// Check data length (10KB max)
-		if len(decodedData) > 10240 {
+		if len(processedData) > 10240 {
 			utils.RespondWithError(c, http.StatusForbidden, "error", "Data too long (10KB max)")
 			return
 		}
 
-		finalValue = decodedData
+		finalValue = processedData
 	} else {
 		// Handle URL post
 		recordType = "R"

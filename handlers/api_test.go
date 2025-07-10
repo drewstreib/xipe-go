@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -180,6 +181,34 @@ func TestPostHandler(t *testing.T) {
 			setupMock: func(m *db.MockDB) {
 				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
 					return r.Typ == "D" && r.Val == "Hello, world!" && len(r.Code) == 4
+				})).Return(nil)
+			},
+			expectedStatus: http.StatusOK,
+			checkBody:      false,
+		},
+		{
+			name:        "JSON: Successful data storage with HTML content",
+			query:       "",
+			body:        `{"ttl":"1d","data":"<script>alert('test')</script><h1>Hello & goodbye</h1>"}`,
+			contentType: "application/json",
+			userAgent:   "curl/7.68.0",
+			setupMock: func(m *db.MockDB) {
+				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
+					return r.Typ == "D" && r.Val == "<script>alert('test')</script><h1>Hello & goodbye</h1>" && len(r.Code) == 4
+				})).Return(nil)
+			},
+			expectedStatus: http.StatusOK,
+			checkBody:      false,
+		},
+		{
+			name:        "URLEncoded: Successful data storage with HTML content",
+			query:       "?input=urlencoded",
+			body:        "ttl=1d&data=" + url.QueryEscape("<div>Test HTML & entities</div>"),
+			contentType: "application/x-www-form-urlencoded",
+			userAgent:   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+			setupMock: func(m *db.MockDB) {
+				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
+					return r.Typ == "D" && r.Val == "<div>Test HTML & entities</div>" && len(r.Code) == 4
 				})).Return(nil)
 			},
 			expectedStatus: http.StatusOK,
