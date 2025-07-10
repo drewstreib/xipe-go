@@ -106,6 +106,22 @@
         .footer a:hover {
             text-decoration: underline;
         }
+        .checkbox-group {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+        }
+        .checkbox-group label {
+            margin: 0;
+            font-weight: normal;
+            font-size: 14px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -164,6 +180,10 @@
                             <label for="data">Text to share:</label>
                             <textarea id="data" name="data" placeholder="Paste your text here..." required></textarea>
                         </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="trim-text" name="trim-text">
+                            <label for="trim-text">Trim pasted text to 10KB</label>
+                        </div>
                         <div class="form-group">
                             <label for="data-ttl">Expiration:</label>
                             <select id="data-ttl" name="ttl">
@@ -173,7 +193,7 @@
                             </select>
                         </div>
                         <input type="hidden" name="format" value="html">
-                        <button type="submit">Store Data</button>
+                        <button type="button" onclick="submitDataForm()">Store Data</button>
                     </form>
                 </div>
 
@@ -186,6 +206,47 @@
     </div>
 
     <script>
+        // Calculate UTF-8 byte length of a string
+        function getUTF8ByteLength(str) {
+            return new TextEncoder().encode(str).length;
+        }
+        
+        // Trim text to fit within maxBytes, starting from beginning
+        function trimToByteLength(text, maxBytes) {
+            // First, rough trim to a safe character length (assuming worst case 4 bytes per char)
+            let roughLimit = Math.min(text.length, Math.floor(maxBytes / 2));
+            let candidate = text.substring(0, roughLimit);
+            
+            // If it's already under the limit, we're done
+            if (getUTF8ByteLength(candidate) <= maxBytes) {
+                return candidate;
+            }
+            
+            // Walk back 100 characters at a time until we fit
+            while (candidate.length > 0 && getUTF8ByteLength(candidate) > maxBytes) {
+                let newLength = Math.max(0, candidate.length - 100);
+                candidate = text.substring(0, newLength);
+            }
+            
+            return candidate;
+        }
+        
+        function submitDataForm() {
+            const form = document.querySelector('#data').closest('form');
+            const textarea = document.getElementById('data');
+            const trimCheckbox = document.getElementById('trim-text');
+            
+            let dataValue = textarea.value;
+            
+            // If trim checkbox is checked, trim the data to 10KB (10240 bytes)
+            if (trimCheckbox.checked) {
+                dataValue = trimToByteLength(dataValue, 10240);
+                textarea.value = dataValue; // Update the textarea with trimmed content
+            }
+            
+            // Submit the form normally
+            form.submit();
+        }
     </script>
 </body>
 </html>
