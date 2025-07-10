@@ -216,22 +216,29 @@
         
         // Trim text to fit within maxBytes, starting from beginning
         function trimToByteLength(text, maxBytes) {
-            // First, rough trim to a safe character length (assuming worst case 4 bytes per char)
-            let roughLimit = Math.min(text.length, Math.floor(maxBytes / 2));
-            let candidate = text.substring(0, roughLimit);
-            
-            // If it's already under the limit, we're done
-            if (getUTF8ByteLength(candidate) <= maxBytes) {
-                return candidate;
+            if (getUTF8ByteLength(text) <= maxBytes) {
+                return text;
             }
             
-            // Walk back 100 characters at a time until we fit
-            while (candidate.length > 0 && getUTF8ByteLength(candidate) > maxBytes) {
-                let newLength = Math.max(0, candidate.length - 100);
-                candidate = text.substring(0, newLength);
+            // Binary search to find the longest valid prefix
+            let left = 0;
+            let right = text.length;
+            let bestFit = '';
+            
+            while (left <= right) {
+                let mid = Math.floor((left + right) / 2);
+                let candidate = text.substring(0, mid);
+                let byteLength = getUTF8ByteLength(candidate);
+                
+                if (byteLength <= maxBytes) {
+                    bestFit = candidate;
+                    left = mid + 1;
+                } else {
+                    right = mid - 1;
+                }
             }
             
-            return candidate;
+            return bestFit;
         }
         
         function submitDataForm() {
