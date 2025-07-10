@@ -314,10 +314,10 @@
             
             if (!hasSyntax && !hasLineNumbers) {
                 // Plain text only
-                codeBlock.innerHTML = originalDataText;
+                codeBlock.textContent = originalDataText;
             } else if (!hasSyntax && hasLineNumbers) {
                 // Plain text with line numbers
-                codeBlock.innerHTML = originalDataText;
+                codeBlock.textContent = originalDataText;
                 hljs.lineNumbersBlock(codeBlock);
             } else if (hasSyntax && !hasLineNumbers) {
                 // Syntax highlighted, no line numbers
