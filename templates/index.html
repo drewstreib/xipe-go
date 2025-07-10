@@ -67,7 +67,7 @@
             font-weight: bold;
         }
         select, textarea {
-            width: 95%;
+            width: 100%;
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
@@ -86,8 +86,8 @@
             flex-wrap: wrap;
         }
         .form-options > div {
-            flex: 1;
-            min-width: 200px;
+            flex: 0 0 auto;
+            min-width: 150px;
         }
         button {
             background-color: #007bff;
@@ -151,19 +151,6 @@
             font-size: 14px;
             cursor: pointer;
         }
-        .inline-select {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .inline-select label {
-            margin: 0;
-            font-weight: bold;
-        }
-        .inline-select select {
-            width: auto;
-            min-width: 100px;
-        }
     </style>
 </head>
 <body>
@@ -182,13 +169,11 @@
                 
                 <div class="form-options">
                     <div>
-                        <div class="inline-select">
-                            <label for="share-type">Share as:</label>
-                            <select id="share-type" name="typ">
-                                <option value="Text" selected>Text</option>
-                                <option value="URL">URL</option>
-                            </select>
-                        </div>
+                        <label for="share-type">Share as:</label>
+                        <select id="share-type" name="typ">
+                            <option value="Text" selected>Text</option>
+                            <option value="URL">URL</option>
+                        </select>
                     </div>
                     
                     <div>
