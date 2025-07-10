@@ -60,12 +60,18 @@
             margin-bottom: 5px;
             font-weight: bold;
         }
-        input[type="url"], select {
+        input[type="url"], select, textarea {
             width: 100%;
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
             box-sizing: border-box;
+        }
+        textarea {
+            min-height: 120px;
+            font-family: 'Courier New', Monaco, monospace;
+            font-size: 14px;
+            resize: vertical;
         }
         button {
             background-color: #007bff;
@@ -104,7 +110,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>xi.pe - "zippy" URL Shortener</h1>
+        <h1>xi.pe - "zippy" URL Shortener & Pastebin</h1>
         
         <div class="layout">
             <div class="left-column">
@@ -112,10 +118,20 @@
                     <h2>URL Shortener API</h2>
                     <p>Shorten URLs with JSON API or use the form on the right:</p>
                     <ul>
-                        <li><strong>Shorten:</strong> <code>POST /api/urlpost</code> with <code>{"ttl":"1d","url":"https://example.com"}</code></li>
+                        <li><strong>Shorten:</strong> <code>POST /api/post</code> with <code>{"ttl":"1d","url":"https://example.com"}</code></li>
                         <li><strong>Access:</strong> <code>/[code]</code> (shows info page with original URL)</li>
                     </ul>
                     <p>TTL options: <code>1d</code> (4 chars), <code>1w</code> (5 chars), <code>1mo</code> (6 chars)</p>
+                </div>
+
+                <div class="section">
+                    <h2>Text Copy/Paste Service</h2>
+                    <p>Store text data with JSON API or use the form on the right:</p>
+                    <ul>
+                        <li><strong>Store:</strong> <code>POST /api/post</code> with <code>{"ttl":"1d","data":"your text here"}</code></li>
+                        <li><strong>Access:</strong> <code>/[code]</code> (shows data page with stored text)</li>
+                    </ul>
+                    <p>Data limit: 10KB max. Same TTL options as URL shortener.</p>
                 </div>
 
             </div>
@@ -123,7 +139,7 @@
             <div class="right-column">
                 <div class="form-section">
                     <h3>Create Short URL</h3>
-                    <form action="/api/urlpost?input=urlencoded" method="POST">
+                    <form action="/api/post?input=urlencoded" method="POST">
                         <div class="form-group">
                             <label for="url">URL to shorten:</label>
                             <input type="url" id="url" name="url" placeholder="https://example.com" required>
@@ -138,6 +154,26 @@
                         </div>
                         <input type="hidden" name="format" value="html">
                         <button type="submit">Shorten URL</button>
+                    </form>
+                </div>
+
+                <div class="form-section">
+                    <h3>Store Text Data</h3>
+                    <form action="/api/post?input=urlencoded" method="POST">
+                        <div class="form-group">
+                            <label for="data">Text to store:</label>
+                            <textarea id="data" name="data" placeholder="Paste your text here..." required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="data-ttl">Expiration:</label>
+                            <select id="data-ttl" name="ttl">
+                                <option value="1d" selected>1 day (4 chars)</option>
+                                <option value="1w">1 week (5 chars)</option>
+                                <option value="1mo">1 month (6 chars)</option>
+                            </select>
+                        </div>
+                        <input type="hidden" name="format" value="html">
+                        <button type="submit">Store Data</button>
                     </form>
                 </div>
 

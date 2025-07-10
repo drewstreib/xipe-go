@@ -24,12 +24,13 @@ type DBInterface interface {
 type DynamoDBClient struct {
 	client *dynamodb.Client
 	table  string
-	cache  *expirable.LRU[string, *CachedRedirect]
+	cache  *expirable.LRU[string, *CachedRecord]
 }
 
-// CachedRedirect holds the redirect URL and original DynamoDB TTL
-type CachedRedirect struct {
-	URL       string
+// CachedRecord holds the data/URL and original DynamoDB TTL
+type CachedRecord struct {
+	Val       string // URL or data content
+	Typ       string // "R" for redirect, "D" for data
 	DynamoTTL int64  // Original DynamoDB TTL timestamp
 	Created   int64  // Creation timestamp
 	IP        string // Creator IP address
@@ -76,7 +77,7 @@ func NewDynamoDBClient() (DBInterface, error) {
 
 	// Cache TTL is 1 hour
 	cacheTTL := time.Hour
-	cache := expirable.NewLRU[string, *CachedRedirect](cacheSize, nil, cacheTTL)
+	cache := expirable.NewLRU[string, *CachedRecord](cacheSize, nil, cacheTTL)
 
 	log.Printf("Initialized LRU cache with size: %d, TTL: %v", cacheSize, cacheTTL)
 
@@ -123,8 +124,8 @@ func (d *DynamoDBClient) GetRedirect(code string) (*RedirectRecord, error) {
 			log.Printf("Cache hit for code %s", code)
 			return &RedirectRecord{
 				Code:    code,
-				Typ:     "R",
-				Val:     cached.URL,
+				Typ:     cached.Typ,
+				Val:     cached.Val,
 				Ettl:    cached.DynamoTTL,
 				Created: cached.Created,
 				IP:      cached.IP,
@@ -156,8 +157,9 @@ func (d *DynamoDBClient) GetRedirect(code string) (*RedirectRecord, error) {
 	}
 
 	// Cache the result for 1 hour
-	cached := &CachedRedirect{
-		URL:       record.Val,
+	cached := &CachedRecord{
+		Val:       record.Val,
+		Typ:       record.Typ,
 		DynamoTTL: record.Ettl,
 		Created:   record.Created,
 		IP:        record.IP,

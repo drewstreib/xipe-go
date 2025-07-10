@@ -56,15 +56,29 @@ func (h *Handlers) RedirectHandler(c *gin.Context) {
 	// Check if this is from a successful creation
 	fromSuccess := c.Query("from") == "success"
 
-	c.HTML(http.StatusOK, "info.html", gin.H{
-		"code":        code,
-		"url":         fullURL,
-		"originalUrl": redirect.Val,
-		"redirectUrl": redirect.Val,
-		"fromSuccess": fromSuccess,
-		"created":     redirect.Created,
-		"expires":     redirect.Ettl,
-	})
+	// Choose template based on type
+	if redirect.Typ == "D" {
+		// Data/pastebin type
+		c.HTML(http.StatusOK, "data.html", gin.H{
+			"code":        code,
+			"url":         fullURL,
+			"data":        redirect.Val,
+			"fromSuccess": fromSuccess,
+			"created":     redirect.Created,
+			"expires":     redirect.Ettl,
+		})
+	} else {
+		// URL redirect type (default)
+		c.HTML(http.StatusOK, "info.html", gin.H{
+			"code":        code,
+			"url":         fullURL,
+			"originalUrl": redirect.Val,
+			"redirectUrl": redirect.Val,
+			"fromSuccess": fromSuccess,
+			"created":     redirect.Created,
+			"expires":     redirect.Ettl,
+		})
+	}
 }
 
 func (h *Handlers) CatchAllHandler(c *gin.Context) {

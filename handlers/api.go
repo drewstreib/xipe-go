@@ -20,32 +20,51 @@ type Handlers struct {
 	DB db.DBInterface
 }
 
-func (h *Handlers) URLPostHandler(c *gin.Context) {
-	var ttl, rawURL string
+func (h *Handlers) PostHandler(c *gin.Context) {
+	var ttl, rawURL, rawData string
+	var isDataPost bool
 
 	// Check if input format is specified as urlencoded
 	if c.Query("input") == "urlencoded" {
 		// Read from form body for URL-encoded data
 		ttl = c.PostForm("ttl")
 		rawURL = c.PostForm("url")
+		rawData = c.PostForm("data")
 	} else {
 		// Default: expect JSON body
 		var requestBody struct {
-			TTL string `json:"ttl" binding:"required"`
-			URL string `json:"url" binding:"required"`
+			TTL  string `json:"ttl" binding:"required"`
+			URL  string `json:"url"`
+			Data string `json:"data"`
 		}
 
 		if err := c.ShouldBindJSON(&requestBody); err != nil {
-			utils.RespondWithError(c, http.StatusBadRequest, "error", "Invalid JSON format or missing required fields (ttl, url)")
+			utils.RespondWithError(c, http.StatusBadRequest, "error", "Invalid JSON format or missing required fields (ttl, url/data)")
 			return
 		}
 
 		ttl = requestBody.TTL
 		rawURL = requestBody.URL
+		rawData = requestBody.Data
 	}
 
-	if ttl == "" || rawURL == "" {
-		utils.RespondWithError(c, http.StatusBadRequest, "error", "ttl and url parameters are required")
+	// Determine if this is a data post or URL post
+	if rawData != "" && rawURL != "" {
+		utils.RespondWithError(c, http.StatusBadRequest, "error", "Cannot specify both url and data parameters")
+		return
+	}
+
+	if rawData != "" {
+		isDataPost = true
+	} else if rawURL != "" {
+		isDataPost = false
+	} else {
+		utils.RespondWithError(c, http.StatusBadRequest, "error", "Either url or data parameter is required")
+		return
+	}
+
+	if ttl == "" {
+		utils.RespondWithError(c, http.StatusBadRequest, "error", "ttl parameter is required")
 		return
 	}
 
@@ -55,36 +74,64 @@ func (h *Handlers) URLPostHandler(c *gin.Context) {
 		return
 	}
 
-	// Decode and validate URL
-	decodedURL, err := url.QueryUnescape(rawURL)
-	if err != nil {
-		utils.RespondWithError(c, http.StatusBadRequest, "error", "invalid URL encoding")
-		return
-	}
+	var finalValue string
+	var recordType string
 
-	// Check URL length (4KB max)
-	if len(decodedURL) > 4096 {
-		utils.RespondWithError(c, http.StatusForbidden, "error", "URL too long (4KB max)")
-		return
-	}
+	if isDataPost {
+		// Handle data post
+		recordType = "D"
 
-	// Check if URL starts with http:// or https://
-	if !strings.HasPrefix(decodedURL, "http://") && !strings.HasPrefix(decodedURL, "https://") {
-		utils.RespondWithError(c, http.StatusForbidden, "error", "URL must start with http:// or https://")
-		return
-	}
+		// Decode data
+		decodedData, err := url.QueryUnescape(rawData)
+		if err != nil {
+			utils.RespondWithError(c, http.StatusBadRequest, "error", "invalid data encoding")
+			return
+		}
 
-	_, err = url.ParseRequestURI(decodedURL)
-	if err != nil {
-		utils.RespondWithError(c, http.StatusBadRequest, "error", "invalid URL format")
-		return
-	}
+		// Check data length (10KB max)
+		if len(decodedData) > 10240 {
+			utils.RespondWithError(c, http.StatusForbidden, "error", "Data too long (10KB max)")
+			return
+		}
 
-	// Check URL against Cloudflare family DNS filter
-	urlCheckResult := utils.URLCheck(decodedURL)
-	if !urlCheckResult.Allowed {
-		utils.RespondWithError(c, urlCheckResult.Status, "error", urlCheckResult.Reason)
-		return
+		finalValue = decodedData
+	} else {
+		// Handle URL post
+		recordType = "R"
+
+		// Decode and validate URL
+		decodedURL, err := url.QueryUnescape(rawURL)
+		if err != nil {
+			utils.RespondWithError(c, http.StatusBadRequest, "error", "invalid URL encoding")
+			return
+		}
+
+		// Check URL length (4KB max)
+		if len(decodedURL) > 4096 {
+			utils.RespondWithError(c, http.StatusForbidden, "error", "URL too long (4KB max)")
+			return
+		}
+
+		// Check if URL starts with http:// or https://
+		if !strings.HasPrefix(decodedURL, "http://") && !strings.HasPrefix(decodedURL, "https://") {
+			utils.RespondWithError(c, http.StatusForbidden, "error", "URL must start with http:// or https://")
+			return
+		}
+
+		_, err = url.ParseRequestURI(decodedURL)
+		if err != nil {
+			utils.RespondWithError(c, http.StatusBadRequest, "error", "invalid URL format")
+			return
+		}
+
+		// Check URL against Cloudflare family DNS filter
+		urlCheckResult := utils.URLCheck(decodedURL)
+		if !urlCheckResult.Allowed {
+			utils.RespondWithError(c, urlCheckResult.Status, "error", urlCheckResult.Reason)
+			return
+		}
+
+		finalValue = decodedURL
 	}
 
 	// Calculate TTL and code length
@@ -110,19 +157,28 @@ func (h *Handlers) URLPostHandler(c *gin.Context) {
 		// Get current timestamp
 		createdTime := time.Now().Unix()
 
-		redirect := &db.RedirectRecord{
+		record := &db.RedirectRecord{
 			Code:    code,
-			Typ:     "R",
-			Val:     decodedURL,
+			Typ:     recordType,
+			Val:     finalValue,
 			Ettl:    ettl,
 			Created: createdTime,
 			IP:      clientIP,
 		}
 
-		log.Printf("Attempting to store redirect - Code: %s, URL: %s", code, decodedURL)
-		insertErr = h.DB.PutRedirect(redirect)
+		log.Printf("Attempting to store %s - Code: %s, Value: %s",
+			map[string]string{"R": "redirect", "D": "data"}[recordType],
+			code,
+			func() string {
+				if len(finalValue) > 50 {
+					return finalValue[:50] + "..."
+				}
+				return finalValue
+			}())
+		insertErr = h.DB.PutRedirect(record)
 		if insertErr == nil {
-			log.Printf("Successfully stored redirect - Code: %s", code)
+			log.Printf("Successfully stored %s - Code: %s",
+				map[string]string{"R": "redirect", "D": "data"}[recordType], code)
 			// Success! Build the full URL
 			scheme := "https"
 			if c.Request.Header.Get("X-Forwarded-Proto") == "" && c.Request.TLS == nil {

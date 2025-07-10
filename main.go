@@ -34,7 +34,7 @@ func main() {
 
 	api := r.Group("/api")
 	{
-		api.POST("/urlpost", h.URLPostHandler)
+		api.POST("/post", h.PostHandler)
 		api.GET("/stats", h.StatsHandler)
 	}
 

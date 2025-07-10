@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestURLPostHandler(t *testing.T) {
+func TestPostHandler(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	tests := []struct {
@@ -28,7 +28,7 @@ func TestURLPostHandler(t *testing.T) {
 		expectedBody   map[string]interface{}
 		checkBody      bool
 	}{
-		// JSON format tests
+		// JSON format tests - URL posts
 		{
 			name:           "JSON: Missing ttl parameter",
 			query:          "",
@@ -39,12 +39,12 @@ func TestURLPostHandler(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: map[string]interface{}{
 				"status":      "error",
-				"description": "Invalid JSON format or missing required fields (ttl, url)",
+				"description": "Invalid JSON format or missing required fields (ttl, url/data)",
 			},
 			checkBody: true,
 		},
 		{
-			name:           "JSON: Missing url parameter",
+			name:           "JSON: Missing url/data parameter",
 			query:          "",
 			body:           `{"ttl":"1d"}`,
 			contentType:    "application/json",
@@ -53,7 +53,7 @@ func TestURLPostHandler(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: map[string]interface{}{
 				"status":      "error",
-				"description": "Invalid JSON format or missing required fields (ttl, url)",
+				"description": "Either url or data parameter is required",
 			},
 			checkBody: true,
 		},
@@ -142,6 +142,50 @@ func TestURLPostHandler(t *testing.T) {
 			checkBody:      false,
 		},
 
+		// JSON format tests - Data posts
+		{
+			name:           "JSON: Both url and data specified",
+			query:          "",
+			body:           `{"ttl":"1d","url":"https://example.com","data":"test data"}`,
+			contentType:    "application/json",
+			userAgent:      "curl/7.68.0",
+			setupMock:      func(m *db.MockDB) {},
+			expectedStatus: http.StatusBadRequest,
+			expectedBody: map[string]interface{}{
+				"status":      "error",
+				"description": "Cannot specify both url and data parameters",
+			},
+			checkBody: true,
+		},
+		{
+			name:           "JSON: Data too long (exceeds 10KB)",
+			query:          "",
+			body:           `{"ttl":"1d","data":"` + strings.Repeat("a", 10241) + `"}`,
+			contentType:    "application/json",
+			userAgent:      "curl/7.68.0",
+			setupMock:      func(m *db.MockDB) {},
+			expectedStatus: http.StatusForbidden,
+			expectedBody: map[string]interface{}{
+				"status":      "error",
+				"description": "Data too long (10KB max)",
+			},
+			checkBody: true,
+		},
+		{
+			name:        "JSON: Successful data storage",
+			query:       "",
+			body:        `{"ttl":"1d","data":"Hello, world!"}`,
+			contentType: "application/json",
+			userAgent:   "curl/7.68.0",
+			setupMock: func(m *db.MockDB) {
+				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
+					return r.Typ == "D" && r.Val == "Hello, world!" && len(r.Code) == 4
+				})).Return(nil)
+			},
+			expectedStatus: http.StatusOK,
+			checkBody:      false,
+		},
+
 		// URL-encoded format tests
 		{
 			name:           "URLEncoded: Missing ttl parameter",
@@ -153,12 +197,12 @@ func TestURLPostHandler(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: map[string]interface{}{
 				"status":      "error",
-				"description": "ttl and url parameters are required",
+				"description": "ttl parameter is required",
 			},
 			checkBody: true,
 		},
 		{
-			name:           "URLEncoded: Missing url parameter",
+			name:           "URLEncoded: Missing url/data parameter",
 			query:          "?input=urlencoded",
 			body:           "ttl=1d",
 			contentType:    "application/x-www-form-urlencoded",
@@ -167,7 +211,7 @@ func TestURLPostHandler(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: map[string]interface{}{
 				"status":      "error",
-				"description": "ttl and url parameters are required",
+				"description": "Either url or data parameter is required",
 			},
 			checkBody: true,
 		},
@@ -200,15 +244,15 @@ func TestURLPostHandler(t *testing.T) {
 
 			var req *http.Request
 			if tt.body != "" {
-				req = httptest.NewRequest("POST", "/api/urlpost"+tt.query, strings.NewReader(tt.body))
+				req = httptest.NewRequest("POST", "/api/post"+tt.query, strings.NewReader(tt.body))
 				req.Header.Set("Content-Type", tt.contentType)
 			} else {
-				req = httptest.NewRequest("POST", "/api/urlpost"+tt.query, nil)
+				req = httptest.NewRequest("POST", "/api/post"+tt.query, nil)
 			}
 			req.Header.Set("User-Agent", tt.userAgent)
 			c.Request = req
 
-			h.URLPostHandler(c)
+			h.PostHandler(c)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
