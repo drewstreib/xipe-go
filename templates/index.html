@@ -135,22 +135,6 @@
         .footer a:hover {
             text-decoration: underline;
         }
-        .checkbox-group {
-            margin: 10px 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .checkbox-group input[type="checkbox"] {
-            width: auto;
-            margin: 0;
-        }
-        .checkbox-group label {
-            margin: 0;
-            font-weight: normal;
-            font-size: 14px;
-            cursor: pointer;
-        }
     </style>
 </head>
 <body>
@@ -161,10 +145,9 @@
         </div>
         
         <div class="form-section">
-            <h3>Share Text or URL</h3>
             <form action="/api/post?input=urlencoded" method="POST">
                 <div class="form-group">
-                    <textarea id="data" name="data" placeholder="Paste your text or URL here..." required></textarea>
+                    <textarea id="data" name="data" placeholder="Paste your text or URL here... (over 10KB will be truncated)" required></textarea>
                 </div>
                 
                 <div class="form-options">
@@ -184,11 +167,6 @@
                             <option value="1mo">1 month (6 char url code)</option>
                         </select>
                     </div>
-                </div>
-                
-                <div class="checkbox-group">
-                    <input type="checkbox" id="trim-text" name="trim-text">
-                    <label for="trim-text">Trim text to 10KB</label>
                 </div>
                 
                 <input type="hidden" name="format" value="html">
@@ -296,27 +274,23 @@
         function submitDataForm() {
             const form = document.querySelector('#data').closest('form');
             const textarea = document.getElementById('data');
-            const trimCheckbox = document.getElementById('trim-text');
             
             let dataValue = textarea.value;
             const originalLength = getUTF8ByteLength(dataValue);
             
-            
-            // If trim checkbox is checked, trim based on server byte length (UTF-8 + line endings)
-            if (trimCheckbox && trimCheckbox.checked) {
-                const originalServerBytes = getServerByteLength(dataValue);
-                if (originalServerBytes > 10240) {
-                    dataValue = trimToByteLength(dataValue, 10240);
-                    textarea.value = dataValue; // Update the textarea with trimmed content
-                    const newLength = getUTF8ByteLength(dataValue);
-                    const newServerBytes = getServerByteLength(dataValue);
-                    const lineCount = (dataValue.match(/\n/g) || []).length;
-                    
-                    alert('Text trimmed from ' + originalServerBytes + ' bytes to ' + newServerBytes + ' bytes');
-                    
-                    // Force trigger change event to ensure form recognizes the new value
-                    textarea.dispatchEvent(new Event('change', { bubbles: true }));
-                }
+            // Always trim if over 10KB based on server byte length (UTF-8 + line endings)
+            const originalServerBytes = getServerByteLength(dataValue);
+            if (originalServerBytes > 10240) {
+                dataValue = trimToByteLength(dataValue, 10240);
+                textarea.value = dataValue; // Update the textarea with trimmed content
+                const newLength = getUTF8ByteLength(dataValue);
+                const newServerBytes = getServerByteLength(dataValue);
+                const lineCount = (dataValue.match(/\n/g) || []).length;
+                
+                alert('Text trimmed from ' + originalServerBytes + ' bytes to ' + newServerBytes + ' bytes');
+                
+                // Force trigger change event to ensure form recognizes the new value
+                textarea.dispatchEvent(new Event('change', { bubbles: true }));
             }
             
             // Add a small delay to ensure textarea value is updated before submit
