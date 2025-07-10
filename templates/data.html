@@ -187,9 +187,13 @@
         <div class="data-container">
             <div class="data-header">
                 <div class="data-label">Stored Data:</div>
-                <div style="display: flex; gap: 10px; align-items: center;">
+                <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
                     <label style="display: flex; align-items: center; gap: 5px; margin: 0; font-weight: normal; font-size: 14px; color: #495057;">
-                        <input type="checkbox" id="line-numbers-toggle" checked onchange="toggleLineNumbers()" style="margin: 0;">
+                        <input type="checkbox" id="syntax-highlighting-toggle" checked onchange="toggleDisplay()" style="margin: 0;">
+                        Syntax highlighting
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; margin: 0; font-weight: normal; font-size: 14px; color: #495057;">
+                        <input type="checkbox" id="line-numbers-toggle" checked onchange="toggleDisplay()" style="margin: 0;">
                         Line numbers
                     </label>
                     <button class="copy-data-header-btn" onclick="copyDataToClipboard()">Copy Data</button>
@@ -261,6 +265,7 @@
         
         // Store original data for copying (set on page load)
         let originalDataText = '';
+        let highlightedHTML = '';
         
         function copyDataToClipboard() {
             // Always copy from stored original text, not the DOM
@@ -299,17 +304,28 @@
             }
         }
         
-        function toggleLineNumbers() {
+        function toggleDisplay() {
             const codeBlock = document.querySelector('#dataContent code');
-            const checkbox = document.getElementById('line-numbers-toggle');
+            const syntaxCheckbox = document.getElementById('syntax-highlighting-toggle');
+            const lineNumbersCheckbox = document.getElementById('line-numbers-toggle');
             
-            if (checkbox.checked) {
-                // Add line numbers
-                hljs.lineNumbersBlock(codeBlock);
-            } else {
-                // Remove line numbers by restoring original content and re-highlighting
+            const hasSyntax = syntaxCheckbox.checked;
+            const hasLineNumbers = lineNumbersCheckbox.checked;
+            
+            if (!hasSyntax && !hasLineNumbers) {
+                // Plain text only
                 codeBlock.innerHTML = originalDataText;
-                hljs.highlightElement(codeBlock);
+            } else if (!hasSyntax && hasLineNumbers) {
+                // Plain text with line numbers
+                codeBlock.innerHTML = originalDataText;
+                hljs.lineNumbersBlock(codeBlock);
+            } else if (hasSyntax && !hasLineNumbers) {
+                // Syntax highlighted, no line numbers
+                codeBlock.innerHTML = highlightedHTML;
+            } else {
+                // Syntax highlighted with line numbers (default)
+                codeBlock.innerHTML = highlightedHTML;
+                hljs.lineNumbersBlock(codeBlock);
             }
         }
         
@@ -402,9 +418,11 @@
             // Initialize syntax highlighting
             hljs.highlightAll();
             
-            // Add line numbers by default (checkbox starts checked)
+            // Store the highlighted HTML after highlighting but before line numbers
             const codeBlock = document.querySelector('#dataContent code');
             if (codeBlock) {
+                highlightedHTML = codeBlock.innerHTML;
+                // Add line numbers by default (checkbox starts checked)
                 hljs.lineNumbersBlock(codeBlock);
             }
         });
