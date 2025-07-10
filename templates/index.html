@@ -259,16 +259,18 @@
                     textarea.value = dataValue; // Update the textarea with trimmed content
                     const newLength = getUTF8ByteLength(dataValue);
                     
-                    // Debug: show all the measurements
-                    console.log('=== TRIM DEBUG ===');
-                    console.log('Original UTF-8 bytes:', originalLength);
-                    console.log('Trimmed UTF-8 bytes:', newLength);
-                    console.log('Original URL-encoded length:', encodeURIComponent(textarea.value).length);
-                    console.log('Trimmed URL-encoded length:', encodeURIComponent(dataValue).length);
-                    console.log('Character count:', dataValue.length);
-                    console.log('=================');
+                    // Debug: show all the measurements in alert
+                    const originalEncoded = encodeURIComponent(textarea.value).length;
+                    const trimmedEncoded = encodeURIComponent(dataValue).length;
                     
-                    alert('Text trimmed from ' + originalLength + ' bytes to ' + newLength + ' bytes (40 byte safety margin)');
+                    const debugInfo = 'TRIM DEBUG:\n' +
+                        'Original UTF-8 bytes: ' + originalLength + '\n' +
+                        'Trimmed UTF-8 bytes: ' + newLength + '\n' +
+                        'Original URL-encoded: ' + originalEncoded + '\n' +
+                        'Trimmed URL-encoded: ' + trimmedEncoded + '\n' +
+                        'Character count: ' + dataValue.length;
+                    
+                    alert(debugInfo);
                     
                     // Force trigger change event to ensure form recognizes the new value
                     textarea.dispatchEvent(new Event('change', { bubbles: true }));
