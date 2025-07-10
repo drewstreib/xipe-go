@@ -260,13 +260,19 @@
                     const newLength = getUTF8ByteLength(dataValue);
                     console.log('Trimmed to:', newLength, 'bytes');
                     alert('Text trimmed from ' + originalLength + ' bytes to ' + newLength + ' bytes');
+                    
+                    // Force trigger change event to ensure form recognizes the new value
+                    textarea.dispatchEvent(new Event('change', { bubbles: true }));
                 } else {
                     console.log('No trimming needed, already under limit');
                 }
             }
             
-            // Submit the form normally
-            form.submit();
+            // Add a small delay to ensure textarea value is updated before submit
+            setTimeout(function() {
+                console.log('Final textarea length before submit:', getUTF8ByteLength(textarea.value), 'bytes');
+                form.submit();
+            }, 10);
         }
     </script>
 </body>
