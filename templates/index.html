@@ -12,7 +12,6 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
             background-color: #f5f5f5;
@@ -22,34 +21,36 @@
             padding: 30px;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 80%;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .header img {
+            width: 48px;
+            height: 48px;
         }
         h1 {
             color: #333;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .layout {
-            display: flex;
-            gap: 30px;
-        }
-        .left-column {
-            flex: 1;
-        }
-        .right-column {
-            flex: 1;
-        }
-        .section {
-            margin: 30px 0;
-            padding: 20px;
-            background-color: #f9f9f9;
-            border-radius: 5px;
+            margin: 0;
+            font-size: 28px;
         }
         .form-section {
             margin: 20px 0;
-            padding: 20px;
+            padding: 25px;
             background-color: #f0f8ff;
-            border-radius: 5px;
+            border-radius: 8px;
             border: 1px solid #d0d0d0;
+        }
+        .form-section h3 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #333;
         }
         code {
             background-color: #e9ecef;
@@ -65,36 +66,59 @@
             margin-bottom: 5px;
             font-weight: bold;
         }
-        input[type="url"], select, textarea {
-            width: 100%;
+        select, textarea {
+            width: 95%;
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
             box-sizing: border-box;
         }
         textarea {
-            min-height: 120px;
+            min-height: 150px;
             font-family: 'Courier New', Monaco, monospace;
             font-size: 14px;
             resize: vertical;
         }
+        .form-options {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+        .form-options > div {
+            flex: 1;
+            min-width: 200px;
+        }
         button {
             background-color: #007bff;
             color: white;
-            padding: 10px 20px;
+            padding: 12px 24px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             width: 100%;
             font-size: 16px;
+            margin-top: 15px;
         }
         button:hover {
             background-color: #0056b3;
         }
-        @media (max-width: 768px) {
-            .layout {
-                flex-direction: column;
-            }
+        .api-section {
+            margin: 40px 0;
+            padding: 25px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+        }
+        .api-section h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        .api-example {
+            background-color: #f4f4f4;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
         }
         .footer {
             margin-top: 50px;
@@ -127,85 +151,89 @@
             font-size: 14px;
             cursor: pointer;
         }
+        .inline-select {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .inline-select label {
+            margin: 0;
+            font-weight: bold;
+        }
+        .inline-select select {
+            width: auto;
+            min-width: 100px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>xi.pe - "zippy" Snippet Sharing</h1>
+        <div class="header">
+            <img src="/android-chrome-192x192.png" alt="xi.pe logo">
+            <h1>xi.pe - zippy text sharing</h1>
+        </div>
         
-        <div class="layout">
-            <div class="left-column">
-                
-                <div class="section">
-                    <h2>Snippet Sharing API</h2>
-                    <p>Store text snippets with JSON API or use the form on the right:</p>
-                    <ul>
-                        <li><strong>Store:</strong> <code>POST /api/post</code> with <code>{"ttl":"1d","data":"your text here"}</code></li>
-                        <li><strong>Access:</strong> <code>/[code]</code> (shows data page with stored text)</li>
-                    </ul>
-                    <p>Data limit: 10KB max. Same TTL options as URL shortener.</p>
+        <div class="form-section">
+            <h3>Share Text or URL</h3>
+            <form action="/api/post?input=urlencoded" method="POST">
+                <div class="form-group">
+                    <textarea id="data" name="data" placeholder="Paste your text or URL here..." required></textarea>
                 </div>
-
-                <div class="section">
-                    <h2>URL Shortener API</h2>
-                    <p>Shorten URLs with JSON API or use the form on the right:</p>
-                    <ul>
-                        <li><strong>Shorten:</strong> <code>POST /api/post</code> with <code>{"ttl":"1d","url":"https://example.com"}</code></li>
-                        <li><strong>Access:</strong> <code>/[code]</code> (shows info page with original URL)</li>
-                    </ul>
-                    <p>TTL options: <code>1d</code> (4 chars), <code>1w</code> (5 chars), <code>1mo</code> (6 chars)</p>
-                </div>
-
-            </div>
-
-            <div class="right-column">
                 
-                <div class="form-section">
-                    <h3>Share Snippet</h3>
-                    <form action="/api/post?input=urlencoded" method="POST">
-                        <div class="form-group">
-                            <label for="data">Text to share:</label>
-                            <textarea id="data" name="data" placeholder="Paste your text here..." required></textarea>
-                        </div>
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="trim-text" name="trim-text">
-                            <label for="trim-text">Trim pasted text to 10KB</label>
-                        </div>
-                        <div class="form-group">
-                            <label for="data-ttl">Expiration:</label>
-                            <select id="data-ttl" name="ttl">
-                                <option value="1d" selected>1 day (4 chars)</option>
-                                <option value="1w">1 week (5 chars)</option>
-                                <option value="1mo">1 month (6 chars)</option>
+                <div class="form-options">
+                    <div>
+                        <div class="inline-select">
+                            <label for="share-type">Share as:</label>
+                            <select id="share-type" name="typ">
+                                <option value="Text" selected>Text</option>
+                                <option value="URL">URL</option>
                             </select>
                         </div>
-                        <input type="hidden" name="format" value="html">
-                        <button type="button" onclick="submitDataForm()">Store Data</button>
-                    </form>
+                    </div>
+                    
+                    <div>
+                        <label for="ttl">Expiration:</label>
+                        <select id="ttl" name="ttl">
+                            <option value="1d" selected>1 day (4 chars)</option>
+                            <option value="1w">1 week (5 chars)</option>
+                            <option value="1mo">1 month (6 chars)</option>
+                        </select>
+                    </div>
                 </div>
-
-                <div class="form-section">
-                    <h3>Create Short URL</h3>
-                    <form action="/api/post?input=urlencoded" method="POST">
-                        <div class="form-group">
-                            <label for="url">URL to shorten:</label>
-                            <input type="url" id="url" name="url" placeholder="https://example.com" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="ttl">Expiration:</label>
-                            <select id="ttl" name="ttl">
-                                <option value="1d" selected>1 day (4 chars)</option>
-                                <option value="1w">1 week (5 chars)</option>
-                                <option value="1mo">1 month (6 chars)</option>
-                            </select>
-                        </div>
-                        <input type="hidden" name="format" value="html">
-                        <button type="submit">Shorten URL</button>
-                    </form>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" id="trim-text" name="trim-text">
+                    <label for="trim-text">Trim text to 10KB</label>
                 </div>
-
-
+                
+                <input type="hidden" name="format" value="html">
+                <button type="button" onclick="submitDataForm()">Share</button>
+            </form>
+        </div>
+        
+        <div class="api-section">
+            <h2>API Documentation</h2>
+            <p>Share text or URLs programmatically with our JSON API:</p>
+            
+            <div class="api-example">
+                <strong>Endpoint:</strong> <code>POST /api/post</code><br>
+                <strong>Content-Type:</strong> <code>application/json</code>
             </div>
+            
+            <h3>Share Text (default)</h3>
+            <div class="api-example">
+                <code>{"ttl":"1d","data":"your text here"}</code><br>
+                <small>Returns: <code>{"status":"ok","url":"http://xi.pe/Ab3d"}</code></small>
+            </div>
+            
+            <h3>Share URL</h3>
+            <div class="api-example">
+                <code>{"ttl":"1d","data":"https://example.com","typ":"URL"}</code><br>
+                <small>Returns: <code>{"status":"ok","url":"http://xi.pe/XyZ9"}</code></small>
+            </div>
+            
+            <p><strong>TTL Options:</strong> <code>1d</code> (4 chars), <code>1w</code> (5 chars), <code>1mo</code> (6 chars)</p>
+            <p><strong>Limits:</strong> Text up to 10KB, URLs up to 4KB</p>
         </div>
         
         <div class="footer">

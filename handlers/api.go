@@ -21,45 +21,44 @@ type Handlers struct {
 }
 
 func (h *Handlers) PostHandler(c *gin.Context) {
-	var ttl, rawURL, rawData string
+	var ttl, rawData, typ string
 	var isDataPost bool
 
 	// Check if input format is specified as urlencoded
 	if c.Query("input") == "urlencoded" {
 		// Read from form body for URL-encoded data
 		ttl = c.PostForm("ttl")
-		rawURL = c.PostForm("url")
 		rawData = c.PostForm("data")
+		typ = c.PostForm("typ")
 	} else {
 		// Default: expect JSON body
 		var requestBody struct {
 			TTL  string `json:"ttl" binding:"required"`
-			URL  string `json:"url"`
-			Data string `json:"data"`
+			Data string `json:"data" binding:"required"`
+			Typ  string `json:"typ"`
 		}
 
 		if err := c.ShouldBindJSON(&requestBody); err != nil {
-			utils.RespondWithError(c, http.StatusBadRequest, "error", "Invalid JSON format or missing required fields (ttl, url/data)")
+			utils.RespondWithError(c, http.StatusBadRequest, "error", "Invalid JSON format or missing required fields (ttl, data)")
 			return
 		}
 
 		ttl = requestBody.TTL
-		rawURL = requestBody.URL
 		rawData = requestBody.Data
+		typ = requestBody.Typ
 	}
 
-	// Determine if this is a data post or URL post
-	if rawData != "" && rawURL != "" {
-		utils.RespondWithError(c, http.StatusBadRequest, "error", "Cannot specify both url and data parameters")
-		return
-	}
-
-	if rawData != "" {
-		isDataPost = true
-	} else if rawURL != "" {
+	// Determine if this is a URL or data post based on typ parameter
+	// Default to data post if typ is not specified or is "Text"
+	if typ == "URL" {
 		isDataPost = false
 	} else {
-		utils.RespondWithError(c, http.StatusBadRequest, "error", "Either url or data parameter is required")
+		// Default to data post for "Text" or empty typ
+		isDataPost = true
+	}
+
+	if rawData == "" {
+		utils.RespondWithError(c, http.StatusBadRequest, "error", "data parameter is required")
 		return
 	}
 
@@ -110,39 +109,47 @@ func (h *Handlers) PostHandler(c *gin.Context) {
 		// Handle URL post
 		recordType = "R"
 
-		// Decode and validate URL
-		decodedURL, err := url.QueryUnescape(rawURL)
-		if err != nil {
-			utils.RespondWithError(c, http.StatusBadRequest, "error", "invalid URL encoding")
-			return
+		// Process URL from data field
+		var processedURL string
+		if c.Query("input") == "urlencoded" {
+			// Form data is already URL-decoded by Gin
+			processedURL = rawData
+		} else {
+			// JSON data might be manually URL-encoded, try to decode
+			if decodedURL, err := url.QueryUnescape(rawData); err == nil {
+				processedURL = decodedURL
+			} else {
+				// If decoding fails, use as-is (probably wasn't URL-encoded)
+				processedURL = rawData
+			}
 		}
 
 		// Check URL length (4KB max)
-		if len(decodedURL) > 4096 {
+		if len(processedURL) > 4096 {
 			utils.RespondWithError(c, http.StatusForbidden, "error", "URL too long (4KB max)")
 			return
 		}
 
 		// Check if URL starts with http:// or https://
-		if !strings.HasPrefix(decodedURL, "http://") && !strings.HasPrefix(decodedURL, "https://") {
+		if !strings.HasPrefix(processedURL, "http://") && !strings.HasPrefix(processedURL, "https://") {
 			utils.RespondWithError(c, http.StatusForbidden, "error", "URL must start with http:// or https://")
 			return
 		}
 
-		_, err = url.ParseRequestURI(decodedURL)
+		_, err := url.ParseRequestURI(processedURL)
 		if err != nil {
 			utils.RespondWithError(c, http.StatusBadRequest, "error", "invalid URL format")
 			return
 		}
 
 		// Check URL against Cloudflare family DNS filter
-		urlCheckResult := utils.URLCheck(decodedURL)
+		urlCheckResult := utils.URLCheck(processedURL)
 		if !urlCheckResult.Allowed {
 			utils.RespondWithError(c, urlCheckResult.Status, "error", urlCheckResult.Reason)
 			return
 		}
 
-		finalValue = decodedURL
+		finalValue = processedURL
 	}
 
 	// Calculate TTL and code length

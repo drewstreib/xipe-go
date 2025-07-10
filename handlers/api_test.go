@@ -33,19 +33,19 @@ func TestPostHandler(t *testing.T) {
 		{
 			name:           "JSON: Missing ttl parameter",
 			query:          "",
-			body:           `{"url":"https://example.com"}`,
+			body:           `{"data":"https://example.com","typ":"URL"}`,
 			contentType:    "application/json",
 			userAgent:      "curl/7.68.0",
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: map[string]interface{}{
 				"status":      "error",
-				"description": "Invalid JSON format or missing required fields (ttl, url/data)",
+				"description": "Invalid JSON format or missing required fields (ttl, data)",
 			},
 			checkBody: true,
 		},
 		{
-			name:           "JSON: Missing url/data parameter",
+			name:           "JSON: Missing data parameter",
 			query:          "",
 			body:           `{"ttl":"1d"}`,
 			contentType:    "application/json",
@@ -54,14 +54,14 @@ func TestPostHandler(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: map[string]interface{}{
 				"status":      "error",
-				"description": "Either url or data parameter is required",
+				"description": "Invalid JSON format or missing required fields (ttl, data)",
 			},
 			checkBody: true,
 		},
 		{
 			name:           "JSON: Invalid ttl format",
 			query:          "",
-			body:           `{"ttl":"2d","url":"https://example.com"}`,
+			body:           `{"ttl":"2d","data":"https://example.com","typ":"URL"}`,
 			contentType:    "application/json",
 			userAgent:      "curl/7.68.0",
 			setupMock:      func(m *db.MockDB) {},
@@ -75,7 +75,7 @@ func TestPostHandler(t *testing.T) {
 		{
 			name:           "JSON: URL without http/https prefix",
 			query:          "",
-			body:           `{"ttl":"1d","url":"example.com"}`,
+			body:           `{"ttl":"1d","data":"example.com","typ":"URL"}`,
 			contentType:    "application/json",
 			userAgent:      "curl/7.68.0",
 			setupMock:      func(m *db.MockDB) {},
@@ -89,7 +89,7 @@ func TestPostHandler(t *testing.T) {
 		{
 			name:           "JSON: Invalid URL format",
 			query:          "",
-			body:           `{"ttl":"1d","url":"http://invalid url with spaces"}`,
+			body:           `{"ttl":"1d","data":"http://invalid url with spaces","typ":"URL"}`,
 			contentType:    "application/json",
 			userAgent:      "curl/7.68.0",
 			setupMock:      func(m *db.MockDB) {},
@@ -103,7 +103,7 @@ func TestPostHandler(t *testing.T) {
 		{
 			name:           "JSON: URL too long (exceeds 4KB)",
 			query:          "",
-			body:           `{"ttl":"1d","url":"https://example.com/` + strings.Repeat("a", 4100) + `"}`,
+			body:           `{"ttl":"1d","data":"https://example.com/` + strings.Repeat("a", 4100) + `","typ":"URL"}`,
 			contentType:    "application/json",
 			userAgent:      "curl/7.68.0",
 			setupMock:      func(m *db.MockDB) {},
@@ -117,7 +117,7 @@ func TestPostHandler(t *testing.T) {
 		{
 			name:        "JSON: Successful URL storage with 1d ttl (browser)",
 			query:       "",
-			body:        `{"ttl":"1d","url":"https://example.com"}`,
+			body:        `{"ttl":"1d","data":"https://example.com","typ":"URL"}`,
 			contentType: "application/json",
 			userAgent:   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
 			setupMock: func(m *db.MockDB) {
@@ -131,7 +131,7 @@ func TestPostHandler(t *testing.T) {
 		{
 			name:        "JSON: API client gets JSON response",
 			query:       "",
-			body:        `{"ttl":"1d","url":"https://example.com"}`,
+			body:        `{"ttl":"1d","data":"https://example.com","typ":"URL"}`,
 			contentType: "application/json",
 			userAgent:   "curl/7.68.0",
 			setupMock: func(m *db.MockDB) {
@@ -144,20 +144,6 @@ func TestPostHandler(t *testing.T) {
 		},
 
 		// JSON format tests - Data posts
-		{
-			name:           "JSON: Both url and data specified",
-			query:          "",
-			body:           `{"ttl":"1d","url":"https://example.com","data":"test data"}`,
-			contentType:    "application/json",
-			userAgent:      "curl/7.68.0",
-			setupMock:      func(m *db.MockDB) {},
-			expectedStatus: http.StatusBadRequest,
-			expectedBody: map[string]interface{}{
-				"status":      "error",
-				"description": "Cannot specify both url and data parameters",
-			},
-			checkBody: true,
-		},
 		{
 			name:           "JSON: Data too long (exceeds 10KB)",
 			query:          "",
@@ -219,7 +205,7 @@ func TestPostHandler(t *testing.T) {
 		{
 			name:           "URLEncoded: Missing ttl parameter",
 			query:          "?input=urlencoded",
-			body:           "url=https%3A%2F%2Fexample.com",
+			body:           "data=https%3A%2F%2Fexample.com&typ=URL",
 			contentType:    "application/x-www-form-urlencoded",
 			userAgent:      "curl/7.68.0",
 			setupMock:      func(m *db.MockDB) {},
@@ -231,7 +217,7 @@ func TestPostHandler(t *testing.T) {
 			checkBody: true,
 		},
 		{
-			name:           "URLEncoded: Missing url/data parameter",
+			name:           "URLEncoded: Missing data parameter",
 			query:          "?input=urlencoded",
 			body:           "ttl=1d",
 			contentType:    "application/x-www-form-urlencoded",
@@ -240,14 +226,14 @@ func TestPostHandler(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: map[string]interface{}{
 				"status":      "error",
-				"description": "Either url or data parameter is required",
+				"description": "data parameter is required",
 			},
 			checkBody: true,
 		},
 		{
 			name:        "URLEncoded: Successful URL storage (browser)",
 			query:       "?input=urlencoded",
-			body:        "ttl=1d&url=https%3A%2F%2Fexample.com&format=html",
+			body:        "ttl=1d&data=https%3A%2F%2Fexample.com&typ=URL&format=html",
 			contentType: "application/x-www-form-urlencoded",
 			userAgent:   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
 			setupMock: func(m *db.MockDB) {
