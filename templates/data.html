@@ -362,6 +362,13 @@
                 expiresEl.textContent = formatTimestamp(timestamp);
             }
             
+            // Remove ?from=success parameter from URL bar if present
+            const url = new URL(window.location);
+            if (url.searchParams.has('from')) {
+                url.searchParams.delete('from');
+                window.history.replaceState({}, '', url.toString());
+            }
+            
             // Initialize syntax highlighting
             hljs.highlightAll();
         });
