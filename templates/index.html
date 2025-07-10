@@ -252,14 +252,14 @@
             console.log('Original data length:', originalLength, 'bytes');
             console.log('Checkbox checked:', trimCheckbox.checked);
             
-            // If trim checkbox is checked, trim the data to 10KB (10240 bytes)
+            // If trim checkbox is checked, trim the data to 10KB (10230 bytes - 10 byte safety margin)
             if (trimCheckbox && trimCheckbox.checked) {
-                if (originalLength > 10240) {
-                    dataValue = trimToByteLength(dataValue, 10240);
+                if (originalLength > 10230) {
+                    dataValue = trimToByteLength(dataValue, 10230);
                     textarea.value = dataValue; // Update the textarea with trimmed content
                     const newLength = getUTF8ByteLength(dataValue);
                     console.log('Trimmed to:', newLength, 'bytes');
-                    alert('Text trimmed from ' + originalLength + ' bytes to ' + newLength + ' bytes');
+                    alert('Text trimmed from ' + originalLength + ' bytes to ' + newLength + ' bytes (10 byte safety margin)');
                     
                     // Force trigger change event to ensure form recognizes the new value
                     textarea.dispatchEvent(new Event('change', { bubbles: true }));
