@@ -214,7 +214,7 @@
             return new TextEncoder().encode(str).length;
         }
         
-        // Trim text to fit within maxBytes, starting from beginning
+        // Trim text to fit within maxBytes (server measures decoded UTF-8 bytes)
         function trimToByteLength(text, maxBytes) {
             if (getUTF8ByteLength(text) <= maxBytes) {
                 return text;
@@ -252,14 +252,23 @@
             console.log('Original data length:', originalLength, 'bytes');
             console.log('Checkbox checked:', trimCheckbox.checked);
             
-            // If trim checkbox is checked, trim the data to 10KB (10230 bytes - 10 byte safety margin)
+            // If trim checkbox is checked, trim to 10KB with extra debugging
             if (trimCheckbox && trimCheckbox.checked) {
-                if (originalLength > 10230) {
-                    dataValue = trimToByteLength(dataValue, 10230);
+                if (originalLength > 10200) { // Use 10200 for safety margin
+                    dataValue = trimToByteLength(dataValue, 10200);
                     textarea.value = dataValue; // Update the textarea with trimmed content
                     const newLength = getUTF8ByteLength(dataValue);
-                    console.log('Trimmed to:', newLength, 'bytes');
-                    alert('Text trimmed from ' + originalLength + ' bytes to ' + newLength + ' bytes (10 byte safety margin)');
+                    
+                    // Debug: show all the measurements
+                    console.log('=== TRIM DEBUG ===');
+                    console.log('Original UTF-8 bytes:', originalLength);
+                    console.log('Trimmed UTF-8 bytes:', newLength);
+                    console.log('Original URL-encoded length:', encodeURIComponent(textarea.value).length);
+                    console.log('Trimmed URL-encoded length:', encodeURIComponent(dataValue).length);
+                    console.log('Character count:', dataValue.length);
+                    console.log('=================');
+                    
+                    alert('Text trimmed from ' + originalLength + ' bytes to ' + newLength + ' bytes (40 byte safety margin)');
                     
                     // Force trigger change event to ensure form recognizes the new value
                     textarea.dispatchEvent(new Event('change', { bubbles: true }));
