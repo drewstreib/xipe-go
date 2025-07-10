@@ -6,6 +6,7 @@
     <title>Data Information - xi.pe</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.8.0/highlightjs-line-numbers.min.js"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -186,7 +187,13 @@
         <div class="data-container">
             <div class="data-header">
                 <div class="data-label">Stored Data:</div>
-                <button class="copy-data-header-btn" onclick="copyDataToClipboard()">Copy Data</button>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <label style="display: flex; align-items: center; gap: 5px; margin: 0; font-weight: normal; font-size: 14px; color: #495057;">
+                        <input type="checkbox" id="line-numbers-toggle" checked onchange="toggleLineNumbers()" style="margin: 0;">
+                        Line numbers
+                    </label>
+                    <button class="copy-data-header-btn" onclick="copyDataToClipboard()">Copy Data</button>
+                </div>
             </div>
             <div class="data-content-wrapper">
                 <div class="data-content" id="dataContent">
@@ -252,9 +259,12 @@
             }
         }
         
+        // Store original data for copying (set on page load)
+        let originalDataText = '';
+        
         function copyDataToClipboard() {
-            const dataContent = document.querySelector('#dataContent code');
-            const textToCopy = dataContent.textContent;
+            // Always copy from stored original text, not the DOM
+            const textToCopy = originalDataText;
             
             try {
                 navigator.clipboard.writeText(textToCopy).then(() => {
@@ -286,6 +296,20 @@
                     btn.textContent = originalText;
                     btn.style.backgroundColor = '#28a745';
                 }, 2000);
+            }
+        }
+        
+        function toggleLineNumbers() {
+            const codeBlock = document.querySelector('#dataContent code');
+            const checkbox = document.getElementById('line-numbers-toggle');
+            
+            if (checkbox.checked) {
+                // Add line numbers
+                hljs.lineNumbersBlock(codeBlock);
+            } else {
+                // Remove line numbers by restoring original content and re-highlighting
+                codeBlock.innerHTML = originalDataText;
+                hljs.highlightElement(codeBlock);
             }
         }
         
@@ -369,8 +393,20 @@
                 window.history.replaceState({}, '', url.toString());
             }
             
+            // Store original text for copying before any modifications
+            const codeElement = document.querySelector('#dataContent code');
+            if (codeElement) {
+                originalDataText = codeElement.textContent;
+            }
+            
             // Initialize syntax highlighting
             hljs.highlightAll();
+            
+            // Add line numbers by default (checkbox starts checked)
+            const codeBlock = document.querySelector('#dataContent code');
+            if (codeBlock) {
+                hljs.lineNumbersBlock(codeBlock);
+            }
         });
     </script>
 </body>
