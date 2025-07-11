@@ -168,6 +168,13 @@
         .back-btn:hover {
             background-color: #545b62;
         }
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+        .delete-btn:hover {
+            background-color: #c82333;
+        }
         .footer {
             margin-top: 40px;
             padding-top: 20px;
@@ -238,6 +245,7 @@
                     Line numbers
                 </label>
                 <button class="copy-data-btn" onclick="copyDataToClipboard()">Copy Data</button>
+                <button class="delete-btn action-btn" id="deleteButton" onclick="deleteData()" style="display: none;">Delete</button>
             </div>
         </div>
         
@@ -456,7 +464,55 @@
                 // Add line numbers by default (checkbox starts checked)
                 hljs.lineNumbersBlock(codeBlock);
             }
+            
+            // Check if user owns this data and show delete button
+            checkOwnershipAndShowDelete();
         });
+        
+        // Function to get cookie value by name
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+        
+        // Check if current user owns this data
+        function checkOwnershipAndShowDelete() {
+            const ownerCookie = getCookie('id');
+            const dataOwner = '{{.owner}}';
+            
+            if (ownerCookie && dataOwner && ownerCookie === dataOwner) {
+                document.getElementById('deleteButton').style.display = 'inline-block';
+            }
+        }
+        
+        // Function to delete the data
+        function deleteData() {
+            if (confirm('This will permanently delete this item with no recovery. Continue?')) {
+                const code = '{{.code}}';
+                
+                fetch(`/${code}`, {
+                    method: 'DELETE',
+                    credentials: 'include', // Include cookies
+                })
+                .then(response => {
+                    if (response.ok) {
+                        // Successful deletion - follow the redirect to show the 404
+                        window.location.href = `/${code}`;
+                    } else if (response.status === 401) {
+                        alert('You are not authorized to delete this item.');
+                    } else {
+                        return response.json().then(data => {
+                            alert('Failed to delete: ' + (data.description || 'Unknown error'));
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Delete error:', error);
+                    alert('Failed to delete item. Please try again.');
+                });
+            }
+        }
     </script>
 </body>
 </html>

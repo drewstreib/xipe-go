@@ -10,6 +10,7 @@ import (
 
 	"github.com/drewstreib/xipe-go/db"
 
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -38,7 +39,7 @@ func TestPostHandler(t *testing.T) {
 			userAgent:   "curl/7.68.0",
 			setupMock: func(m *db.MockDB) {
 				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
-					return r.Typ == "R" && r.Val == "https://example.com" && len(r.Code) == 4
+					return r.Typ == "R" && r.Val == "https://example.com" && len(r.Code) == 4 && r.Owner != ""
 				})).Return(nil)
 			},
 			expectedStatus: http.StatusOK,
@@ -122,7 +123,7 @@ func TestPostHandler(t *testing.T) {
 			userAgent:   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
 			setupMock: func(m *db.MockDB) {
 				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
-					return r.Typ == "R" && r.Val == "https://example.com" && len(r.Code) == 4
+					return r.Typ == "R" && r.Val == "https://example.com" && len(r.Code) == 4 && r.Owner != ""
 				})).Return(nil)
 			},
 			expectedStatus: http.StatusOK,
@@ -136,7 +137,7 @@ func TestPostHandler(t *testing.T) {
 			userAgent:   "curl/7.68.0",
 			setupMock: func(m *db.MockDB) {
 				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
-					return r.Typ == "R" && r.Val == "https://example.com" && len(r.Code) == 4
+					return r.Typ == "R" && r.Val == "https://example.com" && len(r.Code) == 4 && r.Owner != ""
 				})).Return(nil)
 			},
 			expectedStatus: http.StatusOK,
@@ -166,7 +167,7 @@ func TestPostHandler(t *testing.T) {
 			userAgent:   "curl/7.68.0",
 			setupMock: func(m *db.MockDB) {
 				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
-					return r.Typ == "D" && r.Val == "Hello, world!" && len(r.Code) == 4
+					return r.Typ == "D" && r.Val == "Hello, world!" && len(r.Code) == 4 && r.Owner != ""
 				})).Return(nil)
 			},
 			expectedStatus: http.StatusOK,
@@ -180,7 +181,7 @@ func TestPostHandler(t *testing.T) {
 			userAgent:   "curl/7.68.0",
 			setupMock: func(m *db.MockDB) {
 				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
-					return r.Typ == "D" && r.Val == "<script>alert('test')</script><h1>Hello & goodbye</h1>" && len(r.Code) == 4
+					return r.Typ == "D" && r.Val == "<script>alert('test')</script><h1>Hello & goodbye</h1>" && len(r.Code) == 4 && r.Owner != ""
 				})).Return(nil)
 			},
 			expectedStatus: http.StatusOK,
@@ -194,7 +195,7 @@ func TestPostHandler(t *testing.T) {
 			userAgent:   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
 			setupMock: func(m *db.MockDB) {
 				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
-					return r.Typ == "D" && r.Val == "<div>Test HTML & entities</div>" && len(r.Code) == 4
+					return r.Typ == "D" && r.Val == "<div>Test HTML & entities</div>" && len(r.Code) == 4 && r.Owner != ""
 				})).Return(nil)
 			},
 			expectedStatus: http.StatusOK,
@@ -210,7 +211,7 @@ func TestPostHandler(t *testing.T) {
 			userAgent:   "curl/7.68.0",
 			setupMock: func(m *db.MockDB) {
 				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
-					return r.Typ == "R" && r.Val == "https://example.com" && len(r.Code) == 4
+					return r.Typ == "R" && r.Val == "https://example.com" && len(r.Code) == 4 && r.Owner != ""
 				})).Return(nil)
 			},
 			expectedStatus: http.StatusOK,
@@ -238,7 +239,7 @@ func TestPostHandler(t *testing.T) {
 			userAgent:   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
 			setupMock: func(m *db.MockDB) {
 				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
-					return r.Typ == "R" && r.Val == "https://example.com" && len(r.Code) == 4
+					return r.Typ == "R" && r.Val == "https://example.com" && len(r.Code) == 4 && r.Owner != ""
 				})).Return(nil)
 			},
 			expectedStatus: http.StatusOK,
@@ -270,6 +271,121 @@ func TestPostHandler(t *testing.T) {
 			h.PostHandler(c)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
+
+			if tt.checkBody && tt.expectedBody != nil {
+				var response map[string]interface{}
+				err := json.Unmarshal(w.Body.Bytes(), &response)
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedBody, response)
+			}
+
+			mockDB.AssertExpectations(t)
+		})
+	}
+}
+
+func TestDeleteHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name           string
+		code           string
+		ownerID        string
+		setCookie      bool
+		userAgent      string
+		setupMock      func(*db.MockDB)
+		expectedStatus int
+		expectedBody   map[string]interface{}
+		checkBody      bool
+		checkLocation  string
+	}{
+		{
+			name:      "Successful delete with valid owner (API client)",
+			code:      "abc123",
+			ownerID:   "validOwner123",
+			setCookie: true,
+			userAgent: "curl/7.68.0",
+			setupMock: func(m *db.MockDB) {
+				m.On("DeleteRedirect", "abc123", "validOwner123").Return(nil)
+			},
+			expectedStatus: http.StatusOK,
+			expectedBody: map[string]interface{}{
+				"status":  "ok",
+				"message": "deleted successfully",
+			},
+			checkBody: true,
+		},
+		{
+			name:      "Successful delete with valid owner (browser redirect)",
+			code:      "abc123",
+			ownerID:   "validOwner123",
+			setCookie: true,
+			userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+			setupMock: func(m *db.MockDB) {
+				m.On("DeleteRedirect", "abc123", "validOwner123").Return(nil)
+			},
+			expectedStatus: http.StatusOK, // Gin test bug: should be 301 but records as 200
+			checkBody:      false,
+			checkLocation:  "/abc123",
+		},
+		{
+			name:           "Delete without cookie",
+			code:           "abc123",
+			setCookie:      false,
+			userAgent:      "curl/7.68.0",
+			setupMock:      func(m *db.MockDB) {},
+			expectedStatus: http.StatusUnauthorized,
+			expectedBody: map[string]interface{}{
+				"status":      "error",
+				"description": "unauthorized",
+			},
+			checkBody: true,
+		},
+		{
+			name:      "Delete with wrong owner",
+			code:      "abc123",
+			ownerID:   "wrongOwner",
+			setCookie: true,
+			userAgent: "curl/7.68.0",
+			setupMock: func(m *db.MockDB) {
+				m.On("DeleteRedirect", "abc123", "wrongOwner").Return(&types.ConditionalCheckFailedException{})
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedBody: map[string]interface{}{
+				"status":      "error",
+				"description": "unauthorized",
+			},
+			checkBody: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockDB := new(db.MockDB)
+			tt.setupMock(mockDB)
+
+			h := &Handlers{DB: mockDB}
+
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+
+			req := httptest.NewRequest("DELETE", "/"+tt.code, nil)
+			req.Header.Set("User-Agent", tt.userAgent)
+
+			if tt.setCookie && tt.ownerID != "" {
+				req.AddCookie(&http.Cookie{Name: "id", Value: tt.ownerID})
+			}
+
+			c.Request = req
+			c.Params = gin.Params{{Key: "code", Value: tt.code}}
+
+			h.DeleteHandler(c)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+
+			if tt.checkLocation != "" {
+				assert.Equal(t, tt.checkLocation, w.Header().Get("Location"))
+			}
 
 			if tt.checkBody && tt.expectedBody != nil {
 				var response map[string]interface{}

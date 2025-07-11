@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"log"
@@ -20,9 +22,45 @@ type Handlers struct {
 	DB db.DBInterface
 }
 
+// generateOwnerToken generates a 128-bit random token and encodes it as base64
+func generateOwnerToken() (string, error) {
+	bytes := make([]byte, 16) // 16 bytes = 128 bits
+	_, err := rand.Read(bytes)
+	if err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(bytes), nil
+}
+
+// getOrCreateOwnerID gets existing owner ID from cookie or creates a new one
+func getOrCreateOwnerID(c *gin.Context) (string, error) {
+	// Check if owner ID cookie already exists
+	if ownerID, err := c.Cookie("id"); err == nil && ownerID != "" {
+		log.Printf("Reusing existing owner ID from cookie")
+		return ownerID, nil
+	}
+
+	// Generate new owner ID
+	ownerID, err := generateOwnerToken()
+	if err != nil {
+		return "", err
+	}
+
+	log.Printf("Generated new owner ID")
+	return ownerID, nil
+}
+
 func (h *Handlers) PostHandler(c *gin.Context) {
 	var ttl, rawData, typ string
 	var isDataPost bool
+
+	// Get or create owner ID for this post
+	ownerID, err := getOrCreateOwnerID(c)
+	if err != nil {
+		log.Printf("Failed to generate owner ID: %v", err)
+		utils.RespondWithError(c, http.StatusInternalServerError, "error", "failed to generate owner ID")
+		return
+	}
 
 	// Check if input format is specified as urlencoded
 	if c.Query("input") == "urlencoded" {
@@ -182,6 +220,7 @@ func (h *Handlers) PostHandler(c *gin.Context) {
 			Ettl:    ettl,
 			Created: createdTime,
 			IP:      clientIP,
+			Owner:   ownerID,
 		}
 
 		log.Printf("Attempting to store %s - Code: %s, Value: %s",
@@ -197,6 +236,10 @@ func (h *Handlers) PostHandler(c *gin.Context) {
 		if insertErr == nil {
 			log.Printf("Successfully stored %s - Code: %s",
 				map[string]string{"R": "redirect", "D": "data"}[recordType], code)
+
+			// Set the owner ID cookie (30 days expiration)
+			c.SetCookie("id", ownerID, 30*24*60*60, "/", "", false, true)
+
 			// Success! Build the full URL
 			scheme := "https"
 			if c.Request.Header.Get("X-Forwarded-Proto") == "" && c.Request.TLS == nil {
@@ -243,6 +286,50 @@ func (h *Handlers) PostHandler(c *gin.Context) {
 
 	// All attempts failed
 	utils.RespondWithError(c, 529, "error", "Could not allocate URL in the target namespace.")
+}
+
+func (h *Handlers) DeleteHandler(c *gin.Context) {
+	code := c.Param("code")
+
+	// Get owner ID from cookie
+	ownerID, err := c.Cookie("id")
+	if err != nil || ownerID == "" {
+		log.Printf("Delete request without valid owner ID cookie for code: %s", code)
+		utils.RespondWithError(c, http.StatusUnauthorized, "error", "unauthorized")
+		return
+	}
+
+	// Attempt to delete the record
+	err = h.DB.DeleteRedirect(code, ownerID)
+	if err != nil {
+		// Check if it's a conditional check failure (wrong owner or not found)
+		var ccf *types.ConditionalCheckFailedException
+		if errors.As(err, &ccf) {
+			log.Printf("Delete failed for code %s: unauthorized or not found", code)
+			utils.RespondWithError(c, http.StatusUnauthorized, "error", "unauthorized")
+			return
+		}
+
+		// Other database error
+		log.Printf("Database error during delete for code %s: %v", code, err)
+		utils.RespondWithError(c, http.StatusInternalServerError, "error", "failed to delete")
+		return
+	}
+
+	log.Printf("Successfully deleted code: %s", code)
+
+	// Return success response
+	if utils.ShouldReturnHTML(c) {
+		// For HTML clients, redirect to the original item location (which will now 404)
+		c.Redirect(http.StatusMovedPermanently, "/"+code)
+		return
+	} else {
+		// For API clients, return JSON success
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "ok",
+			"message": "deleted successfully",
+		})
+	}
 }
 
 func isDuplicateKeyError(err error) bool {

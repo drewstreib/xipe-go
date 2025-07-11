@@ -80,6 +80,7 @@ func main() {
 
 	r.GET("/", h.RootHandler)
 	r.POST("/", h.PostHandler)
+	r.DELETE("/:code", h.DeleteHandler)
 
 	api := r.Group("/api")
 	{

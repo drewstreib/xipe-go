@@ -66,6 +66,7 @@ func (h *Handlers) RedirectHandler(c *gin.Context) {
 			"fromSuccess": fromSuccess,
 			"created":     redirect.Created,
 			"expires":     redirect.Ettl,
+			"owner":       redirect.Owner,
 		})
 	} else {
 		// URL redirect type (default)

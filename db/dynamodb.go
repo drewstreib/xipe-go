@@ -18,6 +18,7 @@ import (
 type DBInterface interface {
 	PutRedirect(redirect *RedirectRecord) error
 	GetRedirect(code string) (*RedirectRecord, error)
+	DeleteRedirect(code string, ownerID string) error
 	GetCacheSize() int
 }
 
@@ -34,6 +35,7 @@ type CachedRecord struct {
 	DynamoTTL int64  // Original DynamoDB TTL timestamp
 	Created   int64  // Creation timestamp
 	IP        string // Creator IP address
+	Owner     string // Owner ID for deletion authentication
 }
 
 type RedirectRecord struct {
@@ -43,6 +45,7 @@ type RedirectRecord struct {
 	Ettl    int64  `dynamodbav:"ettl,omitempty"`
 	Created int64  `dynamodbav:"created"`
 	IP      string `dynamodbav:"ip"`
+	Owner   string `dynamodbav:"owner"`
 }
 
 func NewDynamoDBClient() (DBInterface, error) {
@@ -129,6 +132,7 @@ func (d *DynamoDBClient) GetRedirect(code string) (*RedirectRecord, error) {
 				Ettl:    cached.DynamoTTL,
 				Created: cached.Created,
 				IP:      cached.IP,
+				Owner:   cached.Owner,
 			}, nil
 		}
 	}
@@ -163,11 +167,53 @@ func (d *DynamoDBClient) GetRedirect(code string) (*RedirectRecord, error) {
 		DynamoTTL: record.Ettl,
 		Created:   record.Created,
 		IP:        record.IP,
+		Owner:     record.Owner,
 	}
 	d.cache.Add(code, cached)
 	log.Printf("Cached redirect for code %s", code)
 
 	return &record, nil
+}
+
+func (d *DynamoDBClient) DeleteRedirect(code string, ownerID string) error {
+	log.Printf("DeleteRedirect called with code: %s", code)
+
+	// First, get the item to verify ownership
+	record, err := d.GetRedirect(code)
+	if err != nil {
+		log.Printf("Failed to get redirect for ownership check: %v", err)
+		return err
+	}
+
+	// Return same error for both "not found" and "wrong owner" for security
+	if record == nil || record.Owner != ownerID {
+		log.Printf("Delete failed: record not found or owner mismatch")
+		return &types.ConditionalCheckFailedException{}
+	}
+
+	// Delete from DynamoDB with condition to double-check ownership
+	input := &dynamodb.DeleteItemInput{
+		TableName: aws.String(d.table),
+		Key: map[string]types.AttributeValue{
+			"code": &types.AttributeValueMemberS{Value: code},
+		},
+		ConditionExpression: aws.String("owner = :owner"),
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":owner": &types.AttributeValueMemberS{Value: ownerID},
+		},
+	}
+
+	_, err = d.client.DeleteItem(context.TODO(), input)
+	if err != nil {
+		log.Printf("DynamoDB DeleteItem failed: %v", err)
+		return err
+	}
+
+	// Remove from cache
+	d.cache.Remove(code)
+	log.Printf("Successfully deleted redirect for code: %s", code)
+
+	return nil
 }
 
 func (d *DynamoDBClient) GetCacheSize() int {

@@ -39,7 +39,6 @@ xipe-go/
 ### 1. URL Shortening & Pastebin Service
 - **Endpoint**: `POST /` (previously /api/post, /api/urlpost)
 - **Method**: POST (required)
-- **Method**: POST (required)
 - **Input Format**: JSON body (default) or URL-encoded form data with `?input=urlencoded`
 - **Supports**: Both URL shortening and pastebin/data storage
 - **TTL Options**:
@@ -50,6 +49,7 @@ xipe-go/
 - **Retry Logic**: Up to 5 attempts on collision (returns 529 on failure)
 - **Storage**: DynamoDB table "xipe_redirects" with conditional writes
 - **Content Filtering**: DNS-based URL filtering using Cloudflare family DNS
+- **Owner Authentication**: 128-bit random tokens for deletion access
 - **Pastebin Features**:
   - Store up to 50KB of text data (vs 4KB for URLs)
   - Syntax highlighting with highlight.js
@@ -65,14 +65,25 @@ xipe-go/
 - **Fallthrough**: Catches all unmatched routes
 - **Not Found**: Returns 404 if code doesn't exist or has expired
 
-### 3. URL Content Filtering
+### 3. Deletion Functionality
+- **Endpoint**: `DELETE /:code`
+- **Authentication**: Owner ID cookie (`id=<128-bit-token>`) required
+- **Cookie Management**: 
+  - Generated on first post, reused for subsequent posts
+  - 30-day expiration, refreshed on each post
+  - HttpOnly flag for security
+- **Security**: Same error response for both "not found" and "wrong owner" (401 Unauthorized)
+- **Database**: Conditional delete with owner verification
+- **Cache Invalidation**: Automatic removal from LRU cache on successful delete
+
+### 4. URL Content Filtering
 - **Method**: DNS over HTTPS queries to Cloudflare family DNS
 - **Endpoint**: `https://family.cloudflare-dns.com/dns-query`
 - **Detection**: URLs returning 0.0.0.0 are blocked (malicious/inappropriate content)
 - **Error Handling**: 503 for DNS unavailable, 403 for blocked content
 - **Timeout**: 10-second timeout for DNS queries
 
-### 4. Static Website
+### 5. Static Website
 - **Endpoint**: `/`
 - **Content**: Usage instructions and service information
 - **Stats**: `/api/stats` endpoint for service metrics
@@ -84,10 +95,11 @@ Primary Key: code (string)
 Attributes:
   - code: string (4-6 chars, auto-generated)
   - typ: string ("R" for redirects, "D" for data/pastebin)
-  - val: string (target URL)
+  - val: string (target URL or data content)
   - ettl: number (optional, TTL in epoch seconds)
   - created: number (creation timestamp in epoch seconds)
   - ip: string (creator's IP address)
+  - owner: string (128-bit base64-encoded token for deletion auth)
 
 TTL Configuration:
   - Enable TTL on 'ettl' attribute in DynamoDB
@@ -306,6 +318,19 @@ curl -X POST "http://localhost:8080/?input=urlencoded" \
 curl -L "http://localhost:8080/Ab3d"
 ```
 
+### Deleting Posts
+```bash
+# Delete a post (requires owner cookie from creation)
+curl -X DELETE "http://localhost:8080/Ab3d" \
+  -b "id=<owner-token>" \
+  -H "Content-Type: application/json"
+# Response: {"status":"ok","message":"deleted successfully"}
+
+# Delete attempt without cookie (fails)
+curl -X DELETE "http://localhost:8080/Ab3d"
+# Response: {"status":"error","description":"unauthorized"}
+```
+
 ## Implementation Notes
 
 ### Code Generation
@@ -328,6 +353,7 @@ curl -L "http://localhost:8080/Ab3d"
 
 ### Error Handling
 - 400: Invalid parameters (ttl, url format, missing hostname, malformed JSON)
+- 401: Unauthorized (delete without valid owner cookie, or wrong owner)
 - 403: URL blocked by content filter, URL too long (4KB max), data too long (50KB max), or missing protocol
 - 404: Code not found or expired
 - 500: Database errors
@@ -339,6 +365,10 @@ curl -L "http://localhost:8080/Ab3d"
 - URL validation prevents open redirect vulnerabilities
 - DNS-based content filtering blocks malicious URLs
 - TTL limits abuse potential
+- Owner-based deletion prevents unauthorized access
+- Same error response for "not found" vs "wrong owner" (prevents enumeration)
+- HttpOnly cookies for owner tokens
+- 128-bit cryptographically secure owner tokens
 - Consider rate limiting for production
 
 ### URL Content Filtering
