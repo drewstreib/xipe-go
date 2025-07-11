@@ -497,16 +497,9 @@
                     credentials: 'include', // Include cookies
                 })
                 .then(response => {
-                    if (response.ok) {
-                        // Successful deletion - follow the redirect to show the 404
-                        window.location.href = `/${code}`;
-                    } else if (response.status === 401) {
-                        alert('You are not authorized to delete this item.');
-                    } else {
-                        return response.json().then(data => {
-                            alert('Failed to delete: ' + (data.description || 'Unknown error'));
-                        });
-                    }
+                    // Always redirect to the item page regardless of response
+                    // Server will show appropriate page (404 if deleted, error if not)
+                    window.location.href = `/${code}`;
                 })
                 .catch(error => {
                     console.error('Delete error:', error);

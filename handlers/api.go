@@ -295,7 +295,15 @@ func (h *Handlers) DeleteHandler(c *gin.Context) {
 	ownerID, err := c.Cookie("id")
 	if err != nil || ownerID == "" {
 		log.Printf("Delete request without valid owner ID cookie for code: %s", code)
-		utils.RespondWithError(c, http.StatusUnauthorized, "error", "unauthorized")
+		if utils.ShouldReturnHTML(c) {
+			// For browser clients, redirect to error page
+			c.HTML(http.StatusUnauthorized, "error.html", gin.H{
+				"status":      "error",
+				"description": "You are not authorized to delete this item",
+			})
+		} else {
+			utils.RespondWithError(c, http.StatusUnauthorized, "error", "unauthorized")
+		}
 		return
 	}
 
@@ -306,23 +314,36 @@ func (h *Handlers) DeleteHandler(c *gin.Context) {
 		var ccf *types.ConditionalCheckFailedException
 		if errors.As(err, &ccf) {
 			log.Printf("Delete failed for code %s: unauthorized or not found", code)
-			utils.RespondWithError(c, http.StatusUnauthorized, "error", "unauthorized")
+			if utils.ShouldReturnHTML(c) {
+				// For browser clients, redirect to error page
+				c.HTML(http.StatusUnauthorized, "error.html", gin.H{
+					"status":      "error",
+					"description": "You are not authorized to delete this item",
+				})
+			} else {
+				utils.RespondWithError(c, http.StatusUnauthorized, "error", "unauthorized")
+			}
 			return
 		}
 
 		// Other database error
 		log.Printf("Database error during delete for code %s: %v", code, err)
-		utils.RespondWithError(c, http.StatusInternalServerError, "error", "failed to delete")
+		if utils.ShouldReturnHTML(c) {
+			c.HTML(http.StatusInternalServerError, "error.html", gin.H{
+				"status":      "error",
+				"description": "Failed to delete item",
+			})
+		} else {
+			utils.RespondWithError(c, http.StatusInternalServerError, "error", "failed to delete")
+		}
 		return
 	}
 
 	log.Printf("Successfully deleted code: %s", code)
 
-	// Return success response
+	// Always redirect for browser clients to the item URL (which will now 404)
 	if utils.ShouldReturnHTML(c) {
-		// For HTML clients, redirect to the original item location (which will now 404)
-		c.Redirect(http.StatusMovedPermanently, "/"+code)
-		return
+		c.Redirect(http.StatusSeeOther, "/"+code)
 	} else {
 		// For API clients, return JSON success
 		c.JSON(http.StatusOK, gin.H{
