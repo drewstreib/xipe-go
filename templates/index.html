@@ -91,6 +91,8 @@
             gap: 20px;
             align-items: flex-start;
             flex-wrap: wrap;
+            justify-content: flex-end;
+            margin-top: 15px;
         }
         .form-options > div {
             flex: 0 0 auto;
@@ -161,6 +163,8 @@
                     <textarea id="data" name="data" placeholder="Paste your text or URL here... (over 50KB will be truncated)" required></textarea>
                 </div>
                 
+                <button type="button" onclick="submitDataForm()">Share</button>
+                
                 <div class="form-options">
                     <div>
                         <label for="share-type">Share as:</label>
@@ -181,7 +185,6 @@
                 </div>
                 
                 <input type="hidden" name="format" value="html">
-                <button type="button" onclick="submitDataForm()">Share</button>
             </form>
         </div>
         
