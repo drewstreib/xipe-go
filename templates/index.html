@@ -186,18 +186,15 @@
             <div class="api-example">
                 <strong>Endpoint:</strong> <code>POST /api/post</code><br>
                 <strong>Content-Type:</strong> <code>application/json</code><br>
-                &nbsp;<br>
-                <code>{"data":"your text here"}</code><br>
+                &nbsp;<br><code>{"data":"your text here"}</code><br>
                 <strong>Returns:</strong> <code>{"status":"ok","url":"https://xi.pe/Ab3d"}</code><br>
-                &nbsp;<br>
-                <strong>Optional TTL:</strong> <code>"ttl":"[1d|1w|1mo]"</code> (defaults to "1d")<br>
+                &nbsp;<br><strong>Optional TTL:</strong> <code>"ttl":"[1d|1w|1mo]"</code> (defaults to "1d")<br>
                 <strong>Optional URL formatting:</strong> <code>"typ":"URL"</code><br>
                 <strong>Limits:</strong> Text up to 10KB, URLs up to 4KB
             </div>
 
             <div class="api-example">
-                <strong>Python:</strong><br>
-                <code>import requests<br>
+                <strong>Python:</strong><br><code>import requests<br>
                 shorturl = requests.post('https://xi.pe/api/post', json={"data": data}).json()['url']</code>
             </div>
         </div>
