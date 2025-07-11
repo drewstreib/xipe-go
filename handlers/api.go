@@ -451,7 +451,7 @@ func (h *Handlers) PutHandler(c *gin.Context) {
 			fullURL := scheme + "://" + host + "/" + code
 
 			// Return plain text response with just the URL
-			c.String(http.StatusOK, fullURL)
+			c.String(http.StatusOK, fullURL+"\n")
 			return
 		}
 

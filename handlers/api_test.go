@@ -421,7 +421,9 @@ func TestPutHandler(t *testing.T) {
 			checkResponse: func(t *testing.T, response string) {
 				assert.Contains(t, response, "http://")
 				assert.Contains(t, response, "/")
-				assert.Equal(t, 4, len(strings.Split(response, "/")[len(strings.Split(response, "/"))-1]))
+				// Strip newline and check code length
+				code := strings.TrimSpace(strings.Split(response, "/")[len(strings.Split(response, "/"))-1])
+				assert.Equal(t, 4, len(code))
 			},
 		},
 		{
