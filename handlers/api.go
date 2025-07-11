@@ -237,8 +237,8 @@ func (h *Handlers) PostHandler(c *gin.Context) {
 			log.Printf("Successfully stored %s - Code: %s",
 				map[string]string{"R": "redirect", "D": "data"}[recordType], code)
 
-			// Set the owner ID cookie (30 days expiration)
-			c.SetCookie("id", ownerID, 30*24*60*60, "/", "", false, true)
+			// Set the owner ID cookie (30 days expiration, no HttpOnly so JS can read for delete button)
+			c.SetCookie("id", ownerID, 30*24*60*60, "/", "", false, false)
 
 			// Success! Build the full URL
 			scheme := "https"
