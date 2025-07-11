@@ -5,11 +5,13 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/drewstreib/xipe-go/db"
 	"github.com/drewstreib/xipe-go/utils"
@@ -351,6 +353,121 @@ func (h *Handlers) DeleteHandler(c *gin.Context) {
 			"message": "deleted successfully",
 		})
 	}
+}
+
+// PutHandler handles raw text uploads via PUT /
+func (h *Handlers) PutHandler(c *gin.Context) {
+	// Read the raw body
+	body, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.String(http.StatusBadRequest, "Error: Failed to read request body")
+		return
+	}
+
+	// Validate UTF-8
+	if !utf8.Valid(body) {
+		c.String(http.StatusBadRequest, "Error: Input text must be UTF-8")
+		return
+	}
+
+	// Convert to string for processing
+	rawData := string(body)
+
+	// Smart truncation to 50KB (51200 bytes) while preserving UTF-8
+	const maxBytes = 51200
+	finalData := rawData
+	if len(rawData) > maxBytes {
+		// Find the longest valid UTF-8 prefix within the limit
+		finalData = rawData
+		for len(finalData) > maxBytes {
+			// Remove the last rune to ensure we don't break UTF-8
+			_, size := utf8.DecodeLastRuneInString(finalData)
+			if size == 0 {
+				break
+			}
+			finalData = finalData[:len(finalData)-size]
+		}
+		log.Printf("Truncated input from %d bytes to %d bytes", len(rawData), len(finalData))
+	}
+
+	// Get or create owner ID for this post
+	ownerID, err := getOrCreateOwnerID(c)
+	if err != nil {
+		log.Printf("Failed to generate owner ID: %v", err)
+		c.String(http.StatusInternalServerError, "Error: Failed to generate owner ID")
+		return
+	}
+
+	// Use default 1d TTL for PUT requests
+	ettl, codeLength, err := utils.CalculateTTL("1d")
+	if err != nil {
+		c.String(http.StatusInternalServerError, "Error: Failed to calculate TTL")
+		return
+	}
+
+	// Try up to 5 times to insert a unique code
+	var code string
+	var insertErr error
+	for attempts := 0; attempts < 5; attempts++ {
+		code, err = utils.GenerateCode(codeLength)
+		if err != nil {
+			c.String(http.StatusInternalServerError, "Error: Failed to generate code")
+			return
+		}
+
+		// Get the client IP
+		clientIP := c.ClientIP()
+
+		// Get current timestamp
+		createdTime := time.Now().Unix()
+
+		record := &db.RedirectRecord{
+			Code:    code,
+			Typ:     "D", // Data type
+			Val:     finalData,
+			Ettl:    ettl,
+			Created: createdTime,
+			IP:      clientIP,
+			Owner:   ownerID,
+		}
+
+		log.Printf("PUT: Attempting to store data - Code: %s, Size: %d bytes", code, len(finalData))
+		insertErr = h.DB.PutRedirect(record)
+		if insertErr == nil {
+			log.Printf("PUT: Successfully stored data - Code: %s", code)
+
+			// Set the owner ID cookie (30 days expiration, no HttpOnly)
+			c.SetCookie("id", ownerID, 30*24*60*60, "/", "", false, false)
+
+			// Build the full URL
+			scheme := "https"
+			if c.Request.Header.Get("X-Forwarded-Proto") == "" && c.Request.TLS == nil {
+				scheme = "http"
+			}
+			host := c.Request.Host
+			if host == "" {
+				host = "xi.pe"
+			}
+			fullURL := scheme + "://" + host + "/" + code
+
+			// Return plain text response with just the URL
+			c.String(http.StatusOK, fullURL)
+			return
+		}
+
+		// Check if error is due to duplicate key
+		if !isDuplicateKeyError(insertErr) {
+			// Some other error occurred
+			log.Printf("DynamoDB error (not duplicate key): %v", insertErr)
+			c.String(http.StatusInternalServerError, "Error: Failed to store data")
+			return
+		}
+		log.Printf("Duplicate key error, retrying with new code. Error: %v", insertErr)
+		// Continue to next attempt if duplicate key
+	}
+
+	// All attempts failed
+	c.String(529, "Error: Could not allocate URL in the target namespace.")
 }
 
 func isDuplicateKeyError(err error) bool {

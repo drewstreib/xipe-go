@@ -398,3 +398,89 @@ func TestDeleteHandler(t *testing.T) {
 		})
 	}
 }
+
+func TestPutHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name           string
+		body           string
+		setupMock      func(*db.MockDB)
+		expectedStatus int
+		checkResponse  func(t *testing.T, response string)
+	}{
+		{
+			name: "Successful PUT with valid UTF-8 text",
+			body: "Hello, world! 👋",
+			setupMock: func(m *db.MockDB) {
+				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
+					return r.Typ == "D" && r.Val == "Hello, world! 👋" && len(r.Code) == 4 && r.Owner != ""
+				})).Return(nil)
+			},
+			expectedStatus: http.StatusOK,
+			checkResponse: func(t *testing.T, response string) {
+				assert.Contains(t, response, "http://")
+				assert.Contains(t, response, "/")
+				assert.Equal(t, 4, len(strings.Split(response, "/")[len(strings.Split(response, "/"))-1]))
+			},
+		},
+		{
+			name:           "Invalid UTF-8 input",
+			body:           string([]byte{0xff, 0xfe, 0xfd}), // Invalid UTF-8
+			setupMock:      func(m *db.MockDB) {},
+			expectedStatus: http.StatusBadRequest,
+			checkResponse: func(t *testing.T, response string) {
+				assert.Equal(t, "Error: Input text must be UTF-8", response)
+			},
+		},
+		{
+			name: "Large input gets truncated",
+			body: strings.Repeat("a", 60000), // 60KB
+			setupMock: func(m *db.MockDB) {
+				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
+					return r.Typ == "D" && len(r.Val) <= 51200 && r.Owner != ""
+				})).Return(nil)
+			},
+			expectedStatus: http.StatusOK,
+			checkResponse: func(t *testing.T, response string) {
+				assert.Contains(t, response, "http://")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create mock DB
+			mockDB := new(db.MockDB)
+			tt.setupMock(mockDB)
+
+			// Create handler with mock DB
+			h := &Handlers{DB: mockDB}
+
+			// Create router
+			r := gin.New()
+			r.PUT("/", h.PutHandler)
+
+			// Create request
+			req := httptest.NewRequest("PUT", "/", strings.NewReader(tt.body))
+			req.Header.Set("Content-Type", "text/plain")
+
+			// Create response recorder
+			w := httptest.NewRecorder()
+
+			// Serve the request
+			r.ServeHTTP(w, req)
+
+			// Check status
+			assert.Equal(t, tt.expectedStatus, w.Code)
+
+			// Check response
+			if tt.checkResponse != nil {
+				tt.checkResponse(t, w.Body.String())
+			}
+
+			// Verify mock expectations
+			mockDB.AssertExpectations(t)
+		})
+	}
+}
