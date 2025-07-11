@@ -197,7 +197,10 @@ func (d *DynamoDBClient) DeleteRedirect(code string, ownerID string) error {
 		Key: map[string]types.AttributeValue{
 			"code": &types.AttributeValueMemberS{Value: code},
 		},
-		ConditionExpression: aws.String("owner = :owner"),
+		ConditionExpression: aws.String("#owner = :owner"),
+		ExpressionAttributeNames: map[string]string{
+			"#owner": "owner",
+		},
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":owner": &types.AttributeValueMemberS{Value: ownerID},
 		},
