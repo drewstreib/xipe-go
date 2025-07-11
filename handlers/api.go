@@ -373,6 +373,12 @@ func (h *Handlers) PutHandler(c *gin.Context) {
 	// Convert to string for processing
 	rawData := string(body)
 
+	// Validate that we have content to store
+	if len(rawData) == 0 {
+		c.String(http.StatusBadRequest, "Error: Cannot store empty content")
+		return
+	}
+
 	// Smart truncation to 50KB (51200 bytes) while preserving UTF-8
 	const maxBytes = 51200
 	finalData := rawData
@@ -388,6 +394,12 @@ func (h *Handlers) PutHandler(c *gin.Context) {
 			finalData = finalData[:len(finalData)-size]
 		}
 		log.Printf("Truncated input from %d bytes to %d bytes", len(rawData), len(finalData))
+
+		// Ensure truncation didn't result in empty content
+		if len(finalData) == 0 {
+			c.String(http.StatusBadRequest, "Error: Content became empty after truncation")
+			return
+		}
 	}
 
 	// Get or create owner ID for this post

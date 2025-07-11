@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -436,11 +437,83 @@ func TestPutHandler(t *testing.T) {
 			},
 		},
 		{
+			name:           "Empty content",
+			body:           "",
+			setupMock:      func(m *db.MockDB) {},
+			expectedStatus: http.StatusBadRequest,
+			checkResponse: func(t *testing.T, response string) {
+				assert.Equal(t, "Error: Cannot store empty content", response)
+			},
+		},
+		{
+			name: "Whitespace-only content",
+			body: "   \n\t   ",
+			setupMock: func(m *db.MockDB) {
+				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
+					return r.Typ == "D" && r.Val == "   \n\t   " && len(r.Code) == 4 && r.Owner != ""
+				})).Return(nil)
+			},
+			expectedStatus: http.StatusOK,
+			checkResponse: func(t *testing.T, response string) {
+				assert.Contains(t, response, "http://")
+			},
+		},
+		{
 			name: "Large input gets truncated",
 			body: strings.Repeat("a", 60000), // 60KB
 			setupMock: func(m *db.MockDB) {
 				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
 					return r.Typ == "D" && len(r.Val) <= 51200 && r.Owner != ""
+				})).Return(nil)
+			},
+			expectedStatus: http.StatusOK,
+			checkResponse: func(t *testing.T, response string) {
+				assert.Contains(t, response, "http://")
+			},
+		},
+		{
+			name: "Database error during store",
+			body: "Valid content",
+			setupMock: func(m *db.MockDB) {
+				m.On("PutRedirect", mock.AnythingOfType("*db.RedirectRecord")).Return(errors.New("database connection failed"))
+			},
+			expectedStatus: http.StatusInternalServerError,
+			checkResponse: func(t *testing.T, response string) {
+				assert.Equal(t, "Error: Failed to store data", response)
+			},
+		},
+		{
+			name: "Multiple collision retries then success",
+			body: "Test content",
+			setupMock: func(m *db.MockDB) {
+				// First 3 attempts fail with conditional check (collision)
+				m.On("PutRedirect", mock.AnythingOfType("*db.RedirectRecord")).Return(&types.ConditionalCheckFailedException{}).Times(3)
+				// 4th attempt succeeds
+				m.On("PutRedirect", mock.AnythingOfType("*db.RedirectRecord")).Return(nil).Once()
+			},
+			expectedStatus: http.StatusOK,
+			checkResponse: func(t *testing.T, response string) {
+				assert.Contains(t, response, "http://")
+			},
+		},
+		{
+			name: "All collision retries fail",
+			body: "Test content",
+			setupMock: func(m *db.MockDB) {
+				// All 5 attempts fail with conditional check (collision)
+				m.On("PutRedirect", mock.AnythingOfType("*db.RedirectRecord")).Return(&types.ConditionalCheckFailedException{}).Times(5)
+			},
+			expectedStatus: 529,
+			checkResponse: func(t *testing.T, response string) {
+				assert.Equal(t, "Error: Could not allocate URL in the target namespace.", response)
+			},
+		},
+		{
+			name: "Single character input",
+			body: "a",
+			setupMock: func(m *db.MockDB) {
+				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
+					return r.Typ == "D" && r.Val == "a" && len(r.Code) == 4 && r.Owner != ""
 				})).Return(nil)
 			},
 			expectedStatus: http.StatusOK,
