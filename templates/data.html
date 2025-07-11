@@ -50,13 +50,14 @@
             margin: 20px 0;
         }
         .url-input {
-            flex: 1;
             padding: 12px;
             border: 2px solid #333333;
             border-radius: 4px;
             font-size: 16px;
             background-color: #222222;
             color: white;
+            width: auto;
+            min-width: 300px;
         }
         .copy-btn {
             padding: 12px 20px;
@@ -241,15 +242,12 @@
             </div>
         </div>
         
-        <p>Here's the information for this stored data:</p>
-        
         <div class="url-container">
             <input type="text" class="url-input" id="shortUrl" value="{{.url}}" readonly>
-            <button class="copy-btn" onclick="copyToClipboard()">Copy</button>
+            <button class="copy-btn" onclick="copyToClipboard()">Copy URL</button>
         </div>
         
         <div class="details">
-            <strong>Short URL:</strong> {{.url}}<br>
             <strong>Data Size:</strong> {{len .data}} bytes<br>
             <strong>Created:</strong> <span id="created-time" data-timestamp="{{.created}}">Loading...</span><br>
             <strong>Expires:</strong> <span id="expires-time" data-timestamp="{{.expires}}">Loading...</span>
