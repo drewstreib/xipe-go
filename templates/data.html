@@ -80,24 +80,30 @@
             border-radius: 4px;
         }
         .data-container {
-            margin: 0 0 20px 0;
-            background-color: #222222;
-            border-radius: 4px;
-            border-left: 4px solid #28a745;
+            margin: 0 0 15px 0;
+            background: none;
+            border: none;
         }
-        .data-header {
+        .data-content-wrapper {
+            padding: 0;
+        }
+        .data-controls {
+            margin-top: 15px;
             display: flex;
-            justify-content: space-between;
+            gap: 20px;
             align-items: center;
-            padding: 15px 15px 10px 15px;
-            margin-bottom: 0;
+            flex-wrap: wrap;
         }
-        .data-label {
-            font-weight: bold;
-            color: #495057;
+        .data-controls label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
             margin: 0;
+            font-weight: normal;
+            font-size: 14px;
+            color: #cccccc;
         }
-        .copy-data-header-btn {
+        .copy-data-btn {
             padding: 8px 16px;
             background-color: #007bff;
             color: white;
@@ -106,11 +112,8 @@
             cursor: pointer;
             font-size: 14px;
         }
-        .copy-data-header-btn:hover {
+        .copy-data-btn:hover {
             background-color: #0056b3;
-        }
-        .data-content-wrapper {
-            padding: 0 15px 15px 15px;
         }
         .data-content {
             width: 100%;
@@ -201,7 +204,7 @@
         }
         .hljs-ln-code {
             padding-left: 4px !important;
-            border-left: 1px solid #333333 !important;
+            border-left: 1px solid #666666 !important;
         }
     </style>
 </head>
@@ -220,24 +223,21 @@
         {{end}}
         
         <div class="data-container">
-            <div class="data-header">
-                <div class="data-label">Stored Data:</div>
-                <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-                    <label style="display: flex; align-items: center; gap: 5px; margin: 0; font-weight: normal; font-size: 14px; color: #495057;">
-                        <input type="checkbox" id="syntax-highlighting-toggle" checked onchange="toggleDisplay()" style="margin: 0;">
-                        Syntax highlighting
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 5px; margin: 0; font-weight: normal; font-size: 14px; color: #495057;">
-                        <input type="checkbox" id="line-numbers-toggle" checked onchange="toggleDisplay()" style="margin: 0;">
-                        Line numbers
-                    </label>
-                    <button class="copy-data-header-btn" onclick="copyDataToClipboard()">Copy Data</button>
-                </div>
-            </div>
             <div class="data-content-wrapper">
                 <div class="data-content" id="dataContent">
                     <pre><code>{{.data}}</code></pre>
                 </div>
+            </div>
+            <div class="data-controls">
+                <label>
+                    <input type="checkbox" id="syntax-highlighting-toggle" checked onchange="toggleDisplay()" style="margin: 0;">
+                    Syntax highlighting
+                </label>
+                <label>
+                    <input type="checkbox" id="line-numbers-toggle" checked onchange="toggleDisplay()" style="margin: 0;">
+                    Line numbers
+                </label>
+                <button class="copy-data-btn" onclick="copyDataToClipboard()">Copy Data</button>
             </div>
         </div>
         
@@ -307,7 +307,7 @@
             
             try {
                 navigator.clipboard.writeText(textToCopy).then(() => {
-                    const btn = document.querySelector('.copy-data-header-btn');
+                    const btn = document.querySelector('.copy-data-btn');
                     const originalText = btn.textContent;
                     btn.textContent = 'Copied!';
                     btn.style.backgroundColor = '#28a745';
@@ -326,7 +326,7 @@
                 document.execCommand('copy');
                 document.body.removeChild(textArea);
                 
-                const btn = document.querySelector('.copy-data-header-btn');
+                const btn = document.querySelector('.copy-data-btn');
                 const originalText = btn.textContent;
                 btn.textContent = 'Copied!';
                 btn.style.backgroundColor = '#28a745';
