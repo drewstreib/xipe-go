@@ -33,13 +33,13 @@ func (h *Handlers) PostHandler(c *gin.Context) {
 	} else {
 		// Default: expect JSON body
 		var requestBody struct {
-			TTL  string `json:"ttl" binding:"required"`
+			TTL  string `json:"ttl"`
 			Data string `json:"data" binding:"required"`
 			Typ  string `json:"typ"`
 		}
 
 		if err := c.ShouldBindJSON(&requestBody); err != nil {
-			utils.RespondWithError(c, http.StatusBadRequest, "error", "Invalid JSON format or missing required fields (ttl, data)")
+			utils.RespondWithError(c, http.StatusBadRequest, "error", "Invalid JSON format or missing required field (data)")
 			return
 		}
 
@@ -62,9 +62,9 @@ func (h *Handlers) PostHandler(c *gin.Context) {
 		return
 	}
 
+	// Default TTL to "1d" if not provided
 	if ttl == "" {
-		utils.RespondWithError(c, http.StatusBadRequest, "error", "ttl parameter is required")
-		return
+		ttl = "1d"
 	}
 
 	// Validate TTL

@@ -31,18 +31,18 @@ func TestPostHandler(t *testing.T) {
 	}{
 		// JSON format tests - URL posts
 		{
-			name:           "JSON: Missing ttl parameter",
-			query:          "",
-			body:           `{"data":"https://example.com","typ":"URL"}`,
-			contentType:    "application/json",
-			userAgent:      "curl/7.68.0",
-			setupMock:      func(m *db.MockDB) {},
-			expectedStatus: http.StatusBadRequest,
-			expectedBody: map[string]interface{}{
-				"status":      "error",
-				"description": "Invalid JSON format or missing required fields (ttl, data)",
+			name:        "JSON: Missing ttl parameter defaults to 1d",
+			query:       "",
+			body:        `{"data":"https://example.com","typ":"URL"}`,
+			contentType: "application/json",
+			userAgent:   "curl/7.68.0",
+			setupMock: func(m *db.MockDB) {
+				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
+					return r.Typ == "R" && r.Val == "https://example.com" && len(r.Code) == 4
+				})).Return(nil)
 			},
-			checkBody: true,
+			expectedStatus: http.StatusOK,
+			checkBody:      false,
 		},
 		{
 			name:           "JSON: Missing data parameter",
@@ -54,7 +54,7 @@ func TestPostHandler(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: map[string]interface{}{
 				"status":      "error",
-				"description": "Invalid JSON format or missing required fields (ttl, data)",
+				"description": "Invalid JSON format or missing required field (data)",
 			},
 			checkBody: true,
 		},
@@ -203,18 +203,18 @@ func TestPostHandler(t *testing.T) {
 
 		// URL-encoded format tests
 		{
-			name:           "URLEncoded: Missing ttl parameter",
-			query:          "?input=urlencoded",
-			body:           "data=https%3A%2F%2Fexample.com&typ=URL",
-			contentType:    "application/x-www-form-urlencoded",
-			userAgent:      "curl/7.68.0",
-			setupMock:      func(m *db.MockDB) {},
-			expectedStatus: http.StatusBadRequest,
-			expectedBody: map[string]interface{}{
-				"status":      "error",
-				"description": "ttl parameter is required",
+			name:        "URLEncoded: Missing ttl parameter defaults to 1d",
+			query:       "?input=urlencoded",
+			body:        "data=https%3A%2F%2Fexample.com&typ=URL",
+			contentType: "application/x-www-form-urlencoded",
+			userAgent:   "curl/7.68.0",
+			setupMock: func(m *db.MockDB) {
+				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
+					return r.Typ == "R" && r.Val == "https://example.com" && len(r.Code) == 4
+				})).Return(nil)
 			},
-			checkBody: true,
+			expectedStatus: http.StatusOK,
+			checkBody:      false,
 		},
 		{
 			name:           "URLEncoded: Missing data parameter",

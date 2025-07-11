@@ -181,26 +181,34 @@
         
         <div class="api-section">
             <h2>API Documentation</h2>
-            <p>Share text or URLs programmatically with our JSON API:</p>
+            <p>Share text or URLs programmatically with our unified JSON API:</p>
             
             <div class="api-example">
                 <strong>Endpoint:</strong> <code>POST /api/post</code><br>
                 <strong>Content-Type:</strong> <code>application/json</code>
             </div>
             
-            <h3>Share Text (default)</h3>
+            <h3>Simple Text Sharing</h3>
             <div class="api-example">
-                <code>{"ttl":"1d","data":"your text here"}</code><br>
+                <code>{"data":"your text here"}</code><br>
                 <small>Returns: <code>{"status":"ok","url":"https://xi.pe/Ab3d"}</code></small>
             </div>
             
-            <h3>Share URL</h3>
+            <h3>Simple URL Sharing</h3>
             <div class="api-example">
-                <code>{"ttl":"1d","data":"https://example.com","typ":"URL"}</code><br>
+                <code>{"data":"https://example.com","typ":"URL"}</code><br>
                 <small>Returns: <code>{"status":"ok","url":"https://xi.pe/XyZ9"}</code></small>
             </div>
             
-            <p><strong>TTL Options:</strong> <code>1d</code> (4 chars), <code>1w</code> (5 chars), <code>1mo</code> (6 chars)</p>
+            <h3>With Optional Parameters</h3>
+            <div class="api-example">
+                <code>{"data":"your content","ttl":"1w","typ":"URL"}</code><br>
+                <small>Returns: <code>{"status":"ok","url":"https://xi.pe/Abc45"}</code></small>
+            </div>
+            
+            <p><strong>Required:</strong> <code>data</code> - your text or URL content</p>
+            <p><strong>Optional TTL:</strong> <code>"1d"</code> (default, 4 chars), <code>"1w"</code> (5 chars), <code>"1mo"</code> (6 chars)</p>
+            <p><strong>Optional Type:</strong> <code>"URL"</code> - formats the shortened page for URL redirection</p>
             <p><strong>Limits:</strong> Text up to 10KB, URLs up to 4KB</p>
         </div>
         
