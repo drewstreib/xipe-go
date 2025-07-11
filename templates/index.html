@@ -86,13 +86,19 @@
             background-color: #000000;
             color: white;
         }
+        .form-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-top: 15px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
         .form-options {
             display: flex;
             gap: 20px;
             align-items: flex-start;
             flex-wrap: wrap;
-            justify-content: flex-end;
-            margin-top: 15px;
         }
         .form-options > div {
             flex: 0 0 auto;
@@ -107,7 +113,6 @@
             cursor: pointer;
             width: 200px;
             font-size: 16px;
-            margin-top: 15px;
         }
         button:hover {
             background-color: #60C;
@@ -163,24 +168,26 @@
                     <textarea id="data" name="data" placeholder="Paste your text or URL here... (over 50KB will be truncated)" required></textarea>
                 </div>
                 
-                <button type="button" onclick="submitDataForm()">Share</button>
-                
-                <div class="form-options">
-                    <div>
-                        <label for="share-type">Share as:</label>
-                        <select id="share-type" name="typ">
-                            <option value="Text" selected>Text</option>
-                            <option value="URL">URL</option>
-                        </select>
-                    </div>
+                <div class="form-controls">
+                    <button type="button" onclick="submitDataForm()">Share</button>
                     
-                    <div>
-                        <label for="ttl">Expiration:</label>
-                        <select id="ttl" name="ttl">
-                            <option value="1d" selected>1 day (4 char url code)</option>
-                            <option value="1w">1 week (5 char url code)</option>
-                            <option value="1mo">1 month (6 char url code)</option>
-                        </select>
+                    <div class="form-options">
+                        <div>
+                            <label for="share-type">Share as:</label>
+                            <select id="share-type" name="typ">
+                                <option value="Text" selected>Text</option>
+                                <option value="URL">URL</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="ttl">Expiration:</label>
+                            <select id="ttl" name="ttl">
+                                <option value="1d" selected>1 day (4 char url code)</option>
+                                <option value="1w">1 week (5 char url code)</option>
+                                <option value="1mo">1 month (6 char url code)</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 
