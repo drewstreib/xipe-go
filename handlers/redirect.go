@@ -58,7 +58,11 @@ func (h *Handlers) RedirectHandler(c *gin.Context) {
 
 	// Choose template based on type
 	if redirect.Typ == "D" {
-		// Data/pastebin type
+		// Data/pastebin type - only pass first 6 chars of owner for security
+		var ownerPrefix string
+		if len(redirect.Owner) >= 6 {
+			ownerPrefix = redirect.Owner[:6]
+		}
 		c.HTML(http.StatusOK, "data.html", gin.H{
 			"code":        code,
 			"url":         fullURL,
@@ -66,7 +70,7 @@ func (h *Handlers) RedirectHandler(c *gin.Context) {
 			"fromSuccess": fromSuccess,
 			"created":     redirect.Created,
 			"expires":     redirect.Ettl,
-			"owner":       redirect.Owner,
+			"ownerPrefix": ownerPrefix,
 		})
 	} else {
 		// URL redirect type (default)

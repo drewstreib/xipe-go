@@ -480,9 +480,9 @@
         // Check if current user owns this data
         function checkOwnershipAndShowDelete() {
             const ownerCookie = getCookie('id');
-            const dataOwner = {{if .owner}}'{{.owner}}'{{else}}null{{end}};
+            const ownerPrefix = {{if .ownerPrefix}}'{{.ownerPrefix}}'{{else}}null{{end}};
             
-            if (ownerCookie && dataOwner && ownerCookie === dataOwner) {
+            if (ownerCookie && ownerPrefix && ownerCookie.startsWith(ownerPrefix)) {
                 document.getElementById('deleteButton').style.display = 'inline-block';
             }
         }
