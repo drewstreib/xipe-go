@@ -259,10 +259,10 @@ func TestPostHandler(t *testing.T) {
 
 			var req *http.Request
 			if tt.body != "" {
-				req = httptest.NewRequest("POST", "/api/post"+tt.query, strings.NewReader(tt.body))
+				req = httptest.NewRequest("POST", "/"+tt.query, strings.NewReader(tt.body))
 				req.Header.Set("Content-Type", tt.contentType)
 			} else {
-				req = httptest.NewRequest("POST", "/api/post"+tt.query, nil)
+				req = httptest.NewRequest("POST", "/"+tt.query, nil)
 			}
 			req.Header.Set("User-Agent", tt.userAgent)
 			c.Request = req

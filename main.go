@@ -79,10 +79,10 @@ func main() {
 	r.SetHTMLTemplate(tmpl)
 
 	r.GET("/", h.RootHandler)
+	r.POST("/", h.PostHandler)
 
 	api := r.Group("/api")
 	{
-		api.POST("/post", h.PostHandler)
 		api.GET("/stats", h.StatsHandler)
 	}
 

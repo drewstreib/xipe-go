@@ -163,7 +163,7 @@
     
     <div class="content">
         <div class="form-section">
-            <form action="/api/post?input=urlencoded" method="POST">
+            <form action="/?input=urlencoded" method="POST">
                 <div class="form-group">
                     <textarea id="data" name="data" placeholder="Paste your text or URL here... (over 50KB will be truncated)" required></textarea>
                 </div>
@@ -199,7 +199,7 @@
             <h2>API Documentation</h2>
             
             <div class="api-example">
-                <strong>Endpoint:</strong> <code>POST /api/post</code><br>
+                <strong>Endpoint:</strong> <code>POST /</code><br>
                 <strong>Content-Type:</strong> <code>application/json</code><br>
                 &nbsp;<br><code>{"data":"your text here"}</code><br>
                 <strong>Returns:</strong> <code>{"status":"ok","url":"https://xi.pe/Ab3d"}</code><br>
@@ -210,7 +210,7 @@
 
             <div class="api-example">
                 <strong>Python:</strong><br><code>import requests<br>
-                shorturl = requests.post('https://xi.pe/api/post', json={"data": data}).json()['url']</code>
+                shorturl = requests.post('https://xi.pe/', json={"data": data}).json()['url']</code>
             </div>
         </div>
         

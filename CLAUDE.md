@@ -37,7 +37,7 @@ xipe-go/
 ## Key Features
 
 ### 1. URL Shortening & Pastebin Service
-- **Endpoint**: `POST /api/post` (previously /api/urlpost)
+- **Endpoint**: `POST /` (previously /api/post, /api/urlpost)
 - **Method**: POST (required)
 - **Method**: POST (required)
 - **Input Format**: JSON body (default) or URL-encoded form data with `?input=urlencoded`
@@ -275,13 +275,13 @@ The most common CI failures are due to formatting issues. To prevent these:
 ### JSON Format (Default)
 ```bash
 # Create short URL with 1-day TTL (4 char code)
-curl -X POST "http://localhost:8080/api/post" \
+curl -X POST "http://localhost:8080/" \
   -H "Content-Type: application/json" \
   -d '{"ttl":"1d","url":"https://example.com"}'
 # Response: {"status":"ok","url":"http://localhost:8080/Ab3d"}
 
 # Store pastebin data
-curl -X POST "http://localhost:8080/api/post" \
+curl -X POST "http://localhost:8080/" \
   -H "Content-Type: application/json" \
   -d '{"ttl":"1d","data":"Hello, world!"}'
 # Response: {"status":"ok","url":"http://localhost:8080/XyZ9"}
@@ -290,12 +290,12 @@ curl -X POST "http://localhost:8080/api/post" \
 ### URL-Encoded Form Data (Legacy)
 ```bash
 # Create short URL using form data (for HTML forms)
-curl -X POST "http://localhost:8080/api/post?input=urlencoded" \
+curl -X POST "http://localhost:8080/?input=urlencoded" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "ttl=1d&url=https%3A%2F%2Fexample.com"
 
 # Store data using form data
-curl -X POST "http://localhost:8080/api/post?input=urlencoded" \
+curl -X POST "http://localhost:8080/?input=urlencoded" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "ttl=1d&data=Hello%20world%21"
 ```
@@ -321,8 +321,8 @@ curl -L "http://localhost:8080/Ab3d"
 - Consider read/write capacity based on traffic
 
 ### Input Formats
-- **JSON (Default)**: `POST /api/post` with `{"ttl":"1d","url":"https://example.com"}` or `{"ttl":"1d","data":"content"}` in body
-- **URL-encoded**: `POST /api/post?input=urlencoded` with form data
+- **JSON (Default)**: `POST /` with `{"ttl":"1d","url":"https://example.com"}` or `{"ttl":"1d","data":"content"}` in body
+- **URL-encoded**: `POST /?input=urlencoded` with form data
 - **Required Fields**: `ttl` (1d|1w|1mo) and either `url` or `data` (not both)
 - **Size Limits**: 4KB for URLs, 50KB for data
 
