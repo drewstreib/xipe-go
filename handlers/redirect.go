@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"regexp"
 
+	"github.com/drewstreib/xipe-go/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -16,28 +17,18 @@ func (h *Handlers) RedirectHandler(c *gin.Context) {
 	code := c.Param("code")
 
 	if !isValidCode(code) {
-		// Always return HTML for redirect errors since this is browser navigation
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{
-			"status":      "error",
-			"description": "Invalid code format",
-		})
+		utils.RespondWithError(c, http.StatusBadRequest, "error", "Invalid code format")
 		return
 	}
 
 	redirect, err := h.DB.GetRedirect(code)
 	if err != nil {
-		c.HTML(http.StatusInternalServerError, "error.html", gin.H{
-			"status":      "error",
-			"description": "Failed to retrieve URL",
-		})
+		utils.RespondWithError(c, http.StatusInternalServerError, "error", "Failed to retrieve URL")
 		return
 	}
 
 	if redirect == nil {
-		c.HTML(http.StatusNotFound, "error.html", gin.H{
-			"status":      "error",
-			"description": "Short URL not found or has expired",
-		})
+		utils.RespondWithError(c, http.StatusNotFound, "error", "Short URL not found or has expired")
 		return
 	}
 
@@ -56,33 +47,45 @@ func (h *Handlers) RedirectHandler(c *gin.Context) {
 	// Check if this is from a successful creation
 	fromSuccess := c.Query("from") == "success"
 
-	// Choose template based on type
-	if redirect.Typ == "D" {
-		// Data/pastebin type - only pass first 6 chars of owner for security
-		var ownerPrefix string
-		if len(redirect.Owner) >= 6 {
-			ownerPrefix = redirect.Owner[:6]
+	// Return response based on client type
+	if utils.ShouldReturnHTML(c) {
+		// Browser clients get HTML templates
+		if redirect.Typ == "D" {
+			// Data/pastebin type - only pass first 6 chars of owner for security
+			var ownerPrefix string
+			if len(redirect.Owner) >= 6 {
+				ownerPrefix = redirect.Owner[:6]
+			}
+			c.HTML(http.StatusOK, "data.html", gin.H{
+				"code":        code,
+				"url":         fullURL,
+				"data":        redirect.Val,
+				"fromSuccess": fromSuccess,
+				"created":     redirect.Created,
+				"expires":     redirect.Ettl,
+				"ownerPrefix": ownerPrefix,
+			})
+		} else {
+			// URL redirect type (default)
+			c.HTML(http.StatusOK, "url.html", gin.H{
+				"code":        code,
+				"url":         fullURL,
+				"originalUrl": redirect.Val,
+				"redirectUrl": redirect.Val,
+				"fromSuccess": fromSuccess,
+				"created":     redirect.Created,
+				"expires":     redirect.Ettl,
+			})
 		}
-		c.HTML(http.StatusOK, "data.html", gin.H{
-			"code":        code,
-			"url":         fullURL,
-			"data":        redirect.Val,
-			"fromSuccess": fromSuccess,
-			"created":     redirect.Created,
-			"expires":     redirect.Ettl,
-			"ownerPrefix": ownerPrefix,
-		})
 	} else {
-		// URL redirect type (default)
-		c.HTML(http.StatusOK, "url.html", gin.H{
-			"code":        code,
-			"url":         fullURL,
-			"originalUrl": redirect.Val,
-			"redirectUrl": redirect.Val,
-			"fromSuccess": fromSuccess,
-			"created":     redirect.Created,
-			"expires":     redirect.Ettl,
-		})
+		// API clients get raw content as plain text
+		if redirect.Typ == "D" {
+			// Return raw data content
+			c.String(http.StatusOK, redirect.Val)
+		} else {
+			// Return raw URL
+			c.String(http.StatusOK, redirect.Val)
+		}
 	}
 }
 
@@ -96,9 +99,5 @@ func (h *Handlers) CatchAllHandler(c *gin.Context) {
 		return
 	}
 
-	// Always return HTML for catch-all since this is browser navigation
-	c.HTML(http.StatusNotFound, "error.html", gin.H{
-		"status":      "error",
-		"description": "Page not found",
-	})
+	utils.RespondWithError(c, http.StatusNotFound, "error", "Page not found")
 }
