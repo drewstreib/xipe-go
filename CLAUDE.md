@@ -51,7 +51,7 @@ xipe-go/
 - **Storage**: DynamoDB table "xipe_redirects" with conditional writes
 - **Content Filtering**: DNS-based URL filtering using Cloudflare family DNS
 - **Pastebin Features**:
-  - Store up to 10KB of text data (vs 4KB for URLs)
+  - Store up to 50KB of text data (vs 4KB for URLs)
   - Syntax highlighting with highlight.js
   - Dynamic line numbers toggle
   - Optional syntax highlighting toggle
@@ -324,11 +324,11 @@ curl -L "http://localhost:8080/Ab3d"
 - **JSON (Default)**: `POST /api/post` with `{"ttl":"1d","url":"https://example.com"}` or `{"ttl":"1d","data":"content"}` in body
 - **URL-encoded**: `POST /api/post?input=urlencoded` with form data
 - **Required Fields**: `ttl` (1d|1w|1mo) and either `url` or `data` (not both)
-- **Size Limits**: 4KB for URLs, 10KB for data
+- **Size Limits**: 4KB for URLs, 50KB for data
 
 ### Error Handling
 - 400: Invalid parameters (ttl, url format, missing hostname, malformed JSON)
-- 403: URL blocked by content filter, URL too long (4KB max), data too long (10KB max), or missing protocol
+- 403: URL blocked by content filter, URL too long (4KB max), data too long (50KB max), or missing protocol
 - 404: Code not found or expired
 - 500: Database errors
 - 503: DNS service unavailable
@@ -354,5 +354,5 @@ curl -L "http://localhost:8080/Ab3d"
 - **Line Numbers**: Optional line numbers with highlightjs-line-numbers.js plugin
 - **Display Modes**: 4 combinations - plain/highlighted × with/without line numbers
 - **Copy Functionality**: Always copies original plain text regardless of display formatting
-- **Text Trimming**: Client-side trimming to 10KB with proper UTF-8 byte counting
+- **Text Trimming**: Client-side trimming to 50KB with proper UTF-8 byte counting
 - **Line Ending Handling**: Accounts for \n → \r\n conversion during form submission

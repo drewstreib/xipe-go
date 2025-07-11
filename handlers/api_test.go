@@ -145,16 +145,16 @@ func TestPostHandler(t *testing.T) {
 
 		// JSON format tests - Data posts
 		{
-			name:           "JSON: Data too long (exceeds 10KB)",
+			name:           "JSON: Data too long (exceeds 50KB)",
 			query:          "",
-			body:           `{"ttl":"1d","data":"` + strings.Repeat("a", 10241) + `"}`,
+			body:           `{"ttl":"1d","data":"` + strings.Repeat("a", 51201) + `"}`,
 			contentType:    "application/json",
 			userAgent:      "curl/7.68.0",
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusForbidden,
 			expectedBody: map[string]interface{}{
 				"status":      "error",
-				"description": "Data too long (10241 bytes, 10KB max)",
+				"description": "Data too long (51201 bytes, 50KB max)",
 			},
 			checkBody: true,
 		},
