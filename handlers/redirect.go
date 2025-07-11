@@ -69,7 +69,7 @@ func (h *Handlers) RedirectHandler(c *gin.Context) {
 		})
 	} else {
 		// URL redirect type (default)
-		c.HTML(http.StatusOK, "info.html", gin.H{
+		c.HTML(http.StatusOK, "url.html", gin.H{
 			"code":        code,
 			"url":         fullURL,
 			"originalUrl": redirect.Val,

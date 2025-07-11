@@ -12,19 +12,35 @@
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            background-color: #1a1a1a;
+            color: white;
+        }
+        .header-bar {
+            background-color: #000000;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .header-bar img {
+            width: 16px;
+            height: 16px;
+        }
+        .header-bar .title {
+            color: white;
+            margin: 0;
+            font-size: 16px;
+            font-family: 'Courier New', Monaco, monospace;
         }
         .container {
-            background: white;
+            max-width: 600px;
+            margin: 0 auto;
             padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         .info {
-            color: #17a2b8;
+            color: white;
             margin-bottom: 20px;
         }
         .url-container {
@@ -35,10 +51,11 @@
         .url-input {
             flex: 1;
             padding: 12px;
-            border: 2px solid #e9ecef;
+            border: 2px solid #333333;
             border-radius: 4px;
             font-size: 16px;
-            background-color: #f8f9fa;
+            background-color: #222222;
+            color: white;
         }
         .copy-btn {
             padding: 12px 20px;
@@ -58,19 +75,19 @@
         .details {
             margin-top: 20px;
             padding: 15px;
-            background-color: #f8f9fa;
+            background-color: #222222;
             border-radius: 4px;
         }
         .redirect-container {
             margin: 20px 0;
             padding: 15px;
-            background-color: #e7f3ff;
+            background-color: #2a2a2a;
             border-radius: 4px;
             border-left: 4px solid #007bff;
         }
         .redirect-url {
             word-break: break-all;
-            color: #0066cc;
+            color: #66aaff;
             text-decoration: underline;
         }
         .actions {
@@ -106,38 +123,38 @@
         .footer {
             margin-top: 40px;
             padding-top: 20px;
-            border-top: 1px solid #e0e0e0;
+            border-top: 1px solid #333333;
             text-align: center;
             font-size: 14px;
-            color: #666;
+            color: #666666;
         }
         .footer a {
-            color: #007bff;
+            color: #66aaff;
             text-decoration: none;
         }
         .footer a:hover {
             text-decoration: underline;
         }
         .success-message {
-            background-color: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
+            background-color: #2a5a3a;
+            border: 1px solid #3a6b4a;
+            color: #90ee90;
             padding: 15px;
             border-radius: 4px;
             margin-bottom: 20px;
             border-left: 4px solid #28a745;
         }
         .success-message strong {
-            color: #155724;
-        }
-        @media (max-width: 800px) {
-            body {
-                max-width: 100%;
-            }
+            color: #90ee90;
         }
     </style>
 </head>
 <body>
+    <div class="header-bar">
+        <a href="https://xi.pe"><img src="/android-chrome-192x192.png" alt="xi.pe logo"></a>
+        <span class="title">xi.pe text sharing</span>
+    </div>
+    
     <div class="container">
         <h1 class="info">ℹ️ URL Information</h1>
         
