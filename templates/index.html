@@ -188,28 +188,14 @@
                 <strong>Content-Type:</strong> <code>application/json</code>
             </div>
             
-            <h3>Simple Text Sharing</h3>
             <div class="api-example">
                 <code>{"data":"your text here"}</code><br>
                 <small>Returns: <code>{"status":"ok","url":"https://xi.pe/Ab3d"}</code></small>
             </div>
             
-            <h3>Simple URL Sharing</h3>
-            <div class="api-example">
-                <code>{"data":"https://example.com","typ":"URL"}</code><br>
-                <small>Returns: <code>{"status":"ok","url":"https://xi.pe/XyZ9"}</code></small>
-            </div>
-            
-            <h3>With Optional Parameters</h3>
-            <div class="api-example">
-                <code>{"data":"your content","ttl":"1w","typ":"URL"}</code><br>
-                <small>Returns: <code>{"status":"ok","url":"https://xi.pe/Abc45"}</code></small>
-            </div>
-            
-            <p><strong>Required:</strong> <code>data</code> - your text or URL content</p>
-            <p><strong>Optional TTL:</strong> <code>"1d"</code> (default, 4 chars), <code>"1w"</code> (5 chars), <code>"1mo"</code> (6 chars)</p>
-            <p><strong>Optional Type:</strong> <code>"URL"</code> - formats the shortened page for URL redirection</p>
-            <p><strong>Limits:</strong> Text up to 10KB, URLs up to 4KB</p>
+            <p><strong>Optional TTL:</strong> <code>"ttl":"[1d|1w|1mo]"</code> (defaults to "1d")
+            <br><strong>Optional URL formatting:</strong> <code>"typ":"URL"</code>
+            <br><strong>Limits:</strong> Text up to 10KB, URLs up to 4KB</p>
         </div>
         
         <div class="footer">
