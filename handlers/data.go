@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/drewstreib/xipe-go/utils"
 	"github.com/gin-gonic/gin"
@@ -39,6 +41,12 @@ func (h *Handlers) DataHandler(c *gin.Context) {
 
 		// Return response based on client type
 		if utils.ShouldReturnHTML(c) {
+			// Static pages can be cached for 1 hour since they don't change
+			c.Header("Cache-Control", "public, max-age=3600")
+			c.Header("Expires", time.Now().Add(time.Hour).UTC().Format(http.TimeFormat))
+			// Remove the no-cache headers set by middleware
+			c.Header("Pragma", "")
+
 			// Browser clients get HTML template (same as data.html)
 			c.HTML(http.StatusOK, "data.html", gin.H{
 				"code":         code,
@@ -122,6 +130,30 @@ func (h *Handlers) DataHandler(c *gin.Context) {
 
 	// Return response based on client type
 	if utils.ShouldReturnHTML(c) {
+		// Calculate cache duration: min(1 hour, time until expiration)
+		now := time.Now().Unix()
+		maxCacheDuration := int64(3600) // 1 hour in seconds
+		var cacheDuration int64
+
+		if redirect.Ettl > 0 && redirect.Ettl > now {
+			// Item has a TTL and hasn't expired yet
+			timeUntilExpiration := redirect.Ettl - now
+			if timeUntilExpiration < maxCacheDuration {
+				cacheDuration = timeUntilExpiration
+			} else {
+				cacheDuration = maxCacheDuration
+			}
+		} else {
+			// No TTL or already expired (shouldn't happen since we got the record)
+			cacheDuration = maxCacheDuration
+		}
+
+		// Set cache headers for data pages
+		c.Header("Cache-Control", fmt.Sprintf("public, max-age=%d", cacheDuration))
+		c.Header("Expires", time.Now().Add(time.Duration(cacheDuration)*time.Second).UTC().Format(http.TimeFormat))
+		// Remove the no-cache headers set by middleware
+		c.Header("Pragma", "")
+
 		// Browser clients get HTML template
 		// Only pass first 6 chars of owner for security
 		var ownerPrefix string
