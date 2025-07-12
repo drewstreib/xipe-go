@@ -6,14 +6,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ShouldReturnHTML determines if the response should be HTML based on format parameter or User-Agent
+// ShouldReturnHTML determines if the response should be HTML based on query parameters or User-Agent
 func ShouldReturnHTML(c *gin.Context) bool {
-	// Check for explicit format parameter first (highest priority)
-	format := strings.ToLower(c.Query("format"))
-	if format == "json" {
+	// Check for ?raw parameter first (highest priority - return raw text)
+	if c.Request.URL.Query().Has("raw") {
 		return false
 	}
-	if format == "html" {
+
+	// Check for ?html parameter (second priority - return HTML)
+	if c.Request.URL.Query().Has("html") {
 		return true
 	}
 

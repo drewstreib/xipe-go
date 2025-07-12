@@ -401,10 +401,18 @@
                 expiresEl.textContent = formatRelativeTime(timestamp);
             }
             
-            // Remove ?from=success parameter from URL bar if present
+            // Remove query parameters from URL bar if present (?from=success, ?html, ?format=html)
             const url = new URL(window.location);
+            let urlChanged = false;
             if (url.searchParams.has('from')) {
                 url.searchParams.delete('from');
+                urlChanged = true;
+            }
+            if (url.searchParams.has('html')) {
+                url.searchParams.delete('html');
+                urlChanged = true;
+            }
+            if (urlChanged) {
                 window.history.replaceState({}, '', url.toString());
             }
             

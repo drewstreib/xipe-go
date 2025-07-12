@@ -176,7 +176,7 @@ func TestPostHandler(t *testing.T) {
 		{
 			name:        "URLEncoded: Successful data storage (browser)",
 			query:       "?input=urlencoded",
-			body:        "data=Hello%20world&format=html",
+			body:        "data=Hello%20world&html",
 			contentType: "application/x-www-form-urlencoded",
 			userAgent:   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
 			setupMock: func(m *db.MockDB, s *db.MockS3) {
