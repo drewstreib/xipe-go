@@ -202,10 +202,10 @@
             <div class="api-example">
                 <strong>POST Endpoint:</strong> <code>POST /</code><br>
                 <strong>Content-Type:</strong> <code>application/json</code><br>
-                &nbsp;<br><pre><code>{"data":"your text here"}</code></pre>
-                <strong>Returns:</strong> <pre><code>{"status":"ok","url":"https://xi.pe/Ab3d"}</code></pre>
-                &nbsp;<br><strong>Optional TTL:</strong> <pre><code>"ttl":"[1d|1w|1mo]"</code></pre> (defaults to "1d")<br>
-                <strong>Optional URL formatting:</strong> <pre><code>"typ":"URL"</code></pre>
+                &nbsp;<br><code>{"data":"your text here"}</code><br>
+                <strong>Returns:</strong> <code>{"status":"ok","url":"https://xi.pe/Ab3d"}</code><br>
+                &nbsp;<br><strong>Optional TTL:</strong> <code>"ttl":"[1d|1w|1mo]"</code> (defaults to "1d")<br>
+                <strong>Optional URL formatting:</strong> <code>"typ":"URL"</code><br>
                 <strong>Limits:</strong> Text up to 50KB, URLs up to 4KB
             </div>
 
@@ -214,15 +214,15 @@
                 <strong>Content-Type:</strong> <code>text/plain</code> (raw text in body)<br>
                 &nbsp;<br><strong>Returns:</strong> Plain text URL<br>
                 <strong>Features:</strong> UTF-8 validation, auto-truncation at 50KB, 1-day TTL<br>
-                &nbsp;<br><pre><code>alias xipe='curl -X PUT https://xi.pe/ -H "Content-Type: text/plain" --data-binary @-'
-echo "your text here" | xipe</code></pre>
+                &nbsp;<br><code>alias xipe='curl -X PUT https://xi.pe/ -H "Content-Type: text/plain" --data-binary @-'</code><br>
+                <code>echo "your text here" | xipe</code>
             </div>
 
             <div class="api-example">
                 <strong>Python:</strong><br>
-                <pre><code>import requests
-data = "your text here"
-shorturl = requests.post('https://xi.pe/', json={"data": data}).json()['url']</code></pre>
+                <code>import requests</code><br>
+                <code>data = "your text here"</code><br>
+                <code>shorturl = requests.post('https://xi.pe/', json={"data": data}).json()['url']</code>
             </div>
         </div>
         
