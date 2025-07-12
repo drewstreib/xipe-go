@@ -39,13 +39,14 @@ func (h *Handlers) DataHandler(c *gin.Context) {
 		if utils.ShouldReturnHTML(c) {
 			// Browser clients get HTML template (same as data.html)
 			c.HTML(http.StatusOK, "data.html", gin.H{
-				"code":        code,
-				"url":         fullURL,
-				"data":        content,
-				"fromSuccess": false,
-				"created":     0,  // Static pages have no creation time
-				"expires":     0,  // Static pages don't expire
-				"ownerPrefix": "", // Static pages have no owner
+				"code":         code,
+				"url":          fullURL,
+				"data":         content,
+				"fromSuccess":  false,
+				"created":      0,    // Static pages have no creation time
+				"expires":      0,    // Static pages don't expire
+				"ownerPrefix":  "",   // Static pages have no owner
+				"isStaticPage": true, // Flag to indicate this is a static page
 			})
 		} else {
 			// API clients get raw content as plain text
@@ -96,13 +97,14 @@ func (h *Handlers) DataHandler(c *gin.Context) {
 				ownerPrefix = redirect.Owner[:6]
 			}
 			c.HTML(http.StatusOK, "data.html", gin.H{
-				"code":        code,
-				"url":         fullURL,
-				"data":        redirect.Val,
-				"fromSuccess": fromSuccess,
-				"created":     redirect.Created,
-				"expires":     redirect.Ettl,
-				"ownerPrefix": ownerPrefix,
+				"code":         code,
+				"url":          fullURL,
+				"data":         redirect.Val,
+				"fromSuccess":  fromSuccess,
+				"created":      redirect.Created,
+				"expires":      redirect.Ettl,
+				"ownerPrefix":  ownerPrefix,
+				"isStaticPage": false, // Flag to indicate this is user data
 			})
 		} else {
 			// URL redirect type (default)

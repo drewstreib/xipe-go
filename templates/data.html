@@ -238,7 +238,7 @@
             </div>
             <div class="data-controls">
                 <label>
-                    <input type="checkbox" id="syntax-highlighting-toggle" checked onchange="toggleDisplay()" style="margin: 0;">
+                    <input type="checkbox" id="syntax-highlighting-toggle" {{if not .isStaticPage}}checked{{end}} onchange="toggleDisplay()" style="margin: 0;">
                     Syntax highlighting
                 </label>
                 <label>
@@ -456,14 +456,27 @@
             }
             
             // Initialize syntax highlighting
-            hljs.highlightAll();
-            
-            // Store the highlighted HTML after highlighting but before line numbers
+            const syntaxCheckbox = document.getElementById('syntax-highlighting-toggle');
             const codeBlock = document.querySelector('#dataContent code');
-            if (codeBlock) {
-                highlightedHTML = codeBlock.innerHTML;
-                // Add line numbers by default (checkbox starts checked)
-                hljs.lineNumbersBlock(codeBlock);
+            
+            if (syntaxCheckbox.checked) {
+                hljs.highlightAll();
+                
+                // Store the highlighted HTML after highlighting but before line numbers
+                if (codeBlock) {
+                    highlightedHTML = codeBlock.innerHTML;
+                    // Add line numbers by default (checkbox starts checked)
+                    hljs.lineNumbersBlock(codeBlock);
+                }
+            } else {
+                // For static pages, keep plain text but add line numbers if enabled
+                if (codeBlock) {
+                    highlightedHTML = codeBlock.innerHTML; // Store original for later use
+                    const lineNumbersCheckbox = document.getElementById('line-numbers-toggle');
+                    if (lineNumbersCheckbox.checked) {
+                        hljs.lineNumbersBlock(codeBlock);
+                    }
+                }
             }
             
             // Check if user owns this data and show delete button
