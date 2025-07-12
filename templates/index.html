@@ -207,6 +207,10 @@
                 &nbsp;<br><strong>Optional TTL:</strong> <code>"ttl":"[1d|1w|1mo]"</code> (defaults to "1d")<br>
                 <strong>Optional URL formatting:</strong> <code>"typ":"URL"</code><br>
                 <strong>Limits:</strong> Text up to 50KB, URLs up to 4KB
+                &nbsp;<br><strong>Python:</strong><br>
+                <code>import requests</code><br>
+                <code>data = "your text here"</code><br>
+                <code>shorturl = requests.post('https://xi.pe/', json={"data": data}).json()['url']</code>
             </div>
 
             <div class="api-example">
@@ -216,13 +220,6 @@
                 <strong>Features:</strong> UTF-8 validation, auto-truncation at 50KB, 1-day TTL<br>
                 &nbsp;<br><code>alias xipe='curl -X PUT https://xi.pe/ -H "Content-Type: text/plain" --data-binary @-'</code><br>
                 <code>echo "your text here" | xipe</code>
-            </div>
-
-            <div class="api-example">
-                <strong>Python:</strong><br>
-                <code>import requests</code><br>
-                <code>data = "your text here"</code><br>
-                <code>shorturl = requests.post('https://xi.pe/', json={"data": data}).json()['url']</code>
             </div>
         </div>
         
