@@ -16,11 +16,6 @@ func isValidCode(code string) bool {
 func (h *Handlers) DataHandler(c *gin.Context) {
 	code := c.Param("code")
 
-	if !isValidCode(code) {
-		utils.RespondWithError(c, http.StatusBadRequest, "error", "Invalid code format")
-		return
-	}
-
 	// Check if this is a reserved code (static page)
 	if utils.IsReservedCode(code) {
 		content, err := utils.GetPageContent(code)
@@ -56,6 +51,12 @@ func (h *Handlers) DataHandler(c *gin.Context) {
 			// API clients get raw content as plain text
 			c.String(http.StatusOK, content)
 		}
+		return
+	}
+
+	// For regular codes, validate format
+	if !isValidCode(code) {
+		utils.RespondWithError(c, http.StatusBadRequest, "error", "Invalid code format")
 		return
 	}
 
@@ -130,6 +131,14 @@ func (h *Handlers) DataHandler(c *gin.Context) {
 func (h *Handlers) CatchAllHandler(c *gin.Context) {
 	path := c.Request.URL.Path[1:]
 
+	// Check if this is a reserved code (static page) first
+	if utils.IsReservedCode(path) {
+		c.Params = append(c.Params, gin.Param{Key: "code", Value: path})
+		h.DataHandler(c)
+		return
+	}
+
+	// Then check if it matches the standard code pattern for generated codes
 	codePattern := regexp.MustCompile("^[a-zA-Z0-9]{4,6}$")
 	if codePattern.MatchString(path) {
 		c.Params = append(c.Params, gin.Param{Key: "code", Value: path})
