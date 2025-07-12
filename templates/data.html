@@ -191,16 +191,27 @@
         .footer a:hover {
             text-decoration: underline;
         }
-        .success-message {
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
             background-color: #2a5a3a;
             border: 1px solid #3a6b4a;
             color: #90ee90;
-            padding: 15px;
-            border-radius: 4px;
-            margin-bottom: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
             border-left: 4px solid #28a745;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            font-size: 14px;
+            font-weight: 500;
+            max-width: 350px;
+            transition: transform 1s ease-in-out;
         }
-        .success-message strong {
+        .toast.slide-out {
+            transform: translateX(100%);
+        }
+        .toast strong {
             color: #90ee90;
         }
         /* Add spacing between line numbers and code */
@@ -223,12 +234,13 @@
         <span class="title"><a href="/" style="color: #80F; text-decoration: none;">xi.pe</a> pastebin service</span>
     </div>
     
+    {{if .fromSuccess}}
+    <div class="toast" id="successToast">
+        <strong>✅ Data Successfully Stored!</strong>
+    </div>
+    {{end}}
+    
     <div class="content">
-        {{if .fromSuccess}}
-        <div class="success-message">
-            <strong>✅ Data Successfully Stored!</strong>
-        </div>
-        {{end}}
         
         <div class="data-container">
             <div class="data-content-wrapper">
@@ -427,8 +439,21 @@
             return `${dateStr} (${relativeStr})`;
         }
         
+        // Initialize toast auto-hide
+        function initToast() {
+            const toast = document.getElementById('successToast');
+            if (toast) {
+                // Auto-hide after 3 seconds
+                setTimeout(() => {
+                    toast.classList.add('slide-out');
+                }, 3000);
+            }
+        }
+        
         // Format timestamps and initialize syntax highlighting on page load
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize toast
+            initToast();
             const createdEl = document.getElementById('created-time');
             const expiresEl = document.getElementById('expires-time');
             
