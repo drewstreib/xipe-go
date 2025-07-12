@@ -208,13 +208,14 @@
                 <strong>Optional URL formatting:</strong> <code>"typ":"URL"</code><br>
                 <strong>Limits:</strong> Text up to 50KB, URLs up to 4KB
             </div>
-            
+
             <div class="api-example">
                 <strong>PUT Endpoint:</strong> <code>PUT /</code><br>
                 <strong>Content-Type:</strong> <code>text/plain</code> (raw text in body)<br>
                 &nbsp;<br><strong>Returns:</strong> Plain text URL<br>
                 <strong>Features:</strong> UTF-8 validation, auto-truncation at 50KB, 1-day TTL<br>
-                &nbsp;<br><code>echo "your text here" | curl -T - https://xi.pe/</code>
+                &nbsp;<br><code>alias xipe='curl -X PUT https://xi.pe/ -H "Content-Type: text/plain" --data-binary @-'</code><br>
+                echo "your text here" | xipe
             </div>
 
             <div class="api-example">
