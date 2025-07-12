@@ -177,11 +177,11 @@
         <div class="form-section">
             <form action="/?input=urlencoded&html" method="POST">
                 <div class="form-group">
-                    <textarea id="data" name="data" placeholder="Paste text here. The link will be available for 24 hours. Text over 2MB will be truncated." required></textarea>
+                    <textarea id="data" name="data" placeholder="Paste text here (<=2MB). The link will be available for 24 hours." required></textarea>
                 </div>
                 
                 <div class="form-controls">
-                    <button type="button" onclick="submitDataForm()">Share</button>
+                    <button type="submit">Share</button>
                     
                 </div>
                 
@@ -212,100 +212,5 @@ shorturl = requests.post(<span style="color: #FF9E64;">'https://xi.pe/'</span>, 
         </div>
     </div>
 
-    <script>
-        // Calculate UTF-8 byte length of a string
-        function getUTF8ByteLength(str) {
-            return new TextEncoder().encode(str).length;
-        }
-        
-        // Calculate what the server will actually measure (UTF-8 + line ending conversion)
-        function getServerByteLength(text) {
-            let utf8Bytes = getUTF8ByteLength(text);
-            let lineCount = (text.match(/\n/g) || []).length;
-            return utf8Bytes + lineCount; // \n becomes \r\n (+1 byte per line)
-        }
-        
-        // Trim text to fit within maxBytes (server measures decoded UTF-8 bytes + line endings)
-        function trimToByteLength(text, maxBytes) {
-            if (getServerByteLength(text) <= maxBytes) {
-                return text;
-            }
-            
-            // Binary search to find the longest valid prefix
-            let left = 0;
-            let right = text.length;
-            let bestFit = '';
-            
-            while (left <= right) {
-                let mid = Math.floor((left + right) / 2);
-                let candidate = text.substring(0, mid);
-                let serverByteLength = getServerByteLength(candidate);
-                
-                if (serverByteLength <= maxBytes) {
-                    bestFit = candidate;
-                    left = mid + 1;
-                } else {
-                    right = mid - 1;
-                }
-            }
-            
-            return bestFit;
-        }
-        
-        // Trim text to fit within maxBytes when URL-encoded
-        function trimToEncodedByteLength(text, maxBytes) {
-            if (encodeURIComponent(text).length <= maxBytes) {
-                return text;
-            }
-            
-            // Binary search to find the longest valid prefix based on URL-encoded size
-            let left = 0;
-            let right = text.length;
-            let bestFit = '';
-            
-            while (left <= right) {
-                let mid = Math.floor((left + right) / 2);
-                let candidate = text.substring(0, mid);
-                let encodedLength = encodeURIComponent(candidate).length;
-                
-                if (encodedLength <= maxBytes) {
-                    bestFit = candidate;
-                    left = mid + 1;
-                } else {
-                    right = mid - 1;
-                }
-            }
-            
-            return bestFit;
-        }
-        
-        function submitDataForm() {
-            const form = document.querySelector('#data').closest('form');
-            const textarea = document.getElementById('data');
-            
-            let dataValue = textarea.value;
-            const originalLength = getUTF8ByteLength(dataValue);
-            
-            // Always trim if over 2MB based on server byte length (UTF-8 + line endings)
-            const originalServerBytes = getServerByteLength(dataValue);
-            if (originalServerBytes > 2097152) {
-                dataValue = trimToByteLength(dataValue, 2097152);
-                textarea.value = dataValue; // Update the textarea with trimmed content
-                const newLength = getUTF8ByteLength(dataValue);
-                const newServerBytes = getServerByteLength(dataValue);
-                const lineCount = (dataValue.match(/\n/g) || []).length;
-                
-                alert('Text trimmed from ' + originalServerBytes + ' bytes to ' + newServerBytes + ' bytes');
-                
-                // Force trigger change event to ensure form recognizes the new value
-                textarea.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-            
-            // Add a small delay to ensure textarea value is updated before submit
-            setTimeout(function() {
-                form.submit();
-            }, 10);
-        }
-    </script>
 </body>
 </html>
