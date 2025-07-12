@@ -121,6 +121,7 @@ func main() {
 	})
 	r.GET("/swagger.json", func(c *gin.Context) {
 		c.Header("Content-Type", "application/json")
+		c.Header("Access-Control-Allow-Origin", "https://docs.xi.pe")
 		c.FileFromFS("static/swagger.json", http.FS(staticFS))
 	})
 
