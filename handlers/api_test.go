@@ -431,25 +431,32 @@ func TestPutHandler(t *testing.T) {
 			},
 		},
 		{
-			name: "Multiple collision retries then success",
+			name: "Multiple collision retries then success on 5-char code",
 			body: "Test content",
 			setupMock: func(m *db.MockDB, s *db.MockS3) {
-				// First 3 attempts fail with conditional check (collision)
-				m.On("PutRedirect", mock.AnythingOfType("*db.RedirectRecord")).Return(&types.ConditionalCheckFailedException{}).Times(3)
-				// 4th attempt succeeds
-				m.On("PutRedirect", mock.AnythingOfType("*db.RedirectRecord")).Return(nil).Once()
+				// First 3 attempts with 4-char codes fail
+				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
+					return len(r.Code) == 4
+				})).Return(&types.ConditionalCheckFailedException{}).Times(3)
+				// First attempt with 5-char code succeeds
+				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
+					return len(r.Code) == 5
+				})).Return(nil).Once()
 			},
 			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, response string) {
 				assert.Contains(t, response, "http://")
+				// Verify it's a 5-character code
+				code := strings.TrimSpace(strings.Split(response, "/")[len(strings.Split(response, "/"))-1])
+				assert.Equal(t, 5, len(code))
 			},
 		},
 		{
 			name: "All collision retries fail",
 			body: "Test content",
 			setupMock: func(m *db.MockDB, s *db.MockS3) {
-				// All 5 attempts fail with conditional check (collision)
-				m.On("PutRedirect", mock.AnythingOfType("*db.RedirectRecord")).Return(&types.ConditionalCheckFailedException{}).Times(5)
+				// All 6 attempts fail (3 with 4-char, 3 with 5-char)
+				m.On("PutRedirect", mock.AnythingOfType("*db.RedirectRecord")).Return(&types.ConditionalCheckFailedException{}).Times(6)
 			},
 			expectedStatus: 529,
 			checkResponse: func(t *testing.T, response string) {

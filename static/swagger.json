@@ -226,10 +226,10 @@
             "name": "code",
             "in": "path",
             "required": true,
-            "description": "The short code (4 characters for 24-hour expiration) or static page name",
+            "description": "The short code (4-5 characters) or static page name",
             "schema": {
               "type": "string",
-              "pattern": "^[a-zA-Z0-9]{4,6}$|^[a-zA-Z]+$"
+              "pattern": "^[a-zA-Z0-9]{4,5}$|^[a-zA-Z]+$"
             }
           },
           {
@@ -303,7 +303,7 @@
             "description": "The short code to delete",
             "schema": {
               "type": "string",
-              "pattern": "^[a-zA-Z0-9]{4,6}$"
+              "pattern": "^[a-zA-Z0-9]{4,5}$"
             }
           }
         ],

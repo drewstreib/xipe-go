@@ -39,12 +39,9 @@ xipe-go/
 - **Endpoint**: `POST /`
 - **Method**: POST (required)
 - **Input Format**: JSON body (default) or URL-encoded form data with `?input=urlencoded`
-- **TTL Options**:
-  - `1d`: 4-char code, expires in 24 hours
-  - `1w`: 5-char code, expires in 1 week  
-  - `1mo`: 6-char code, expires in 1 month
-- **Code Generation**: Cryptographically random alphanumeric
-- **Retry Logic**: Up to 5 attempts on collision (returns 529 on failure)
+- **TTL**: Fixed at 24 hours (no longer user-selectable)
+- **Code Generation**: Cryptographically random alphanumeric (4-5 characters)
+- **Retry Logic**: 3 attempts with 4-character codes, then 3 attempts with 5-character codes on collision (returns 529 on failure)
 - **Storage**: DynamoDB table "xipe_redirects" with conditional writes
 - **Owner Authentication**: 128-bit random tokens for deletion access
 - **Features**:
@@ -55,7 +52,7 @@ xipe-go/
   - Clean copy functionality regardless of display mode
 
 ### 2. Data Display
-- **Pattern**: `/[a-zA-Z0-9]{4,6}`
+- **Pattern**: `/[a-zA-Z0-9]{4,5}` (or static page names)
 - **Behavior**: 
   - **Static Pages**: Reserved codes (e.g., `/privacy`) serve embedded content from `utils/pages/*.txt`
   - Shows data page with syntax highlighting and copy options

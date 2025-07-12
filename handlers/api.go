@@ -127,117 +127,122 @@ func (h *Handlers) PostHandler(c *gin.Context) {
 		finalValue = "" // Empty in DynamoDB, data will be in S3
 	}
 
-	// Calculate TTL and code length
-	ettl, codeLength, err := utils.CalculateTTL(ttl)
+	// Calculate TTL (always 1d now)
+	ettl, _, err := utils.CalculateTTL(ttl)
 	if err != nil {
 		utils.RespondWithError(c, http.StatusInternalServerError, "error", "failed to calculate TTL")
 		return
 	}
 
-	// Try up to 5 times to insert a unique code
+	// Try 3 times with 4-character codes, then 3 times with 5-character codes
 	var code string
 	var insertErr error
-	for attempts := 0; attempts < 5; attempts++ {
-		code, err = utils.GenerateUniqueCode(codeLength)
-		if err != nil {
-			utils.RespondWithError(c, http.StatusInternalServerError, "error", "failed to generate code")
-			return
-		}
+	totalAttempts := 0
 
-		// Set S3 key if using S3 storage
-		if recordType == "S" {
-			s3Key = "S/" + code + ".zst"
-		}
+	for _, currentCodeLength := range []int{4, 5} {
+		for attempts := 0; attempts < 3; attempts++ {
+			totalAttempts++
+			code, err = utils.GenerateUniqueCode(currentCodeLength)
+			if err != nil {
+				utils.RespondWithError(c, http.StatusInternalServerError, "error", "failed to generate code")
+				return
+			}
 
-		// Get the client IP (Gin's ClientIP handles X-Forwarded-For, X-Real-IP, etc.)
-		clientIP := c.ClientIP()
+			// Set S3 key if using S3 storage
+			if recordType == "S" {
+				s3Key = "S/" + code + ".zst"
+			}
 
-		// Get current timestamp
-		createdTime := time.Now().Unix()
+			// Get the client IP (Gin's ClientIP handles X-Forwarded-For, X-Real-IP, etc.)
+			clientIP := c.ClientIP()
 
-		record := &db.RedirectRecord{
-			Code:    code,
-			Typ:     recordType,
-			Val:     finalValue,
-			Ettl:    ettl,
-			Created: createdTime,
-			IP:      clientIP,
-			Owner:   ownerID,
-		}
+			// Get current timestamp
+			createdTime := time.Now().Unix()
 
-		log.Printf("Attempting to store data - Code: %s, Type: %s, Size: %d bytes",
-			code, recordType, dataLen)
+			record := &db.RedirectRecord{
+				Code:    code,
+				Typ:     recordType,
+				Val:     finalValue,
+				Ettl:    ettl,
+				Created: createdTime,
+				IP:      clientIP,
+				Owner:   ownerID,
+			}
 
-		// Store in S3 first if needed (before DynamoDB to ensure data is available)
-		if recordType == "S" {
-			s3Err := h.S3.PutObject(s3Key, []byte(processedData))
-			if s3Err != nil {
-				log.Printf("Failed to store data in S3: %v", s3Err)
-				// Check for specific S3 errors
-				errorMsg := s3Err.Error()
-				if strings.Contains(errorMsg, "AccessDenied") || strings.Contains(errorMsg, "Forbidden") {
-					utils.RespondWithError(c, http.StatusInternalServerError, "error", "storage service access denied")
-				} else if strings.Contains(errorMsg, "ServiceUnavailable") || strings.Contains(errorMsg, "SlowDown") {
-					utils.RespondWithError(c, http.StatusServiceUnavailable, "error", "storage service temporarily unavailable")
-				} else if strings.Contains(errorMsg, "NoSuchBucket") {
-					utils.RespondWithError(c, http.StatusInternalServerError, "error", "storage configuration error")
+			log.Printf("Attempting to store data - Code: %s (%d chars), Type: %s, Size: %d bytes, Attempt: %d/6",
+				code, currentCodeLength, recordType, dataLen, totalAttempts)
+
+			// Store in S3 first if needed (before DynamoDB to ensure data is available)
+			if recordType == "S" {
+				s3Err := h.S3.PutObject(s3Key, []byte(processedData))
+				if s3Err != nil {
+					log.Printf("Failed to store data in S3: %v", s3Err)
+					// Check for specific S3 errors
+					errorMsg := s3Err.Error()
+					if strings.Contains(errorMsg, "AccessDenied") || strings.Contains(errorMsg, "Forbidden") {
+						utils.RespondWithError(c, http.StatusInternalServerError, "error", "storage service access denied")
+					} else if strings.Contains(errorMsg, "ServiceUnavailable") || strings.Contains(errorMsg, "SlowDown") {
+						utils.RespondWithError(c, http.StatusServiceUnavailable, "error", "storage service temporarily unavailable")
+					} else if strings.Contains(errorMsg, "NoSuchBucket") {
+						utils.RespondWithError(c, http.StatusInternalServerError, "error", "storage configuration error")
+					} else {
+						utils.RespondWithError(c, http.StatusInternalServerError, "error", "failed to store data")
+					}
+					return
+				}
+				log.Printf("Successfully stored data in S3 - Key: %s", s3Key)
+			}
+
+			insertErr = h.DB.PutRedirect(record)
+			if insertErr == nil {
+				log.Printf("Successfully stored metadata - Code: %s (%d chars)", code, currentCodeLength)
+
+				// Set the owner ID cookie (30 days expiration, no HttpOnly so JS can read for delete button)
+				c.SetCookie("id", ownerID, 30*24*60*60, "/", "", false, false)
+
+				// Success! Build the full URL
+				scheme := "https"
+				if c.Request.Header.Get("X-Forwarded-Proto") == "" && c.Request.TLS == nil {
+					scheme = "http"
+				}
+				host := c.Request.Host
+				if host == "" {
+					host = "xi.pe"
+				}
+				fullURL := scheme + "://" + host + "/" + code
+
+				// Build redirect URL to info page with success parameter
+				redirectPath := fmt.Sprintf("/%s?from=success", code)
+
+				// Preserve format parameter if present
+				if format := c.Query("format"); format != "" {
+					redirectPath += "&format=" + url.QueryEscape(format)
+				}
+
+				// Return response based on client type
+				if utils.ShouldReturnHTML(c) {
+					// For HTML clients, redirect to info page
+					c.Redirect(http.StatusSeeOther, redirectPath)
 				} else {
-					utils.RespondWithError(c, http.StatusInternalServerError, "error", "failed to store data")
+					// For API clients, return JSON with the full URL
+					c.JSON(http.StatusOK, gin.H{
+						"status": "ok",
+						"url":    fullURL,
+					})
 				}
 				return
 			}
-			log.Printf("Successfully stored data in S3 - Key: %s", s3Key)
+
+			// Check if error is due to duplicate key
+			if !isDuplicateKeyError(insertErr) {
+				// Some other error occurred
+				log.Printf("DynamoDB error (not duplicate key): %v", insertErr)
+				utils.RespondWithError(c, http.StatusInternalServerError, "error", "failed to store data")
+				return
+			}
+			log.Printf("Duplicate key error for %d-char code, retrying. Error: %v", currentCodeLength, insertErr)
+			// Continue to next attempt if duplicate key
 		}
-
-		insertErr = h.DB.PutRedirect(record)
-		if insertErr == nil {
-			log.Printf("Successfully stored metadata - Code: %s", code)
-
-			// Set the owner ID cookie (30 days expiration, no HttpOnly so JS can read for delete button)
-			c.SetCookie("id", ownerID, 30*24*60*60, "/", "", false, false)
-
-			// Success! Build the full URL
-			scheme := "https"
-			if c.Request.Header.Get("X-Forwarded-Proto") == "" && c.Request.TLS == nil {
-				scheme = "http"
-			}
-			host := c.Request.Host
-			if host == "" {
-				host = "xi.pe"
-			}
-			fullURL := scheme + "://" + host + "/" + code
-
-			// Build redirect URL to info page with success parameter
-			redirectPath := fmt.Sprintf("/%s?from=success", code)
-
-			// Preserve format parameter if present
-			if format := c.Query("format"); format != "" {
-				redirectPath += "&format=" + url.QueryEscape(format)
-			}
-
-			// Return response based on client type
-			if utils.ShouldReturnHTML(c) {
-				// For HTML clients, redirect to info page
-				c.Redirect(http.StatusSeeOther, redirectPath)
-			} else {
-				// For API clients, return JSON with the full URL
-				c.JSON(http.StatusOK, gin.H{
-					"status": "ok",
-					"url":    fullURL,
-				})
-			}
-			return
-		}
-
-		// Check if error is due to duplicate key
-		if !isDuplicateKeyError(insertErr) {
-			// Some other error occurred
-			log.Printf("DynamoDB error (not duplicate key): %v", insertErr)
-			utils.RespondWithError(c, http.StatusInternalServerError, "error", "failed to store data")
-			return
-		}
-		log.Printf("Duplicate key error, retrying with new code. Error: %v", insertErr)
-		// Continue to next attempt if duplicate key
 	}
 
 	// All attempts failed
@@ -382,98 +387,104 @@ func (h *Handlers) PutHandler(c *gin.Context) {
 	}
 
 	// Use default 1d TTL for PUT requests
-	ettl, codeLength, err := utils.CalculateTTL("1d")
+	ettl, _, err := utils.CalculateTTL("1d")
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error: Failed to calculate TTL\n")
 		return
 	}
 
-	// Try up to 5 times to insert a unique code
+	// Try 3 times with 4-character codes, then 3 times with 5-character codes
 	var code string
 	var insertErr error
-	for attempts := 0; attempts < 5; attempts++ {
-		code, err = utils.GenerateUniqueCode(codeLength)
-		if err != nil {
-			c.String(http.StatusInternalServerError, "Error: Failed to generate code\n")
-			return
-		}
+	totalAttempts := 0
 
-		// Set S3 key if using S3 storage
-		if recordType == "S" {
-			s3Key = "S/" + code + ".zst"
-		}
-
-		// Get the client IP
-		clientIP := c.ClientIP()
-
-		// Get current timestamp
-		createdTime := time.Now().Unix()
-
-		record := &db.RedirectRecord{
-			Code:    code,
-			Typ:     recordType,
-			Val:     finalValue,
-			Ettl:    ettl,
-			Created: createdTime,
-			IP:      clientIP,
-			Owner:   ownerID,
-		}
-
-		log.Printf("PUT: Attempting to store data - Code: %s, Type: %s, Size: %d bytes", code, recordType, dataLen)
-
-		// Store in S3 first if needed
-		if recordType == "S" {
-			s3Err := h.S3.PutObject(s3Key, []byte(finalData))
-			if s3Err != nil {
-				log.Printf("PUT: Failed to store data in S3: %v", s3Err)
-				// Check for specific S3 errors
-				errorMsg := s3Err.Error()
-				if strings.Contains(errorMsg, "AccessDenied") || strings.Contains(errorMsg, "Forbidden") {
-					c.String(http.StatusInternalServerError, "Error: Storage service access denied\n")
-				} else if strings.Contains(errorMsg, "ServiceUnavailable") || strings.Contains(errorMsg, "SlowDown") {
-					c.String(http.StatusServiceUnavailable, "Error: Storage service temporarily unavailable\n")
-				} else if strings.Contains(errorMsg, "NoSuchBucket") {
-					c.String(http.StatusInternalServerError, "Error: Storage configuration error\n")
-				} else {
-					c.String(http.StatusInternalServerError, "Error: Failed to store data\n")
-				}
+	for _, currentCodeLength := range []int{4, 5} {
+		for attempts := 0; attempts < 3; attempts++ {
+			totalAttempts++
+			code, err = utils.GenerateUniqueCode(currentCodeLength)
+			if err != nil {
+				c.String(http.StatusInternalServerError, "Error: Failed to generate code\n")
 				return
 			}
-			log.Printf("PUT: Successfully stored data in S3 - Key: %s", s3Key)
-		}
 
-		insertErr = h.DB.PutRedirect(record)
-		if insertErr == nil {
-			log.Printf("PUT: Successfully stored metadata - Code: %s", code)
-
-			// Set the owner ID cookie (30 days expiration, no HttpOnly)
-			c.SetCookie("id", ownerID, 30*24*60*60, "/", "", false, false)
-
-			// Build the full URL
-			scheme := "https"
-			if c.Request.Header.Get("X-Forwarded-Proto") == "" && c.Request.TLS == nil {
-				scheme = "http"
+			// Set S3 key if using S3 storage
+			if recordType == "S" {
+				s3Key = "S/" + code + ".zst"
 			}
-			host := c.Request.Host
-			if host == "" {
-				host = "xi.pe"
+
+			// Get the client IP
+			clientIP := c.ClientIP()
+
+			// Get current timestamp
+			createdTime := time.Now().Unix()
+
+			record := &db.RedirectRecord{
+				Code:    code,
+				Typ:     recordType,
+				Val:     finalValue,
+				Ettl:    ettl,
+				Created: createdTime,
+				IP:      clientIP,
+				Owner:   ownerID,
 			}
-			fullURL := scheme + "://" + host + "/" + code
 
-			// Return plain text response with just the URL
-			c.String(http.StatusOK, fullURL+"\n")
-			return
-		}
+			log.Printf("PUT: Attempting to store data - Code: %s (%d chars), Type: %s, Size: %d bytes, Attempt: %d/6",
+				code, currentCodeLength, recordType, dataLen, totalAttempts)
 
-		// Check if error is due to duplicate key
-		if !isDuplicateKeyError(insertErr) {
-			// Some other error occurred
-			log.Printf("DynamoDB error (not duplicate key): %v", insertErr)
-			c.String(http.StatusInternalServerError, "Error: Failed to store data\n")
-			return
+			// Store in S3 first if needed
+			if recordType == "S" {
+				s3Err := h.S3.PutObject(s3Key, []byte(finalData))
+				if s3Err != nil {
+					log.Printf("PUT: Failed to store data in S3: %v", s3Err)
+					// Check for specific S3 errors
+					errorMsg := s3Err.Error()
+					if strings.Contains(errorMsg, "AccessDenied") || strings.Contains(errorMsg, "Forbidden") {
+						c.String(http.StatusInternalServerError, "Error: Storage service access denied\n")
+					} else if strings.Contains(errorMsg, "ServiceUnavailable") || strings.Contains(errorMsg, "SlowDown") {
+						c.String(http.StatusServiceUnavailable, "Error: Storage service temporarily unavailable\n")
+					} else if strings.Contains(errorMsg, "NoSuchBucket") {
+						c.String(http.StatusInternalServerError, "Error: Storage configuration error\n")
+					} else {
+						c.String(http.StatusInternalServerError, "Error: Failed to store data\n")
+					}
+					return
+				}
+				log.Printf("PUT: Successfully stored data in S3 - Key: %s", s3Key)
+			}
+
+			insertErr = h.DB.PutRedirect(record)
+			if insertErr == nil {
+				log.Printf("PUT: Successfully stored metadata - Code: %s (%d chars)", code, currentCodeLength)
+
+				// Set the owner ID cookie (30 days expiration, no HttpOnly)
+				c.SetCookie("id", ownerID, 30*24*60*60, "/", "", false, false)
+
+				// Build the full URL
+				scheme := "https"
+				if c.Request.Header.Get("X-Forwarded-Proto") == "" && c.Request.TLS == nil {
+					scheme = "http"
+				}
+				host := c.Request.Host
+				if host == "" {
+					host = "xi.pe"
+				}
+				fullURL := scheme + "://" + host + "/" + code
+
+				// Return plain text response with just the URL
+				c.String(http.StatusOK, fullURL+"\n")
+				return
+			}
+
+			// Check if error is due to duplicate key
+			if !isDuplicateKeyError(insertErr) {
+				// Some other error occurred
+				log.Printf("DynamoDB error (not duplicate key): %v", insertErr)
+				c.String(http.StatusInternalServerError, "Error: Failed to store data\n")
+				return
+			}
+			log.Printf("PUT: Duplicate key error for %d-char code, retrying. Error: %v", currentCodeLength, insertErr)
+			// Continue to next attempt if duplicate key
 		}
-		log.Printf("Duplicate key error, retrying with new code. Error: %v", insertErr)
-		// Continue to next attempt if duplicate key
 	}
 
 	// All attempts failed

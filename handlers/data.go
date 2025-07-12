@@ -11,7 +11,7 @@ import (
 )
 
 func isValidCode(code string) bool {
-	matched, _ := regexp.MatchString("^[a-zA-Z0-9]{4,6}$", code)
+	matched, _ := regexp.MatchString("^[a-zA-Z0-9]{4,5}$", code)
 	return matched
 }
 
@@ -155,7 +155,7 @@ func (h *Handlers) CatchAllHandler(c *gin.Context) {
 	}
 
 	// Then check if it matches the standard code pattern for generated codes
-	codePattern := regexp.MustCompile("^[a-zA-Z0-9]{4,6}$")
+	codePattern := regexp.MustCompile("^[a-zA-Z0-9]{4,5}$")
 	if codePattern.MatchString(path) {
 		c.Params = append(c.Params, gin.Param{Key: "code", Value: path})
 		h.DataHandler(c)

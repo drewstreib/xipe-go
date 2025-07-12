@@ -151,23 +151,6 @@ func TestCatchAllHandler(t *testing.T) {
 			expectedBody:   nil, // Returns HTML data page
 		},
 		{
-			name: "Valid 6-char code",
-			path: "/test66",
-			setupMock: func(m *db.MockDB) {
-				m.On("GetRedirect", "test66").Return(&db.RedirectRecord{
-					Code:    "test66",
-					Typ:     "D",
-					Val:     "Even more data content",
-					Created: 1234567890,
-					Ettl:    1234567890,
-					IP:      "192.168.1.1",
-				}, nil)
-			},
-			expectedStatus: http.StatusOK,
-			expectedHeader: "",
-			expectedBody:   nil, // Returns HTML data page
-		},
-		{
 			name:           "Invalid path - too short",
 			path:           "/abc",
 			setupMock:      func(m *db.MockDB) {},
@@ -176,8 +159,8 @@ func TestCatchAllHandler(t *testing.T) {
 			expectedBody:   nil, // Now returns HTML, don't check body
 		},
 		{
-			name:           "Invalid path - too long",
-			path:           "/abcdefg",
+			name:           "Invalid path - too long (6 chars)",
+			path:           "/abcdef",
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusNotFound,
 			expectedHeader: "",
