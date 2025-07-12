@@ -177,22 +177,12 @@
         <div class="form-section">
             <form action="/?input=urlencoded" method="POST">
                 <div class="form-group">
-                    <textarea id="data" name="data" placeholder="Paste your text here... (text over 2MB will be truncated)" required></textarea>
+                    <textarea id="data" name="data" placeholder="Paste text here. The link will be available for 24 hours. Text over 2MB will be truncated." required></textarea>
                 </div>
                 
                 <div class="form-controls">
                     <button type="button" onclick="submitDataForm()">Share</button>
                     
-                    <div class="form-options">
-                        <div>
-                            <label for="ttl">Expiration:</label>
-                            <select id="ttl" name="ttl">
-                                <option value="1d" selected>1 day (xi.pe/ABCD)</option>
-                                <option value="1w">1 week (xi.pe/ABCDE)</option>
-                                <option value="1mo">1 month (xi.pe/ABCDEF)</option>
-                            </select>
-                        </div>
-                    </div>
                 </div>
                 
                 <input type="hidden" name="format" value="html">

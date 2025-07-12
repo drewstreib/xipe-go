@@ -47,20 +47,6 @@ func TestPostHandler(t *testing.T) {
 			checkBody: true,
 		},
 		{
-			name:           "JSON: Invalid ttl format",
-			query:          "",
-			body:           `{"ttl":"2d","data":"Hello, world!"}`,
-			contentType:    "application/json",
-			userAgent:      "curl/7.68.0",
-			setupMock:      func(m *db.MockDB, s *db.MockS3) {},
-			expectedStatus: http.StatusBadRequest,
-			expectedBody: map[string]interface{}{
-				"status":      "error",
-				"description": "ttl must be 1d, 1w, or 1mo",
-			},
-			checkBody: true,
-		},
-		{
 			name:           "JSON: Data too long (exceeds 2MB)",
 			query:          "",
 			body:           `{"ttl":"1d","data":"` + strings.Repeat("a", 2097153) + `"}`,
@@ -126,7 +112,7 @@ func TestPostHandler(t *testing.T) {
 		{
 			name:        "URLEncoded: Successful data storage with HTML content",
 			query:       "?input=urlencoded",
-			body:        "ttl=1d&data=" + url.QueryEscape("<div>Test HTML & entities</div>"),
+			body:        "data=" + url.QueryEscape("<div>Test HTML & entities</div>"),
 			contentType: "application/x-www-form-urlencoded",
 			userAgent:   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
 			setupMock: func(m *db.MockDB, s *db.MockS3) {
@@ -176,7 +162,7 @@ func TestPostHandler(t *testing.T) {
 		{
 			name:           "URLEncoded: Missing data parameter",
 			query:          "?input=urlencoded",
-			body:           "ttl=1d",
+			body:           "",
 			contentType:    "application/x-www-form-urlencoded",
 			userAgent:      "curl/7.68.0",
 			setupMock:      func(m *db.MockDB, s *db.MockS3) {},
@@ -190,7 +176,7 @@ func TestPostHandler(t *testing.T) {
 		{
 			name:        "URLEncoded: Successful data storage (browser)",
 			query:       "?input=urlencoded",
-			body:        "ttl=1d&data=Hello%20world&format=html",
+			body:        "data=Hello%20world&format=html",
 			contentType: "application/x-www-form-urlencoded",
 			userAgent:   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
 			setupMock: func(m *db.MockDB, s *db.MockS3) {

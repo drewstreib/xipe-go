@@ -27,7 +27,7 @@
     "/": {
       "post": {
         "summary": "Store data",
-        "description": "Stores pastebin data. Supports both JSON and URL-encoded form data.",
+        "description": "Stores pastebin data with 24-hour expiration. Supports both JSON and URL-encoded form data.",
         "parameters": [
           {
             "name": "input",
@@ -50,7 +50,6 @@
                 "data_example": {
                   "summary": "Data storage",
                   "value": {
-                    "ttl": "1w", 
                     "data": "Hello, world!"
                   }
                 }
@@ -227,7 +226,7 @@
             "name": "code",
             "in": "path",
             "required": true,
-            "description": "The short code (4-6 characters) or static page name",
+            "description": "The short code (4 characters for 24-hour expiration) or static page name",
             "schema": {
               "type": "string",
               "pattern": "^[a-zA-Z0-9]{4,6}$|^[a-zA-Z]+$"
@@ -353,16 +352,10 @@
       "CreateRequest": {
         "type": "object",
         "properties": {
-          "ttl": {
-            "type": "string",
-            "enum": ["1d", "1w", "1mo"],
-            "description": "Time to live: 1d=4 chars, 1w=5 chars, 1mo=6 chars",
-            "default": "1d"
-          },
           "data": {
             "type": "string",
             "maxLength": 2097152,
-            "description": "Text data to store (up to 2MB)"
+            "description": "Text data to store (up to 2MB, expires after 24 hours)"
           }
         },
         "required": ["data"]
@@ -370,13 +363,9 @@
       "CreateFormRequest": {
         "type": "object",
         "properties": {
-          "ttl": {
-            "type": "string",
-            "enum": ["1d", "1w", "1mo"]
-          },
           "data": {
             "type": "string",
-            "description": "Text data to store"
+            "description": "Text data to store (expires after 24 hours)"
           },
           "format": {
             "type": "string",

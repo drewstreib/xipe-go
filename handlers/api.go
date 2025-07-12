@@ -54,7 +54,7 @@ func getOrCreateOwnerID(c *gin.Context) (string, error) {
 }
 
 func (h *Handlers) PostHandler(c *gin.Context) {
-	var ttl, rawData string
+	var rawData string
 
 	// Get or create owner ID for this post
 	ownerID, err := getOrCreateOwnerID(c)
@@ -67,12 +67,10 @@ func (h *Handlers) PostHandler(c *gin.Context) {
 	// Check if input format is specified as urlencoded
 	if c.Query("input") == "urlencoded" {
 		// Read from form body for URL-encoded data
-		ttl = c.PostForm("ttl")
 		rawData = c.PostForm("data")
 	} else {
 		// Default: expect JSON body
 		var requestBody struct {
-			TTL  string `json:"ttl"`
 			Data string `json:"data" binding:"required"`
 		}
 
@@ -81,7 +79,6 @@ func (h *Handlers) PostHandler(c *gin.Context) {
 			return
 		}
 
-		ttl = requestBody.TTL
 		rawData = requestBody.Data
 	}
 
@@ -90,16 +87,8 @@ func (h *Handlers) PostHandler(c *gin.Context) {
 		return
 	}
 
-	// Default TTL to "1d" if not provided
-	if ttl == "" {
-		ttl = "1d"
-	}
-
-	// Validate TTL
-	if ttl != "1d" && ttl != "1w" && ttl != "1mo" {
-		utils.RespondWithError(c, http.StatusBadRequest, "error", "ttl must be 1d, 1w, or 1mo")
-		return
-	}
+	// Always use 1d TTL (24 hours)
+	const ttl = "1d"
 
 	// For data posts, use the raw data as-is (already URL-decoded by Gin for form data)
 	// Only URL decode if this came from JSON and might be manually encoded
