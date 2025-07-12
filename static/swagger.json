@@ -127,19 +127,29 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "Service unavailable - storage service temporarily unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         }
       },
       "put": {
         "summary": "Store raw text data",
-        "description": "Stores raw text data with automatic UTF-8 validation, truncation at 50KB, and 1-day TTL.",
+        "description": "Stores raw text data with automatic UTF-8 validation, truncation at 2MB, and 1-day TTL.",
         "requestBody": {
           "required": true,
           "content": {
             "text/plain": {
               "schema": {
                 "type": "string",
-                "maxLength": 51200,
+                "maxLength": 2097152,
                 "description": "Raw text content to store"
               }
             }
@@ -187,6 +197,16 @@
           },
           "529": {
             "description": "Unable to generate unique code",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable - storage service temporarily unavailable",
             "content": {
               "text/plain": {
                 "schema": {
@@ -341,8 +361,8 @@
           },
           "data": {
             "type": "string",
-            "maxLength": 51200,
-            "description": "Text data to store (up to 50KB)"
+            "maxLength": 2097152,
+            "description": "Text data to store (up to 2MB)"
           }
         },
         "required": ["data"]

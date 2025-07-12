@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -21,6 +22,7 @@ import (
 
 type Handlers struct {
 	DB db.DBInterface
+	S3 db.S3Interface
 }
 
 // generateOwnerToken generates a 128-bit random token and encodes it as base64
@@ -99,9 +101,6 @@ func (h *Handlers) PostHandler(c *gin.Context) {
 		return
 	}
 
-	// Handle data post
-	recordType := "D"
-
 	// For data posts, use the raw data as-is (already URL-decoded by Gin for form data)
 	// Only URL decode if this came from JSON and might be manually encoded
 	var processedData string
@@ -118,15 +117,26 @@ func (h *Handlers) PostHandler(c *gin.Context) {
 		}
 	}
 
-	// Check data length (50KB max)
+	// Check data length (2MB max)
 	dataLen := len(processedData)
 	log.Printf("DEBUG: processedData length = %d bytes", dataLen)
-	if dataLen > 51200 {
-		utils.RespondWithError(c, http.StatusForbidden, "error", fmt.Sprintf("Data too long (%d bytes, 50KB max)", dataLen))
+	if dataLen > 2097152 {
+		utils.RespondWithError(c, http.StatusForbidden, "error", fmt.Sprintf("Data too long (%d bytes, 2MB max)", dataLen))
 		return
 	}
 
-	finalValue := processedData
+	// Determine storage type and prepare data
+	var recordType string
+	var finalValue string
+	var s3Key string
+
+	if dataLen <= 10240 { // 10KB or less: store in DynamoDB
+		recordType = "D"
+		finalValue = processedData
+	} else { // Over 10KB: store in S3
+		recordType = "S"
+		finalValue = "" // Empty in DynamoDB, data will be in S3
+	}
 
 	// Calculate TTL and code length
 	ettl, codeLength, err := utils.CalculateTTL(ttl)
@@ -145,6 +155,11 @@ func (h *Handlers) PostHandler(c *gin.Context) {
 			return
 		}
 
+		// Set S3 key if using S3 storage
+		if recordType == "S" {
+			s3Key = "S/" + code
+		}
+
 		// Get the client IP (Gin's ClientIP handles X-Forwarded-For, X-Real-IP, etc.)
 		clientIP := c.ClientIP()
 
@@ -161,17 +176,33 @@ func (h *Handlers) PostHandler(c *gin.Context) {
 			Owner:   ownerID,
 		}
 
-		log.Printf("Attempting to store data - Code: %s, Value: %s",
-			code,
-			func() string {
-				if len(finalValue) > 50 {
-					return finalValue[:50] + "..."
+		log.Printf("Attempting to store data - Code: %s, Type: %s, Size: %d bytes",
+			code, recordType, dataLen)
+
+		// Store in S3 first if needed (before DynamoDB to ensure data is available)
+		if recordType == "S" {
+			s3Err := h.S3.PutObject(s3Key, []byte(processedData))
+			if s3Err != nil {
+				log.Printf("Failed to store data in S3: %v", s3Err)
+				// Check for specific S3 errors
+				errorMsg := s3Err.Error()
+				if strings.Contains(errorMsg, "AccessDenied") || strings.Contains(errorMsg, "Forbidden") {
+					utils.RespondWithError(c, http.StatusInternalServerError, "error", "storage service access denied")
+				} else if strings.Contains(errorMsg, "ServiceUnavailable") || strings.Contains(errorMsg, "SlowDown") {
+					utils.RespondWithError(c, http.StatusServiceUnavailable, "error", "storage service temporarily unavailable")
+				} else if strings.Contains(errorMsg, "NoSuchBucket") {
+					utils.RespondWithError(c, http.StatusInternalServerError, "error", "storage configuration error")
+				} else {
+					utils.RespondWithError(c, http.StatusInternalServerError, "error", "failed to store data")
 				}
-				return finalValue
-			}())
+				return
+			}
+			log.Printf("Successfully stored data in S3 - Key: %s", s3Key)
+		}
+
 		insertErr = h.DB.PutRedirect(record)
 		if insertErr == nil {
-			log.Printf("Successfully stored data - Code: %s", code)
+			log.Printf("Successfully stored metadata - Code: %s", code)
 
 			// Set the owner ID cookie (30 days expiration, no HttpOnly so JS can read for delete button)
 			c.SetCookie("id", ownerID, 30*24*60*60, "/", "", false, false)
@@ -313,8 +344,8 @@ func (h *Handlers) PutHandler(c *gin.Context) {
 		return
 	}
 
-	// Smart truncation to 50KB (51200 bytes) while preserving UTF-8
-	const maxBytes = 51200
+	// Smart truncation to 2MB (2097152 bytes) while preserving UTF-8
+	const maxBytes = 2097152
 	finalData := rawData
 	if len(rawData) > maxBytes {
 		// Find the longest valid UTF-8 prefix within the limit
@@ -344,6 +375,20 @@ func (h *Handlers) PutHandler(c *gin.Context) {
 		return
 	}
 
+	// Determine storage type for PUT data
+	dataLen := len(finalData)
+	var recordType string
+	var finalValue string
+	var s3Key string
+
+	if dataLen <= 10240 { // 10KB or less: store in DynamoDB
+		recordType = "D"
+		finalValue = finalData
+	} else { // Over 10KB: store in S3
+		recordType = "S"
+		finalValue = "" // Empty in DynamoDB, data will be in S3
+	}
+
 	// Use default 1d TTL for PUT requests
 	ettl, codeLength, err := utils.CalculateTTL("1d")
 	if err != nil {
@@ -361,6 +406,11 @@ func (h *Handlers) PutHandler(c *gin.Context) {
 			return
 		}
 
+		// Set S3 key if using S3 storage
+		if recordType == "S" {
+			s3Key = "S/" + code
+		}
+
 		// Get the client IP
 		clientIP := c.ClientIP()
 
@@ -369,18 +419,40 @@ func (h *Handlers) PutHandler(c *gin.Context) {
 
 		record := &db.RedirectRecord{
 			Code:    code,
-			Typ:     "D", // Data type
-			Val:     finalData,
+			Typ:     recordType,
+			Val:     finalValue,
 			Ettl:    ettl,
 			Created: createdTime,
 			IP:      clientIP,
 			Owner:   ownerID,
 		}
 
-		log.Printf("PUT: Attempting to store data - Code: %s, Size: %d bytes", code, len(finalData))
+		log.Printf("PUT: Attempting to store data - Code: %s, Type: %s, Size: %d bytes", code, recordType, dataLen)
+
+		// Store in S3 first if needed
+		if recordType == "S" {
+			s3Err := h.S3.PutObject(s3Key, []byte(finalData))
+			if s3Err != nil {
+				log.Printf("PUT: Failed to store data in S3: %v", s3Err)
+				// Check for specific S3 errors
+				errorMsg := s3Err.Error()
+				if strings.Contains(errorMsg, "AccessDenied") || strings.Contains(errorMsg, "Forbidden") {
+					c.String(http.StatusInternalServerError, "Error: Storage service access denied\n")
+				} else if strings.Contains(errorMsg, "ServiceUnavailable") || strings.Contains(errorMsg, "SlowDown") {
+					c.String(http.StatusServiceUnavailable, "Error: Storage service temporarily unavailable\n")
+				} else if strings.Contains(errorMsg, "NoSuchBucket") {
+					c.String(http.StatusInternalServerError, "Error: Storage configuration error\n")
+				} else {
+					c.String(http.StatusInternalServerError, "Error: Failed to store data\n")
+				}
+				return
+			}
+			log.Printf("PUT: Successfully stored data in S3 - Key: %s", s3Key)
+		}
+
 		insertErr = h.DB.PutRedirect(record)
 		if insertErr == nil {
-			log.Printf("PUT: Successfully stored data - Code: %s", code)
+			log.Printf("PUT: Successfully stored metadata - Code: %s", code)
 
 			// Set the owner ID cookie (30 days expiration, no HttpOnly)
 			c.SetCookie("id", ownerID, 30*24*60*60, "/", "", false, false)

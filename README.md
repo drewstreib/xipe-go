@@ -125,7 +125,7 @@ ko build .
 ## Security Features
 
 - **Owner-based Deletion**: Only creators can delete their pastes
-- **Size Limits**: 50KB maximum paste size
+- **Size Limits**: 2MB maximum paste size
 - **IP Tracking**: Creator IP stored for abuse prevention
 - **Input Sanitization**: Protection against XSS and injection attacks
 - **Secure Tokens**: 128-bit cryptographically secure owner tokens
@@ -175,7 +175,7 @@ Create a new paste.
 
 **Error Responses**:
 - `400` - Invalid parameters
-- `403` - Data too long (50KB max)
+- `403` - Data too long (2MB max)
 - `500` - Internal server error
 - `529` - Unable to generate unique code
 

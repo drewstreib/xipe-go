@@ -30,8 +30,14 @@ func main() {
 		log.Fatal("Failed to create DynamoDB client:", err)
 	}
 
+	s3Client, err := db.NewS3Client()
+	if err != nil {
+		log.Fatal("Failed to create S3 client:", err)
+	}
+
 	h := &handlers.Handlers{
 		DB: dbClient,
+		S3: s3Client,
 	}
 
 	r := gin.Default()

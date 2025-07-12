@@ -30,3 +30,21 @@ func (m *MockDB) GetCacheSize() int {
 	args := m.Called()
 	return args.Int(0)
 }
+
+// MockS3 is a mock implementation of S3Interface for testing
+type MockS3 struct {
+	mock.Mock
+}
+
+func (m *MockS3) PutObject(key string, data []byte) error {
+	args := m.Called(key, data)
+	return args.Error(0)
+}
+
+func (m *MockS3) GetObject(key string) ([]byte, error) {
+	args := m.Called(key)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]byte), args.Error(1)
+}

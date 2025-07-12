@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"regexp"
+	"strings"
 
 	"github.com/drewstreib/xipe-go/utils"
 	"github.com/gin-gonic/gin"
@@ -87,10 +89,35 @@ func (h *Handlers) DataHandler(c *gin.Context) {
 	// Check if this is from a successful creation
 	fromSuccess := c.Query("from") == "success"
 
-	// Only handle data/pastebin type
-	if redirect.Typ != "D" {
+	// Handle data/pastebin types (both D and S)
+	if redirect.Typ != "D" && redirect.Typ != "S" {
 		utils.RespondWithError(c, http.StatusNotFound, "error", "Content not found")
 		return
+	}
+
+	// Get the actual data content
+	var dataContent string
+	if redirect.Typ == "D" {
+		// Data stored directly in DynamoDB
+		dataContent = redirect.Val
+	} else if redirect.Typ == "S" {
+		// Data stored in S3, need to fetch it
+		s3Key := "S/" + code
+		s3Data, err := h.S3.GetObject(s3Key)
+		if err != nil {
+			// Check for specific S3 errors
+			errorMsg := err.Error()
+			if strings.Contains(errorMsg, "NoSuchKey") || strings.Contains(errorMsg, "NotFound") {
+				// S3 object not found - treat as 404 since DynamoDB record exists but S3 data is missing
+				utils.RespondWithError(c, http.StatusNotFound, "error", "Content not found or has expired")
+			} else {
+				// Other S3 errors (access denied, service unavailable, etc.)
+				log.Printf("S3 error retrieving %s: %v", s3Key, err)
+				utils.RespondWithError(c, http.StatusInternalServerError, "error", "Failed to retrieve content")
+			}
+			return
+		}
+		dataContent = string(s3Data)
 	}
 
 	// Return response based on client type
@@ -104,7 +131,7 @@ func (h *Handlers) DataHandler(c *gin.Context) {
 		c.HTML(http.StatusOK, "data.html", gin.H{
 			"code":         code,
 			"url":          fullURL,
-			"data":         redirect.Val,
+			"data":         dataContent,
 			"fromSuccess":  fromSuccess,
 			"created":      redirect.Created,
 			"expires":      redirect.Ettl,
@@ -113,7 +140,7 @@ func (h *Handlers) DataHandler(c *gin.Context) {
 		})
 	} else {
 		// API clients get raw content as plain text
-		c.String(http.StatusOK, redirect.Val)
+		c.String(http.StatusOK, dataContent)
 	}
 }
 

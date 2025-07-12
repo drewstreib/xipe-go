@@ -177,7 +177,7 @@
         <div class="form-section">
             <form action="/?input=urlencoded" method="POST">
                 <div class="form-group">
-                    <textarea id="data" name="data" placeholder="Paste your text here... (text over 50KB will be truncated)" required></textarea>
+                    <textarea id="data" name="data" placeholder="Paste your text here... (text over 2MB will be truncated)" required></textarea>
                 </div>
                 
                 <div class="form-controls">
@@ -297,10 +297,10 @@ shorturl = requests.post(<span style="color: #FF9E64;">'https://xi.pe/'</span>, 
             let dataValue = textarea.value;
             const originalLength = getUTF8ByteLength(dataValue);
             
-            // Always trim if over 50KB based on server byte length (UTF-8 + line endings)
+            // Always trim if over 2MB based on server byte length (UTF-8 + line endings)
             const originalServerBytes = getServerByteLength(dataValue);
-            if (originalServerBytes > 51200) {
-                dataValue = trimToByteLength(dataValue, 51200);
+            if (originalServerBytes > 2097152) {
+                dataValue = trimToByteLength(dataValue, 2097152);
                 textarea.value = dataValue; // Update the textarea with trimmed content
                 const newLength = getUTF8ByteLength(dataValue);
                 const newServerBytes = getServerByteLength(dataValue);

@@ -26,7 +26,7 @@ func TestPostHandler(t *testing.T) {
 		body           string
 		contentType    string
 		userAgent      string
-		setupMock      func(*db.MockDB)
+		setupMock      func(*db.MockDB, *db.MockS3)
 		expectedStatus int
 		expectedBody   map[string]interface{}
 		checkBody      bool
@@ -38,7 +38,7 @@ func TestPostHandler(t *testing.T) {
 			body:           `{"ttl":"1d"}`,
 			contentType:    "application/json",
 			userAgent:      "curl/7.68.0",
-			setupMock:      func(m *db.MockDB) {},
+			setupMock:      func(m *db.MockDB, s *db.MockS3) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: map[string]interface{}{
 				"status":      "error",
@@ -52,7 +52,7 @@ func TestPostHandler(t *testing.T) {
 			body:           `{"ttl":"2d","data":"Hello, world!"}`,
 			contentType:    "application/json",
 			userAgent:      "curl/7.68.0",
-			setupMock:      func(m *db.MockDB) {},
+			setupMock:      func(m *db.MockDB, s *db.MockS3) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: map[string]interface{}{
 				"status":      "error",
@@ -61,16 +61,16 @@ func TestPostHandler(t *testing.T) {
 			checkBody: true,
 		},
 		{
-			name:           "JSON: Data too long (exceeds 50KB)",
+			name:           "JSON: Data too long (exceeds 2MB)",
 			query:          "",
-			body:           `{"ttl":"1d","data":"` + strings.Repeat("a", 51201) + `"}`,
+			body:           `{"ttl":"1d","data":"` + strings.Repeat("a", 2097153) + `"}`,
 			contentType:    "application/json",
 			userAgent:      "curl/7.68.0",
-			setupMock:      func(m *db.MockDB) {},
+			setupMock:      func(m *db.MockDB, s *db.MockS3) {},
 			expectedStatus: http.StatusForbidden,
 			expectedBody: map[string]interface{}{
 				"status":      "error",
-				"description": "Data too long (51201 bytes, 50KB max)",
+				"description": "Data too long (2097153 bytes, 2MB max)",
 			},
 			checkBody: true,
 		},
@@ -80,7 +80,7 @@ func TestPostHandler(t *testing.T) {
 			body:        `{"ttl":"1d","data":"Hello, world!"}`,
 			contentType: "application/json",
 			userAgent:   "curl/7.68.0",
-			setupMock: func(m *db.MockDB) {
+			setupMock: func(m *db.MockDB, s *db.MockS3) {
 				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
 					return r.Typ == "D" && r.Val == "Hello, world!" && len(r.Code) == 4 && r.Owner != ""
 				})).Return(nil)
@@ -94,9 +94,30 @@ func TestPostHandler(t *testing.T) {
 			body:        `{"ttl":"1d","data":"<script>alert('test')</script><h1>Hello & goodbye</h1>"}`,
 			contentType: "application/json",
 			userAgent:   "curl/7.68.0",
-			setupMock: func(m *db.MockDB) {
+			setupMock: func(m *db.MockDB, s *db.MockS3) {
 				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
 					return r.Typ == "D" && r.Val == "<script>alert('test')</script><h1>Hello & goodbye</h1>" && len(r.Code) == 4 && r.Owner != ""
+				})).Return(nil)
+			},
+			expectedStatus: http.StatusOK,
+			checkBody:      false,
+		},
+		{
+			name:        "JSON: Large data stored in S3 (>10KB)",
+			query:       "",
+			body:        `{"ttl":"1d","data":"` + strings.Repeat("a", 15000) + `"}`,
+			contentType: "application/json",
+			userAgent:   "curl/7.68.0",
+			setupMock: func(m *db.MockDB, s *db.MockS3) {
+				// S3 should be called to store the data
+				s.On("PutObject", mock.MatchedBy(func(key string) bool {
+					return strings.HasPrefix(key, "S/") && len(key) == 6 // S/ + 4-char code
+				}), mock.MatchedBy(func(data []byte) bool {
+					return len(data) == 15000
+				})).Return(nil)
+				// DynamoDB should be called with empty val and type S
+				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
+					return r.Typ == "S" && r.Val == "" && len(r.Code) == 4 && r.Owner != ""
 				})).Return(nil)
 			},
 			expectedStatus: http.StatusOK,
@@ -108,13 +129,47 @@ func TestPostHandler(t *testing.T) {
 			body:        "ttl=1d&data=" + url.QueryEscape("<div>Test HTML & entities</div>"),
 			contentType: "application/x-www-form-urlencoded",
 			userAgent:   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-			setupMock: func(m *db.MockDB) {
+			setupMock: func(m *db.MockDB, s *db.MockS3) {
 				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
 					return r.Typ == "D" && r.Val == "<div>Test HTML & entities</div>" && len(r.Code) == 4 && r.Owner != ""
 				})).Return(nil)
 			},
 			expectedStatus: http.StatusOK,
 			checkBody:      false,
+		},
+		{
+			name:        "JSON: S3 storage failure - access denied",
+			query:       "",
+			body:        `{"ttl":"1d","data":"` + strings.Repeat("a", 15000) + `"}`,
+			contentType: "application/json",
+			userAgent:   "curl/7.68.0",
+			setupMock: func(m *db.MockDB, s *db.MockS3) {
+				// S3 returns access denied error
+				s.On("PutObject", mock.AnythingOfType("string"), mock.AnythingOfType("[]uint8")).Return(errors.New("AccessDenied: Access denied"))
+			},
+			expectedStatus: http.StatusInternalServerError,
+			expectedBody: map[string]interface{}{
+				"status":      "error",
+				"description": "storage service access denied",
+			},
+			checkBody: true,
+		},
+		{
+			name:        "JSON: S3 storage failure - service unavailable",
+			query:       "",
+			body:        `{"ttl":"1d","data":"` + strings.Repeat("a", 15000) + `"}`,
+			contentType: "application/json",
+			userAgent:   "curl/7.68.0",
+			setupMock: func(m *db.MockDB, s *db.MockS3) {
+				// S3 returns service unavailable error
+				s.On("PutObject", mock.AnythingOfType("string"), mock.AnythingOfType("[]uint8")).Return(errors.New("ServiceUnavailable: Service temporarily unavailable"))
+			},
+			expectedStatus: http.StatusServiceUnavailable,
+			expectedBody: map[string]interface{}{
+				"status":      "error",
+				"description": "storage service temporarily unavailable",
+			},
+			checkBody: true,
 		},
 
 		// URL-encoded format tests
@@ -124,7 +179,7 @@ func TestPostHandler(t *testing.T) {
 			body:           "ttl=1d",
 			contentType:    "application/x-www-form-urlencoded",
 			userAgent:      "curl/7.68.0",
-			setupMock:      func(m *db.MockDB) {},
+			setupMock:      func(m *db.MockDB, s *db.MockS3) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: map[string]interface{}{
 				"status":      "error",
@@ -138,7 +193,7 @@ func TestPostHandler(t *testing.T) {
 			body:        "ttl=1d&data=Hello%20world&format=html",
 			contentType: "application/x-www-form-urlencoded",
 			userAgent:   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-			setupMock: func(m *db.MockDB) {
+			setupMock: func(m *db.MockDB, s *db.MockS3) {
 				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
 					return r.Typ == "D" && r.Val == "Hello world" && len(r.Code) == 4 && r.Owner != ""
 				})).Return(nil)
@@ -151,9 +206,10 @@ func TestPostHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockDB := new(db.MockDB)
-			tt.setupMock(mockDB)
+			mockS3 := new(db.MockS3)
+			tt.setupMock(mockDB, mockS3)
 
-			h := &Handlers{DB: mockDB}
+			h := &Handlers{DB: mockDB, S3: mockS3}
 
 			w := httptest.NewRecorder()
 			c, router := gin.CreateTestContext(w)
@@ -181,6 +237,7 @@ func TestPostHandler(t *testing.T) {
 			}
 
 			mockDB.AssertExpectations(t)
+			mockS3.AssertExpectations(t)
 		})
 	}
 }
@@ -194,7 +251,7 @@ func TestDeleteHandler(t *testing.T) {
 		ownerID        string
 		setCookie      bool
 		userAgent      string
-		setupMock      func(*db.MockDB)
+		setupMock      func(*db.MockDB, *db.MockS3)
 		expectedStatus int
 		expectedBody   map[string]interface{}
 		checkBody      bool
@@ -206,7 +263,7 @@ func TestDeleteHandler(t *testing.T) {
 			ownerID:   "validOwner123",
 			setCookie: true,
 			userAgent: "curl/7.68.0",
-			setupMock: func(m *db.MockDB) {
+			setupMock: func(m *db.MockDB, s *db.MockS3) {
 				m.On("DeleteRedirect", "abc123", "validOwner123").Return(nil)
 			},
 			expectedStatus: http.StatusOK,
@@ -222,7 +279,7 @@ func TestDeleteHandler(t *testing.T) {
 			ownerID:   "validOwner123",
 			setCookie: true,
 			userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-			setupMock: func(m *db.MockDB) {
+			setupMock: func(m *db.MockDB, s *db.MockS3) {
 				m.On("DeleteRedirect", "abc123", "validOwner123").Return(nil)
 			},
 			expectedStatus: http.StatusOK, // Gin test bug: should be 301 but records as 200
@@ -234,7 +291,7 @@ func TestDeleteHandler(t *testing.T) {
 			code:           "abc123",
 			setCookie:      false,
 			userAgent:      "curl/7.68.0",
-			setupMock:      func(m *db.MockDB) {},
+			setupMock:      func(m *db.MockDB, s *db.MockS3) {},
 			expectedStatus: http.StatusUnauthorized,
 			expectedBody: map[string]interface{}{
 				"status":      "error",
@@ -248,7 +305,7 @@ func TestDeleteHandler(t *testing.T) {
 			ownerID:   "wrongOwner",
 			setCookie: true,
 			userAgent: "curl/7.68.0",
-			setupMock: func(m *db.MockDB) {
+			setupMock: func(m *db.MockDB, s *db.MockS3) {
 				m.On("DeleteRedirect", "abc123", "wrongOwner").Return(&types.ConditionalCheckFailedException{})
 			},
 			expectedStatus: http.StatusUnauthorized,
@@ -263,9 +320,10 @@ func TestDeleteHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockDB := new(db.MockDB)
-			tt.setupMock(mockDB)
+			mockS3 := new(db.MockS3)
+			tt.setupMock(mockDB, mockS3)
 
-			h := &Handlers{DB: mockDB}
+			h := &Handlers{DB: mockDB, S3: mockS3}
 
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
@@ -296,6 +354,7 @@ func TestDeleteHandler(t *testing.T) {
 			}
 
 			mockDB.AssertExpectations(t)
+			mockS3.AssertExpectations(t)
 		})
 	}
 }
@@ -306,14 +365,14 @@ func TestPutHandler(t *testing.T) {
 	tests := []struct {
 		name           string
 		body           string
-		setupMock      func(*db.MockDB)
+		setupMock      func(*db.MockDB, *db.MockS3)
 		expectedStatus int
 		checkResponse  func(t *testing.T, response string)
 	}{
 		{
 			name: "Successful PUT with valid UTF-8 text",
 			body: "Hello, world! 👋",
-			setupMock: func(m *db.MockDB) {
+			setupMock: func(m *db.MockDB, s *db.MockS3) {
 				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
 					return r.Typ == "D" && r.Val == "Hello, world! 👋" && len(r.Code) == 4 && r.Owner != ""
 				})).Return(nil)
@@ -330,7 +389,7 @@ func TestPutHandler(t *testing.T) {
 		{
 			name:           "Invalid UTF-8 input",
 			body:           string([]byte{0xff, 0xfe, 0xfd}), // Invalid UTF-8
-			setupMock:      func(m *db.MockDB) {},
+			setupMock:      func(m *db.MockDB, s *db.MockS3) {},
 			expectedStatus: http.StatusBadRequest,
 			checkResponse: func(t *testing.T, response string) {
 				assert.Equal(t, "Error: Input text must be UTF-8\n", response)
@@ -339,7 +398,7 @@ func TestPutHandler(t *testing.T) {
 		{
 			name:           "Empty content",
 			body:           "",
-			setupMock:      func(m *db.MockDB) {},
+			setupMock:      func(m *db.MockDB, s *db.MockS3) {},
 			expectedStatus: http.StatusBadRequest,
 			checkResponse: func(t *testing.T, response string) {
 				assert.Equal(t, "Error: Cannot store empty content\n", response)
@@ -348,7 +407,7 @@ func TestPutHandler(t *testing.T) {
 		{
 			name: "Whitespace-only content",
 			body: "   \n\t   ",
-			setupMock: func(m *db.MockDB) {
+			setupMock: func(m *db.MockDB, s *db.MockS3) {
 				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
 					return r.Typ == "D" && r.Val == "   \n\t   " && len(r.Code) == 4 && r.Owner != ""
 				})).Return(nil)
@@ -361,9 +420,12 @@ func TestPutHandler(t *testing.T) {
 		{
 			name: "Large input gets truncated",
 			body: strings.Repeat("a", 60000), // 60KB
-			setupMock: func(m *db.MockDB) {
+			setupMock: func(m *db.MockDB, s *db.MockS3) {
+				s.On("PutObject", mock.AnythingOfType("string"), mock.MatchedBy(func(data []byte) bool {
+					return len(data) <= 2097152
+				})).Return(nil)
 				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
-					return r.Typ == "D" && len(r.Val) <= 51200 && r.Owner != ""
+					return r.Typ == "S" && r.Val == "" && r.Owner != ""
 				})).Return(nil)
 			},
 			expectedStatus: http.StatusOK,
@@ -374,7 +436,7 @@ func TestPutHandler(t *testing.T) {
 		{
 			name: "Database error during store",
 			body: "Valid content",
-			setupMock: func(m *db.MockDB) {
+			setupMock: func(m *db.MockDB, s *db.MockS3) {
 				m.On("PutRedirect", mock.AnythingOfType("*db.RedirectRecord")).Return(errors.New("database connection failed"))
 			},
 			expectedStatus: http.StatusInternalServerError,
@@ -385,7 +447,7 @@ func TestPutHandler(t *testing.T) {
 		{
 			name: "Multiple collision retries then success",
 			body: "Test content",
-			setupMock: func(m *db.MockDB) {
+			setupMock: func(m *db.MockDB, s *db.MockS3) {
 				// First 3 attempts fail with conditional check (collision)
 				m.On("PutRedirect", mock.AnythingOfType("*db.RedirectRecord")).Return(&types.ConditionalCheckFailedException{}).Times(3)
 				// 4th attempt succeeds
@@ -399,7 +461,7 @@ func TestPutHandler(t *testing.T) {
 		{
 			name: "All collision retries fail",
 			body: "Test content",
-			setupMock: func(m *db.MockDB) {
+			setupMock: func(m *db.MockDB, s *db.MockS3) {
 				// All 5 attempts fail with conditional check (collision)
 				m.On("PutRedirect", mock.AnythingOfType("*db.RedirectRecord")).Return(&types.ConditionalCheckFailedException{}).Times(5)
 			},
@@ -411,7 +473,7 @@ func TestPutHandler(t *testing.T) {
 		{
 			name: "Single character input",
 			body: "a",
-			setupMock: func(m *db.MockDB) {
+			setupMock: func(m *db.MockDB, s *db.MockS3) {
 				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
 					return r.Typ == "D" && r.Val == "a" && len(r.Code) == 4 && r.Owner != ""
 				})).Return(nil)
@@ -427,10 +489,11 @@ func TestPutHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock DB
 			mockDB := new(db.MockDB)
-			tt.setupMock(mockDB)
+			mockS3 := new(db.MockS3)
+			tt.setupMock(mockDB, mockS3)
 
-			// Create handler with mock DB
-			h := &Handlers{DB: mockDB}
+			// Create handler with mock DB and S3
+			h := &Handlers{DB: mockDB, S3: mockS3}
 
 			// Create router
 			r := gin.New()
@@ -456,6 +519,7 @@ func TestPutHandler(t *testing.T) {
 
 			// Verify mock expectations
 			mockDB.AssertExpectations(t)
+			mockS3.AssertExpectations(t)
 		})
 	}
 }

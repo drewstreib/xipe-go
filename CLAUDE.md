@@ -9,6 +9,7 @@ xipe (zippy) is a high-performance pastebin service for xi.pe, built with Go and
 - **Language**: Go 1.24.3
 - **Web Framework**: Gin (github.com/gin-gonic/gin)
 - **Database**: AWS DynamoDB
+- **Object Storage**: AWS S3 (for files >10KB)
 - **Cache**: HashiCorp golang-lru/v2/expirable (LRU cache with TTL)
 - **Testing**: testify/assert, testify/mock
 
@@ -47,7 +48,7 @@ xipe-go/
 - **Storage**: DynamoDB table "xipe_redirects" with conditional writes
 - **Owner Authentication**: 128-bit random tokens for deletion access
 - **Features**:
-  - Store up to 50KB of text data
+  - Store up to 2MB of text data (up to 10KB stored in DynamoDB, larger files stored in S3)
   - Syntax highlighting with highlight.js
   - Dynamic line numbers toggle
   - Optional syntax highlighting toggle
@@ -88,14 +89,35 @@ xipe-go/
 - **Content**: Usage instructions and service information
 - **Stats**: `/api/stats` endpoint for service metrics
 
+## Storage Architecture
+
+### Hybrid Storage System
+xipe uses a hybrid storage approach to efficiently handle files of different sizes:
+
+- **Small Files (≤10KB)**: Stored directly in DynamoDB for fast access
+- **Large Files (>10KB, ≤2MB)**: Content stored in S3, metadata in DynamoDB
+
+### Storage Decision Logic
+1. **Data ≤10KB**: Record type "D", content stored in DynamoDB `val` field
+2. **Data >10KB**: Record type "S", content stored in S3 bucket `xipe-data` with key `S/{code}`, DynamoDB `val` field empty
+
+### S3 Configuration
+- **Bucket**: `xipe-data`
+- **Region**: `us-east-1` 
+- **Object Key Format**: `S/{code}` (e.g., `S/AbC4D`)
+- **Access**: Same AWS credentials as DynamoDB
+- **Expiration**: Objects expire after 30 days via S3 lifecycle policy (independent of DynamoDB TTL)
+- **Overwriting**: Tolerant of overwriting existing objects when codes are reused after expiration
+- **Error Handling**: Specific HTTP status codes for different S3 errors (access denied, service unavailable, object not found)
+
 ## Database Schema
 ```
 DynamoDB Table: xipe_redirects
 Primary Key: code (string)
 Attributes:
   - code: string (4-6 chars, auto-generated)
-  - typ: string ("D" for data/pastebin)
-  - val: string (data content)
+  - typ: string ("D" for DynamoDB storage, "S" for S3 storage)
+  - val: string (data content for type "D", empty for type "S")
   - ettl: number (optional, TTL in epoch seconds)
   - created: number (creation timestamp in epoch seconds)
   - ip: string (creator's IP address)
@@ -104,6 +126,7 @@ Attributes:
 TTL Configuration:
   - Enable TTL on 'ettl' attribute in DynamoDB
   - Items automatically expire after TTL timestamp
+  - S3 objects cleaned up separately via lifecycle policy
 ```
 
 ## Testing Strategy
@@ -238,10 +261,13 @@ gh auth token | docker login ghcr.io -u $(gh api user --jq .login) --password-st
 ```
 
 ### Requirements
-- AWS credentials with DynamoDB access
+- AWS credentials with DynamoDB and S3 access
 - DynamoDB table "xipe_redirects" must exist with:
   - Primary key: "code" (String)
   - TTL enabled on "ettl" attribute
+- S3 bucket "xipe-data" must exist with:
+  - Public access blocked (private bucket)
+  - 30-day lifecycle policy for object expiration (optional)
 - Docker/Docker Compose for containerized deployment
 - Go 1.24.3 or later for building from source
 
@@ -336,14 +362,15 @@ curl -X DELETE "http://localhost:8080/Ab3d"
 - **JSON (Default)**: `POST /` with `{"ttl":"1d","data":"content"}` in body
 - **URL-encoded**: `POST /?input=urlencoded` with form data
 - **Required Fields**: `ttl` (1d|1w|1mo) and `data`
-- **Size Limit**: 50KB for data
+- **Size Limit**: 2MB for data
 
 ### Error Handling
 - 400: Invalid parameters (ttl, malformed JSON)
 - 401: Unauthorized (delete without valid owner cookie, or wrong owner)
-- 403: Data too long (50KB max)
-- 404: Code not found or expired
-- 500: Database errors
+- 403: Data too long (2MB max)
+- 404: Code not found or expired, S3 object not found
+- 500: Database errors, S3 access denied, storage configuration errors
+- 503: S3 service temporarily unavailable
 - 529: Unable to generate unique code (very rare)
 
 ### Security Considerations
@@ -361,5 +388,5 @@ curl -X DELETE "http://localhost:8080/Ab3d"
 - **Line Numbers**: Optional line numbers with highlightjs-line-numbers.js plugin
 - **Display Modes**: 4 combinations - plain/highlighted × with/without line numbers
 - **Copy Functionality**: Always copies original plain text regardless of display formatting
-- **Text Trimming**: Client-side trimming to 50KB with proper UTF-8 byte counting
+- **Text Trimming**: Client-side trimming to 2MB with proper UTF-8 byte counting
 - **Line Ending Handling**: Accounts for \n → \r\n conversion during form submission
