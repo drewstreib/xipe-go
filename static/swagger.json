@@ -48,7 +48,7 @@
               },
               "examples": {
                 "data_example": {
-                  "summary": "Data storage",
+                  "summary": "Data storage (default)",
                   "value": {
                     "ttl": "1w", 
                     "data": "Hello, world!"
@@ -58,7 +58,8 @@
                   "summary": "URL storage",
                   "value": {
                     "ttl": "1d",
-                    "url": "https://example.com"
+                    "data": "https://example.com",
+                    "typ": "URL"
                   }
                 }
               }
@@ -356,27 +357,18 @@
             "description": "Time to live: 1d=4 chars, 1w=5 chars, 1mo=6 chars",
             "default": "1d"
           },
-          "url": {
-            "type": "string",
-            "format": "uri",
-            "maxLength": 4096,
-            "description": "URL to store (must include http:// or https://)"
-          },
           "data": {
             "type": "string",
             "maxLength": 51200,
-            "description": "Text data to store (up to 50KB)"
+            "description": "Content to store - either text data (up to 50KB) or URL (up to 4KB, must include http:// or https://)"
+          },
+          "typ": {
+            "type": "string",
+            "enum": ["URL", "Text"],
+            "description": "Optional content type: 'URL' for URL shortening, 'Text' or omit for pastebin data (default)"
           }
         },
-        "required": ["ttl"],
-        "oneOf": [
-          {
-            "required": ["url"]
-          },
-          {
-            "required": ["data"]
-          }
-        ]
+        "required": ["data"]
       },
       "CreateFormRequest": {
         "type": "object",
@@ -385,17 +377,21 @@
             "type": "string",
             "enum": ["1d", "1w", "1mo"]
           },
-          "url": {
-            "type": "string"
-          },
           "data": {
-            "type": "string"
+            "type": "string",
+            "description": "Content to store - either text data or URL"
+          },
+          "typ": {
+            "type": "string",
+            "enum": ["URL", "Text"],
+            "description": "Optional content type: 'URL' for URL shortening, 'Text' or omit for pastebin data (default)"
           },
           "format": {
             "type": "string",
             "enum": ["html"]
           }
-        }
+        },
+        "required": ["data"]
       },
       "CreateResponse": {
         "type": "object",
