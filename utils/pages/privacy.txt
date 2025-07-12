@@ -5,6 +5,9 @@
 ## Public Access
 All content you post is publicly accessible to anyone with the relevant URL.
 
+## Data Collection
+For security purposes, we collect IP addresses when content is posted. This information is not displayed to end users.
+
 ## License Grant
 You grant xi.pe and its operator a perpetual, worldwide, royalty-free license to use, display, distribute, and make available any content you post.
 
