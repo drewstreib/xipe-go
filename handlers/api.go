@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -53,8 +52,7 @@ func getOrCreateOwnerID(c *gin.Context) (string, error) {
 }
 
 func (h *Handlers) PostHandler(c *gin.Context) {
-	var ttl, rawData, typ string
-	var isDataPost bool
+	var ttl, rawData string
 
 	// Get or create owner ID for this post
 	ownerID, err := getOrCreateOwnerID(c)
@@ -69,13 +67,11 @@ func (h *Handlers) PostHandler(c *gin.Context) {
 		// Read from form body for URL-encoded data
 		ttl = c.PostForm("ttl")
 		rawData = c.PostForm("data")
-		typ = c.PostForm("typ")
 	} else {
 		// Default: expect JSON body
 		var requestBody struct {
 			TTL  string `json:"ttl"`
 			Data string `json:"data" binding:"required"`
-			Typ  string `json:"typ"`
 		}
 
 		if err := c.ShouldBindJSON(&requestBody); err != nil {
@@ -85,16 +81,6 @@ func (h *Handlers) PostHandler(c *gin.Context) {
 
 		ttl = requestBody.TTL
 		rawData = requestBody.Data
-		typ = requestBody.Typ
-	}
-
-	// Determine if this is a URL or data post based on typ parameter
-	// Default to data post if typ is not specified or is "Text"
-	if typ == "URL" {
-		isDataPost = false
-	} else {
-		// Default to data post for "Text" or empty typ
-		isDataPost = true
 	}
 
 	if rawData == "" {
@@ -113,84 +99,34 @@ func (h *Handlers) PostHandler(c *gin.Context) {
 		return
 	}
 
-	var finalValue string
-	var recordType string
+	// Handle data post
+	recordType := "D"
 
-	if isDataPost {
-		// Handle data post
-		recordType = "D"
-
-		// For data posts, use the raw data as-is (already URL-decoded by Gin for form data)
-		// Only URL decode if this came from JSON and might be manually encoded
-		var processedData string
-		if c.Query("input") == "urlencoded" {
-			// Form data is already URL-decoded by Gin
-			processedData = rawData
-		} else {
-			// JSON data might be manually URL-encoded, try to decode
-			if decodedData, err := url.QueryUnescape(rawData); err == nil {
-				processedData = decodedData
-			} else {
-				// If decoding fails, use as-is (probably wasn't URL-encoded)
-				processedData = rawData
-			}
-		}
-
-		// Check data length (50KB max)
-		dataLen := len(processedData)
-		log.Printf("DEBUG: processedData length = %d bytes", dataLen)
-		if dataLen > 51200 {
-			utils.RespondWithError(c, http.StatusForbidden, "error", fmt.Sprintf("Data too long (%d bytes, 50KB max)", dataLen))
-			return
-		}
-
-		finalValue = processedData
+	// For data posts, use the raw data as-is (already URL-decoded by Gin for form data)
+	// Only URL decode if this came from JSON and might be manually encoded
+	var processedData string
+	if c.Query("input") == "urlencoded" {
+		// Form data is already URL-decoded by Gin
+		processedData = rawData
 	} else {
-		// Handle URL post
-		recordType = "R"
-
-		// Process URL from data field
-		var processedURL string
-		if c.Query("input") == "urlencoded" {
-			// Form data is already URL-decoded by Gin
-			processedURL = rawData
+		// JSON data might be manually URL-encoded, try to decode
+		if decodedData, err := url.QueryUnescape(rawData); err == nil {
+			processedData = decodedData
 		} else {
-			// JSON data might be manually URL-encoded, try to decode
-			if decodedURL, err := url.QueryUnescape(rawData); err == nil {
-				processedURL = decodedURL
-			} else {
-				// If decoding fails, use as-is (probably wasn't URL-encoded)
-				processedURL = rawData
-			}
+			// If decoding fails, use as-is (probably wasn't URL-encoded)
+			processedData = rawData
 		}
-
-		// Check URL length (4KB max)
-		if len(processedURL) > 4096 {
-			utils.RespondWithError(c, http.StatusForbidden, "error", "URL too long (4KB max)")
-			return
-		}
-
-		// Check if URL starts with http:// or https://
-		if !strings.HasPrefix(processedURL, "http://") && !strings.HasPrefix(processedURL, "https://") {
-			utils.RespondWithError(c, http.StatusForbidden, "error", "URL must start with http:// or https://")
-			return
-		}
-
-		_, err := url.ParseRequestURI(processedURL)
-		if err != nil {
-			utils.RespondWithError(c, http.StatusBadRequest, "error", "invalid URL format")
-			return
-		}
-
-		// Check URL against Cloudflare family DNS filter
-		urlCheckResult := utils.URLCheck(processedURL)
-		if !urlCheckResult.Allowed {
-			utils.RespondWithError(c, urlCheckResult.Status, "error", urlCheckResult.Reason)
-			return
-		}
-
-		finalValue = processedURL
 	}
+
+	// Check data length (50KB max)
+	dataLen := len(processedData)
+	log.Printf("DEBUG: processedData length = %d bytes", dataLen)
+	if dataLen > 51200 {
+		utils.RespondWithError(c, http.StatusForbidden, "error", fmt.Sprintf("Data too long (%d bytes, 50KB max)", dataLen))
+		return
+	}
+
+	finalValue := processedData
 
 	// Calculate TTL and code length
 	ettl, codeLength, err := utils.CalculateTTL(ttl)
@@ -225,8 +161,7 @@ func (h *Handlers) PostHandler(c *gin.Context) {
 			Owner:   ownerID,
 		}
 
-		log.Printf("Attempting to store %s - Code: %s, Value: %s",
-			map[string]string{"R": "redirect", "D": "data"}[recordType],
+		log.Printf("Attempting to store data - Code: %s, Value: %s",
 			code,
 			func() string {
 				if len(finalValue) > 50 {
@@ -236,8 +171,7 @@ func (h *Handlers) PostHandler(c *gin.Context) {
 			}())
 		insertErr = h.DB.PutRedirect(record)
 		if insertErr == nil {
-			log.Printf("Successfully stored %s - Code: %s",
-				map[string]string{"R": "redirect", "D": "data"}[recordType], code)
+			log.Printf("Successfully stored data - Code: %s", code)
 
 			// Set the owner ID cookie (30 days expiration, no HttpOnly so JS can read for delete button)
 			c.SetCookie("id", ownerID, 30*24*60*60, "/", "", false, false)
@@ -279,7 +213,7 @@ func (h *Handlers) PostHandler(c *gin.Context) {
 		if !isDuplicateKeyError(insertErr) {
 			// Some other error occurred
 			log.Printf("DynamoDB error (not duplicate key): %v", insertErr)
-			utils.RespondWithError(c, http.StatusInternalServerError, "error", "failed to store URL")
+			utils.RespondWithError(c, http.StatusInternalServerError, "error", "failed to store data")
 			return
 		}
 		log.Printf("Duplicate key error, retrying with new code. Error: %v", insertErr)

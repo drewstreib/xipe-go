@@ -1,7 +1,7 @@
-# xipe - URL Shortener & Pastebin Service
+# xipe - Pastebin Service
 
 ## Project Overview
-xipe (zippy) is a high-performance URL shortener and pastebin service for xi.pe, built with Go and Gin framework. The service provides short, memorable URLs using 4-8 character alphanumeric codes.
+xipe (zippy) is a high-performance pastebin service for xi.pe, built with Go and Gin framework. The service provides short, memorable codes using 4-6 character alphanumeric identifiers.
 
 ## Architecture
 
@@ -18,29 +18,26 @@ xipe-go/
 ├── main.go              # Application entry point
 ├── handlers/            # HTTP request handlers
 │   ├── root.go         # Root page and stats endpoints
-│   ├── api.go          # API endpoints (/api/*)
-│   └── redirect.go     # URL redirect handler
+│   ├── api.go          # API endpoints
+│   └── data.go         # Data display handler
 ├── db/                 # Database layer
 │   ├── dynamodb.go     # DynamoDB implementation
 │   └── mock.go         # Mock DB for testing
 ├── utils/              # Utility functions
 │   ├── codegen.go      # Code generation utilities
-│   ├── response.go     # HTTP response utilities
-│   └── url_check.go    # URL content filtering
+│   └── response.go     # HTTP response utilities
 ├── templates/          # HTML templates
 │   ├── index.html      # Landing page
-│   ├── info.html       # URL redirect info page
 │   └── data.html       # Pastebin data display page
 └── test files (*_test.go)
 ```
 
 ## Key Features
 
-### 1. URL Shortening & Pastebin Service
-- **Endpoint**: `POST /` (previously /api/post, /api/urlpost)
+### 1. Pastebin Service
+- **Endpoint**: `POST /`
 - **Method**: POST (required)
 - **Input Format**: JSON body (default) or URL-encoded form data with `?input=urlencoded`
-- **Supports**: Both URL shortening and pastebin/data storage
 - **TTL Options**:
   - `1d`: 4-char code, expires in 24 hours
   - `1w`: 5-char code, expires in 1 week  
@@ -48,21 +45,19 @@ xipe-go/
 - **Code Generation**: Cryptographically random alphanumeric
 - **Retry Logic**: Up to 5 attempts on collision (returns 529 on failure)
 - **Storage**: DynamoDB table "xipe_redirects" with conditional writes
-- **Content Filtering**: DNS-based URL filtering using Cloudflare family DNS
 - **Owner Authentication**: 128-bit random tokens for deletion access
-- **Pastebin Features**:
-  - Store up to 50KB of text data (vs 4KB for URLs)
+- **Features**:
+  - Store up to 50KB of text data
   - Syntax highlighting with highlight.js
   - Dynamic line numbers toggle
   - Optional syntax highlighting toggle
   - Clean copy functionality regardless of display mode
 
-### 2. URL Redirection & Data Display
+### 2. Data Display
 - **Pattern**: `/[a-zA-Z0-9]{4,6}`
 - **Behavior**: 
   - **Static Pages**: Reserved codes (e.g., `/privacy`) serve embedded content from `utils/pages/*.txt`
-  - For URLs (typ="R"): Shows info page with target URL and metadata
-  - For Data (typ="D"): Shows data page with syntax highlighting and copy options
+  - Shows data page with syntax highlighting and copy options
 - **Fallthrough**: Catches all unmatched routes
 - **Not Found**: Returns 404 if code doesn't exist or has expired
 
@@ -77,14 +72,8 @@ xipe-go/
 - **Database**: Conditional delete with owner verification
 - **Cache Invalidation**: Automatic removal from LRU cache on successful delete
 
-### 4. URL Content Filtering
-- **Method**: DNS over HTTPS queries to Cloudflare family DNS
-- **Endpoint**: `https://family.cloudflare-dns.com/dns-query`
-- **Detection**: URLs returning 0.0.0.0 are blocked (malicious/inappropriate content)
-- **Error Handling**: 503 for DNS unavailable, 403 for blocked content
-- **Timeout**: 10-second timeout for DNS queries
 
-### 5. Static Pages System
+### 4. Static Pages System
 - **Purpose**: Serve static content pages using short URL codes (e.g., `/privacy`)
 - **Implementation**: 
   - Files stored in `utils/pages/*.txt` and embedded at build time
@@ -94,7 +83,7 @@ xipe-go/
 - **Access**: Both browser (HTML) and API (plain text) access supported
 - **Management**: Manual - add/remove .txt files in pages directory and rebuild
 
-### 6. Static Website
+### 5. Static Website
 - **Endpoint**: `/`
 - **Content**: Usage instructions and service information
 - **Stats**: `/api/stats` endpoint for service metrics
@@ -105,8 +94,8 @@ DynamoDB Table: xipe_redirects
 Primary Key: code (string)
 Attributes:
   - code: string (4-6 chars, auto-generated)
-  - typ: string ("R" for redirects, "D" for data/pastebin)
-  - val: string (target URL or data content)
+  - typ: string ("D" for data/pastebin)
+  - val: string (data content)
   - ettl: number (optional, TTL in epoch seconds)
   - created: number (creation timestamp in epoch seconds)
   - ip: string (creator's IP address)
@@ -211,13 +200,11 @@ ko apply -f config/
 - **Cache Logic**: Honors DynamoDB TTL by checking expiration before serving cached results
 - **DynamoDB session reuse** for connection pooling
 - **Lightweight Gin framework** for minimal overhead
-- **Simple key-value lookups** for fast redirects
+- **Simple key-value lookups** for fast retrieval
 - Regex validation cached at compile time
 
 ## Security Notes
 - Input validation on all user-provided keys
-- URL content filtering via Cloudflare family DNS
-- Protocol validation (requires http:// or https://)
 - No user authentication (planned for future)
 - SQL injection not possible (NoSQL database)
 - XSS protection through Go's html/template
@@ -297,36 +284,25 @@ The most common CI failures are due to formatting issues. To prevent these:
 
 ### JSON Format (Default)
 ```bash
-# Create short URL with 1-day TTL (4 char code)
-curl -X POST "http://localhost:8080/" \
-  -H "Content-Type: application/json" \
-  -d '{"ttl":"1d","url":"https://example.com"}'
-# Response: {"status":"ok","url":"http://localhost:8080/Ab3d"}
-
-# Store pastebin data
+# Store pastebin data with 1-day TTL (4 char code)
 curl -X POST "http://localhost:8080/" \
   -H "Content-Type: application/json" \
   -d '{"ttl":"1d","data":"Hello, world!"}'
 # Response: {"status":"ok","url":"http://localhost:8080/XyZ9"}
 ```
 
-### URL-Encoded Form Data (Legacy)
+### URL-Encoded Form Data
 ```bash
-# Create short URL using form data (for HTML forms)
-curl -X POST "http://localhost:8080/?input=urlencoded" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "ttl=1d&url=https%3A%2F%2Fexample.com"
-
-# Store data using form data
+# Store data using form data (for HTML forms)
 curl -X POST "http://localhost:8080/?input=urlencoded" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "ttl=1d&data=Hello%20world%21"
 ```
 
-### Using Short URLs
+### Retrieving Pastes
 ```bash
-# Use short URL
-curl -L "http://localhost:8080/Ab3d"
+# Get paste content
+curl "http://localhost:8080/Ab3d"
 ```
 
 ### Deleting Posts
@@ -357,24 +333,21 @@ curl -X DELETE "http://localhost:8080/Ab3d"
 - Consider read/write capacity based on traffic
 
 ### Input Formats
-- **JSON (Default)**: `POST /` with `{"ttl":"1d","url":"https://example.com"}` or `{"ttl":"1d","data":"content"}` in body
+- **JSON (Default)**: `POST /` with `{"ttl":"1d","data":"content"}` in body
 - **URL-encoded**: `POST /?input=urlencoded` with form data
-- **Required Fields**: `ttl` (1d|1w|1mo) and either `url` or `data` (not both)
-- **Size Limits**: 4KB for URLs, 50KB for data
+- **Required Fields**: `ttl` (1d|1w|1mo) and `data`
+- **Size Limit**: 50KB for data
 
 ### Error Handling
-- 400: Invalid parameters (ttl, url format, missing hostname, malformed JSON)
+- 400: Invalid parameters (ttl, malformed JSON)
 - 401: Unauthorized (delete without valid owner cookie, or wrong owner)
-- 403: URL blocked by content filter, URL too long (4KB max), data too long (50KB max), or missing protocol
+- 403: Data too long (50KB max)
 - 404: Code not found or expired
 - 500: Database errors
-- 503: DNS service unavailable
 - 529: Unable to generate unique code (very rare)
 
 ### Security Considerations
-- No user input in redirect codes (prevents enumeration)
-- URL validation prevents open redirect vulnerabilities
-- DNS-based content filtering blocks malicious URLs
+- No user input in codes (prevents enumeration)
 - TTL limits abuse potential
 - Owner-based deletion prevents unauthorized access
 - Same error response for "not found" vs "wrong owner" (prevents enumeration)
@@ -382,13 +355,6 @@ curl -X DELETE "http://localhost:8080/Ab3d"
 - 128-bit cryptographically secure owner tokens
 - Consider rate limiting for production
 
-### URL Content Filtering
-- **Implementation**: `utils.URLCheck()` function in `utils/url_check.go`
-- **DNS Provider**: Cloudflare family DNS (family.cloudflare-dns.com)
-- **Query Method**: DNS over HTTPS with JSON responses
-- **Blocking Logic**: URLs resolving to 0.0.0.0 are considered blocked
-- **Performance**: 10-second timeout prevents hanging requests
-- **Error Handling**: Graceful degradation on DNS service unavailability
 
 ### Pastebin Display Features
 - **Syntax Highlighting**: Uses highlight.js for code syntax highlighting

@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "xi.pe API",
-    "description": "A high-performance pastebin service providing short, memorable URLs using 4-8 character alphanumeric codes.",
+    "description": "A high-performance pastebin service providing short, memorable codes using 4-6 character alphanumeric identifiers.",
     "version": "1.0.0",
     "contact": {
       "name": "Drew Streib",
@@ -27,7 +27,7 @@
     "/": {
       "post": {
         "summary": "Store data",
-        "description": "Stores pastebin data or URLs. Supports both JSON and URL-encoded form data.",
+        "description": "Stores pastebin data. Supports both JSON and URL-encoded form data.",
         "parameters": [
           {
             "name": "input",
@@ -48,18 +48,10 @@
               },
               "examples": {
                 "data_example": {
-                  "summary": "Data storage (default)",
+                  "summary": "Data storage",
                   "value": {
                     "ttl": "1w", 
                     "data": "Hello, world!"
-                  }
-                },
-                "url_example": {
-                  "summary": "URL storage",
-                  "value": {
-                    "ttl": "1d",
-                    "data": "https://example.com",
-                    "typ": "URL"
                   }
                 }
               }
@@ -107,7 +99,7 @@
             }
           },
           "403": {
-            "description": "Forbidden - URL blocked or content too large",
+            "description": "Forbidden - content too large",
             "content": {
               "application/json": {
                 "schema": {
@@ -118,16 +110,6 @@
           },
           "500": {
             "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "Service unavailable - DNS service down",
             "content": {
               "application/json": {
                 "schema": {
@@ -218,8 +200,8 @@
     },
     "/{code}": {
       "get": {
-        "summary": "Access short URL or view data",
-        "description": "Accesses a short URL or views stored data. Returns HTML info page for browsers, raw content for API clients.",
+        "summary": "View data",
+        "description": "Views stored data. Returns HTML page for browsers, raw content for API clients.",
         "parameters": [
           {
             "name": "code",
@@ -248,13 +230,13 @@
               "text/html": {
                 "schema": {
                   "type": "string",
-                  "description": "HTML page showing URL info or data content"
+                  "description": "HTML page showing data content"
                 }
               },
               "text/plain": {
                 "schema": {
                   "type": "string",
-                  "description": "Raw URL or data content for API clients"
+                  "description": "Raw data content for API clients"
                 }
               }
             }
@@ -292,8 +274,8 @@
         }
       },
       "delete": {
-        "summary": "Delete a short URL or data",
-        "description": "Deletes a short URL or stored data. Requires owner authentication via cookie.",
+        "summary": "Delete data",
+        "description": "Deletes stored data. Requires owner authentication via cookie.",
         "parameters": [
           {
             "name": "code",
@@ -360,12 +342,7 @@
           "data": {
             "type": "string",
             "maxLength": 51200,
-            "description": "Content to store - either text data (up to 50KB) or URL (up to 4KB, must include http:// or https://)"
-          },
-          "typ": {
-            "type": "string",
-            "enum": ["URL", "Text"],
-            "description": "Optional content type: 'URL' for URL shortening, 'Text' or omit for pastebin data (default)"
+            "description": "Text data to store (up to 50KB)"
           }
         },
         "required": ["data"]
@@ -379,12 +356,7 @@
           },
           "data": {
             "type": "string",
-            "description": "Content to store - either text data or URL"
-          },
-          "typ": {
-            "type": "string",
-            "enum": ["URL", "Text"],
-            "description": "Optional content type: 'URL' for URL shortening, 'Text' or omit for pastebin data (default)"
+            "description": "Text data to store"
           },
           "format": {
             "type": "string",

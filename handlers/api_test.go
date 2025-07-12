@@ -31,21 +31,7 @@ func TestPostHandler(t *testing.T) {
 		expectedBody   map[string]interface{}
 		checkBody      bool
 	}{
-		// JSON format tests - URL posts
-		{
-			name:        "JSON: Missing ttl parameter defaults to 1d",
-			query:       "",
-			body:        `{"data":"https://example.com","typ":"URL"}`,
-			contentType: "application/json",
-			userAgent:   "curl/7.68.0",
-			setupMock: func(m *db.MockDB) {
-				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
-					return r.Typ == "R" && r.Val == "https://example.com" && len(r.Code) == 4 && r.Owner != ""
-				})).Return(nil)
-			},
-			expectedStatus: http.StatusOK,
-			checkBody:      false,
-		},
+		// JSON format tests - Data posts
 		{
 			name:           "JSON: Missing data parameter",
 			query:          "",
@@ -63,7 +49,7 @@ func TestPostHandler(t *testing.T) {
 		{
 			name:           "JSON: Invalid ttl format",
 			query:          "",
-			body:           `{"ttl":"2d","data":"https://example.com","typ":"URL"}`,
+			body:           `{"ttl":"2d","data":"Hello, world!"}`,
 			contentType:    "application/json",
 			userAgent:      "curl/7.68.0",
 			setupMock:      func(m *db.MockDB) {},
@@ -74,78 +60,6 @@ func TestPostHandler(t *testing.T) {
 			},
 			checkBody: true,
 		},
-		{
-			name:           "JSON: URL without http/https prefix",
-			query:          "",
-			body:           `{"ttl":"1d","data":"example.com","typ":"URL"}`,
-			contentType:    "application/json",
-			userAgent:      "curl/7.68.0",
-			setupMock:      func(m *db.MockDB) {},
-			expectedStatus: http.StatusForbidden,
-			expectedBody: map[string]interface{}{
-				"status":      "error",
-				"description": "URL must start with http:// or https://",
-			},
-			checkBody: true,
-		},
-		{
-			name:           "JSON: Invalid URL format",
-			query:          "",
-			body:           `{"ttl":"1d","data":"http://invalid url with spaces","typ":"URL"}`,
-			contentType:    "application/json",
-			userAgent:      "curl/7.68.0",
-			setupMock:      func(m *db.MockDB) {},
-			expectedStatus: http.StatusBadRequest,
-			expectedBody: map[string]interface{}{
-				"status":      "error",
-				"description": "invalid URL format",
-			},
-			checkBody: true,
-		},
-		{
-			name:           "JSON: URL too long (exceeds 4KB)",
-			query:          "",
-			body:           `{"ttl":"1d","data":"https://example.com/` + strings.Repeat("a", 4100) + `","typ":"URL"}`,
-			contentType:    "application/json",
-			userAgent:      "curl/7.68.0",
-			setupMock:      func(m *db.MockDB) {},
-			expectedStatus: http.StatusForbidden,
-			expectedBody: map[string]interface{}{
-				"status":      "error",
-				"description": "URL too long (4KB max)",
-			},
-			checkBody: true,
-		},
-		{
-			name:        "JSON: Successful URL storage with 1d ttl (browser)",
-			query:       "",
-			body:        `{"ttl":"1d","data":"https://example.com","typ":"URL"}`,
-			contentType: "application/json",
-			userAgent:   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-			setupMock: func(m *db.MockDB) {
-				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
-					return r.Typ == "R" && r.Val == "https://example.com" && len(r.Code) == 4 && r.Owner != ""
-				})).Return(nil)
-			},
-			expectedStatus: http.StatusOK,
-			checkBody:      false,
-		},
-		{
-			name:        "JSON: API client gets JSON response",
-			query:       "",
-			body:        `{"ttl":"1d","data":"https://example.com","typ":"URL"}`,
-			contentType: "application/json",
-			userAgent:   "curl/7.68.0",
-			setupMock: func(m *db.MockDB) {
-				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
-					return r.Typ == "R" && r.Val == "https://example.com" && len(r.Code) == 4 && r.Owner != ""
-				})).Return(nil)
-			},
-			expectedStatus: http.StatusOK,
-			checkBody:      false,
-		},
-
-		// JSON format tests - Data posts
 		{
 			name:           "JSON: Data too long (exceeds 50KB)",
 			query:          "",
@@ -205,20 +119,6 @@ func TestPostHandler(t *testing.T) {
 
 		// URL-encoded format tests
 		{
-			name:        "URLEncoded: Missing ttl parameter defaults to 1d",
-			query:       "?input=urlencoded",
-			body:        "data=https%3A%2F%2Fexample.com&typ=URL",
-			contentType: "application/x-www-form-urlencoded",
-			userAgent:   "curl/7.68.0",
-			setupMock: func(m *db.MockDB) {
-				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
-					return r.Typ == "R" && r.Val == "https://example.com" && len(r.Code) == 4 && r.Owner != ""
-				})).Return(nil)
-			},
-			expectedStatus: http.StatusOK,
-			checkBody:      false,
-		},
-		{
 			name:           "URLEncoded: Missing data parameter",
 			query:          "?input=urlencoded",
 			body:           "ttl=1d",
@@ -233,14 +133,14 @@ func TestPostHandler(t *testing.T) {
 			checkBody: true,
 		},
 		{
-			name:        "URLEncoded: Successful URL storage (browser)",
+			name:        "URLEncoded: Successful data storage (browser)",
 			query:       "?input=urlencoded",
-			body:        "ttl=1d&data=https%3A%2F%2Fexample.com&typ=URL&format=html",
+			body:        "ttl=1d&data=Hello%20world&format=html",
 			contentType: "application/x-www-form-urlencoded",
 			userAgent:   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
 			setupMock: func(m *db.MockDB) {
 				m.On("PutRedirect", mock.MatchedBy(func(r *db.RedirectRecord) bool {
-					return r.Typ == "R" && r.Val == "https://example.com" && len(r.Code) == 4 && r.Owner != ""
+					return r.Typ == "D" && r.Val == "Hello world" && len(r.Code) == 4 && r.Owner != ""
 				})).Return(nil)
 			},
 			expectedStatus: http.StatusOK,

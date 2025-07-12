@@ -87,46 +87,33 @@ func (h *Handlers) DataHandler(c *gin.Context) {
 	// Check if this is from a successful creation
 	fromSuccess := c.Query("from") == "success"
 
+	// Only handle data/pastebin type
+	if redirect.Typ != "D" {
+		utils.RespondWithError(c, http.StatusNotFound, "error", "Content not found")
+		return
+	}
+
 	// Return response based on client type
 	if utils.ShouldReturnHTML(c) {
-		// Browser clients get HTML templates
-		if redirect.Typ == "D" {
-			// Data/pastebin type - only pass first 6 chars of owner for security
-			var ownerPrefix string
-			if len(redirect.Owner) >= 6 {
-				ownerPrefix = redirect.Owner[:6]
-			}
-			c.HTML(http.StatusOK, "data.html", gin.H{
-				"code":         code,
-				"url":          fullURL,
-				"data":         redirect.Val,
-				"fromSuccess":  fromSuccess,
-				"created":      redirect.Created,
-				"expires":      redirect.Ettl,
-				"ownerPrefix":  ownerPrefix,
-				"isStaticPage": false, // Flag to indicate this is user data
-			})
-		} else {
-			// URL redirect type (default)
-			c.HTML(http.StatusOK, "url.html", gin.H{
-				"code":        code,
-				"url":         fullURL,
-				"originalUrl": redirect.Val,
-				"redirectUrl": redirect.Val,
-				"fromSuccess": fromSuccess,
-				"created":     redirect.Created,
-				"expires":     redirect.Ettl,
-			})
+		// Browser clients get HTML template
+		// Only pass first 6 chars of owner for security
+		var ownerPrefix string
+		if len(redirect.Owner) >= 6 {
+			ownerPrefix = redirect.Owner[:6]
 		}
+		c.HTML(http.StatusOK, "data.html", gin.H{
+			"code":         code,
+			"url":          fullURL,
+			"data":         redirect.Val,
+			"fromSuccess":  fromSuccess,
+			"created":      redirect.Created,
+			"expires":      redirect.Ettl,
+			"ownerPrefix":  ownerPrefix,
+			"isStaticPage": false, // Flag to indicate this is user data
+		})
 	} else {
 		// API clients get raw content as plain text
-		if redirect.Typ == "D" {
-			// Return raw data content
-			c.String(http.StatusOK, redirect.Val)
-		} else {
-			// Return raw URL
-			c.String(http.StatusOK, redirect.Val)
-		}
+		c.String(http.StatusOK, redirect.Val)
 	}
 }
 

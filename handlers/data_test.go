@@ -26,13 +26,13 @@ func TestDataHandler(t *testing.T) {
 		expectedBody   map[string]interface{}
 	}{
 		{
-			name: "Valid code - shows info page",
+			name: "Valid code - shows data page",
 			code: "test",
 			setupMock: func(m *db.MockDB) {
 				m.On("GetRedirect", "test").Return(&db.RedirectRecord{
 					Code:    "test",
-					Typ:     "R",
-					Val:     "https://example.com",
+					Typ:     "D",
+					Val:     "Hello, world!",
 					Created: 1234567890,
 					Ettl:    1234567890,
 					IP:      "192.168.1.1",
@@ -40,7 +40,7 @@ func TestDataHandler(t *testing.T) {
 			},
 			expectedStatus: http.StatusOK,
 			expectedHeader: "",
-			expectedBody:   nil, // Returns HTML info page
+			expectedBody:   nil, // Returns HTML data page
 		},
 		{
 			name: "Valid code - not found",
@@ -122,8 +122,8 @@ func TestCatchAllHandler(t *testing.T) {
 			setupMock: func(m *db.MockDB) {
 				m.On("GetRedirect", "test").Return(&db.RedirectRecord{
 					Code:    "test",
-					Typ:     "R",
-					Val:     "https://example.com",
+					Typ:     "D",
+					Val:     "Sample data",
 					Created: 1234567890,
 					Ettl:    1234567890,
 					IP:      "192.168.1.1",
@@ -131,7 +131,7 @@ func TestCatchAllHandler(t *testing.T) {
 			},
 			expectedStatus: http.StatusOK,
 			expectedHeader: "",
-			expectedBody:   nil, // Returns HTML info page
+			expectedBody:   nil, // Returns HTML data page
 		},
 		{
 			name: "Valid 5-char code",
@@ -139,8 +139,8 @@ func TestCatchAllHandler(t *testing.T) {
 			setupMock: func(m *db.MockDB) {
 				m.On("GetRedirect", "test5").Return(&db.RedirectRecord{
 					Code:    "test5",
-					Typ:     "R",
-					Val:     "https://example.com",
+					Typ:     "D",
+					Val:     "Longer data content",
 					Created: 1234567890,
 					Ettl:    1234567890,
 					IP:      "192.168.1.1",
@@ -148,7 +148,7 @@ func TestCatchAllHandler(t *testing.T) {
 			},
 			expectedStatus: http.StatusOK,
 			expectedHeader: "",
-			expectedBody:   nil, // Returns HTML info page
+			expectedBody:   nil, // Returns HTML data page
 		},
 		{
 			name: "Valid 6-char code",
@@ -156,8 +156,8 @@ func TestCatchAllHandler(t *testing.T) {
 			setupMock: func(m *db.MockDB) {
 				m.On("GetRedirect", "test66").Return(&db.RedirectRecord{
 					Code:    "test66",
-					Typ:     "R",
-					Val:     "https://example.com",
+					Typ:     "D",
+					Val:     "Even more data content",
 					Created: 1234567890,
 					Ettl:    1234567890,
 					IP:      "192.168.1.1",
@@ -165,7 +165,7 @@ func TestCatchAllHandler(t *testing.T) {
 			},
 			expectedStatus: http.StatusOK,
 			expectedHeader: "",
-			expectedBody:   nil, // Returns HTML info page
+			expectedBody:   nil, // Returns HTML data page
 		},
 		{
 			name:           "Invalid path - too short",
@@ -239,30 +239,6 @@ func TestDataHandlerBranching(t *testing.T) {
 		expectHTML     bool
 	}{
 		{
-			name:      "API client (curl) - URL redirect returns raw URL",
-			code:      "test1",
-			userAgent: "curl/7.68.0",
-			redirect: &db.RedirectRecord{
-				Code:    "test1",
-				Typ:     "R",
-				Val:     "https://example.com",
-				Created: time.Now().Unix(),
-				Owner:   "owner123",
-			},
-			setupMock: func(m *db.MockDB) {
-				m.On("GetRedirect", "test1").Return(&db.RedirectRecord{
-					Code:    "test1",
-					Typ:     "R",
-					Val:     "https://example.com",
-					Created: time.Now().Unix(),
-					Owner:   "owner123",
-				}, nil)
-			},
-			expectedStatus: http.StatusOK,
-			expectedBody:   "https://example.com",
-			expectHTML:     false,
-		},
-		{
 			name:      "API client (curl) - Data returns raw data",
 			code:      "test2",
 			userAgent: "curl/7.68.0",
@@ -287,30 +263,6 @@ func TestDataHandlerBranching(t *testing.T) {
 			expectHTML:     false,
 		},
 		{
-			name:      "Browser client - URL redirect returns HTML",
-			code:      "test3",
-			userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-			redirect: &db.RedirectRecord{
-				Code:    "test3",
-				Typ:     "R",
-				Val:     "https://example.com",
-				Created: time.Now().Unix(),
-				Owner:   "owner123",
-			},
-			setupMock: func(m *db.MockDB) {
-				m.On("GetRedirect", "test3").Return(&db.RedirectRecord{
-					Code:    "test3",
-					Typ:     "R",
-					Val:     "https://example.com",
-					Created: time.Now().Unix(),
-					Owner:   "owner123",
-				}, nil)
-			},
-			expectedStatus: http.StatusOK,
-			expectedBody:   "", // Don't check HTML content exactly
-			expectHTML:     true,
-		},
-		{
 			name:      "Browser client - Data returns HTML",
 			code:      "test4",
 			userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -333,30 +285,6 @@ func TestDataHandlerBranching(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			expectedBody:   "", // Don't check HTML content exactly
 			expectHTML:     true,
-		},
-		{
-			name:      "Unknown client defaults to plain text - URL",
-			code:      "test5",
-			userAgent: "SomeUnknownBot/1.0",
-			redirect: &db.RedirectRecord{
-				Code:    "test5",
-				Typ:     "R",
-				Val:     "https://example.com/path",
-				Created: time.Now().Unix(),
-				Owner:   "owner123",
-			},
-			setupMock: func(m *db.MockDB) {
-				m.On("GetRedirect", "test5").Return(&db.RedirectRecord{
-					Code:    "test5",
-					Typ:     "R",
-					Val:     "https://example.com/path",
-					Created: time.Now().Unix(),
-					Owner:   "owner123",
-				}, nil)
-			},
-			expectedStatus: http.StatusOK,
-			expectedBody:   "https://example.com/path",
-			expectHTML:     false,
 		},
 		{
 			name:      "Unknown client defaults to plain text - Data",

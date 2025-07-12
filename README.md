@@ -1,15 +1,14 @@
-# xipe - URL Shortener Service
+# xipe - Pastebin Service
 
-A high-performance URL shortener service for xi.pe, built with Go and AWS DynamoDB. Creates short, memorable URLs using 4-8 character alphanumeric codes with automatic expiration.
+A high-performance pastebin service for xi.pe, built with Go and AWS DynamoDB. Creates short, memorable codes using 4-6 character alphanumeric identifiers with automatic expiration.
 
 ## Features
 
-- **URL Shortening**: Generate short URLs with customizable expiration times
-- **Security First**: No automatic redirects - shows info page with target URL
-- **Content Filtering**: Built-in malicious URL detection using Cloudflare DNS
+- **Pastebin Service**: Store and share text/code snippets with customizable expiration times
+- **Syntax Highlighting**: Automatic code syntax highlighting with highlight.js
 - **High Performance**: In-memory LRU cache with TTL support
 - **REST API**: JSON API with optional form-encoded input support
-- **Automatic Cleanup**: URLs expire automatically based on TTL settings
+- **Automatic Cleanup**: Pastes expire automatically based on TTL settings
 
 ## Quick Start
 
@@ -42,13 +41,13 @@ go build -o xipe .
 
 ## API Usage
 
-### Create Short URL
+### Create Paste
 
 ```bash
-# Create short URL with 1-day expiration (4 character code)
-curl -X POST "http://localhost:8080/api/urlpost" \
+# Create paste with 1-day expiration (4 character code)
+curl -X POST "http://localhost:8080/" \
   -H "Content-Type: application/json" \
-  -d '{"ttl":"1d","url":"https://example.com"}'
+  -d '{"ttl":"1d","data":"Hello, world!"}'
 
 # Response:
 # {"status":"ok","url":"http://localhost:8080/Ab3d"}
@@ -60,13 +59,14 @@ curl -X POST "http://localhost:8080/api/urlpost" \
 - `1w` - 1 week expiration (5 character code)  
 - `1mo` - 1 month expiration (6 character code)
 
-### Access Short URL
+### Access Paste
 
-Navigate to `http://localhost:8080/[code]` to see the info page with:
-- Original URL (clickable)
+Navigate to `http://localhost:8080/[code]` to see the paste with:
+- Syntax highlighting (if code detected)
+- Line numbers toggle
+- Copy button
 - Creation timestamp
 - Expiration time
-- Short URL for copying
 
 ## Configuration
 
@@ -124,11 +124,11 @@ ko build .
 
 ## Security Features
 
-- **No Automatic Redirects**: Users see target URL before visiting
-- **Content Filtering**: URLs checked against Cloudflare family DNS
-- **URL Validation**: Only accepts properly formatted http/https URLs
+- **Owner-based Deletion**: Only creators can delete their pastes
+- **Size Limits**: 50KB maximum paste size
 - **IP Tracking**: Creator IP stored for abuse prevention
 - **Input Sanitization**: Protection against XSS and injection attacks
+- **Secure Tokens**: 128-bit cryptographically secure owner tokens
 
 ## Architecture
 
@@ -149,19 +149,19 @@ ko build .
 - **Web Framework**: Gin (high-performance HTTP)
 - **Database**: AWS DynamoDB (NoSQL)
 - **Cache**: HashiCorp golang-lru/v2 (TTL-aware)
-- **DNS Filter**: Cloudflare DNS over HTTPS
+- **Syntax Highlighting**: highlight.js
 
 ## API Reference
 
-### POST /api/urlpost
+### POST /
 
-Create a shortened URL.
+Create a new paste.
 
 **Request Body (JSON)**:
 ```json
 {
   "ttl": "1d",
-  "url": "https://example.com"
+  "data": "Your text or code here"
 }
 ```
 
@@ -175,16 +175,15 @@ Create a shortened URL.
 
 **Error Responses**:
 - `400` - Invalid parameters
-- `403` - URL blocked by content filter, URL too long (4KB max), or missing protocol
+- `403` - Data too long (50KB max)
 - `500` - Internal server error
-- `503` - DNS service unavailable
 - `529` - Unable to generate unique code
 
 ### GET /[code]
 
-Display info page for shortened URL.
+Display paste content.
 
-**Response**: HTML page with URL information
+**Response**: HTML page with paste content and syntax highlighting
 
 ### GET /api/stats
 
