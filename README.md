@@ -6,7 +6,7 @@ A high-performance pastebin service for xi.pe, built with Go and AWS DynamoDB. C
 
 - **Pastebin Service**: Store and share text/code snippets with customizable expiration times
 - **Syntax Highlighting**: Automatic code syntax highlighting with highlight.js
-- **High Performance**: In-memory LRU cache with TTL support
+- **High Performance**: In-memory LRU cache with TTL support and zstd compression
 - **REST API**: JSON API with optional form-encoded input support
 - **Automatic Cleanup**: Pastes expire automatically based on TTL settings
 

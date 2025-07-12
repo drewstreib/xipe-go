@@ -105,6 +105,7 @@ xipe uses a hybrid storage approach to efficiently handle files of different siz
 - **Bucket**: `xipe-data`
 - **Region**: `us-east-1` 
 - **Object Key Format**: `S/{code}` (e.g., `S/AbC4D`)
+- **Compression**: All objects stored with zstd level 3 compression for optimal storage efficiency
 - **Access**: Same AWS credentials as DynamoDB
 - **Expiration**: Objects expire after 30 days via S3 lifecycle policy (independent of DynamoDB TTL)
 - **Overwriting**: Tolerant of overwriting existing objects when codes are reused after expiration
@@ -222,6 +223,7 @@ ko apply -f config/
 - **In-Memory LRU Cache**: 10K item cache with 1-hour TTL reduces DynamoDB load
 - **Cache Logic**: Honors DynamoDB TTL by checking expiration before serving cached results
 - **DynamoDB session reuse** for connection pooling
+- **S3 Compression**: zstd level 3 compression reduces storage costs and transfer times
 - **Lightweight Gin framework** for minimal overhead
 - **Simple key-value lookups** for fast retrieval
 - Regex validation cached at compile time
