@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "xi.pe API",
-    "description": "A high-performance URL shortener and pastebin service providing short, memorable URLs using 4-8 character alphanumeric codes.",
+    "description": "A high-performance pastebin service providing short, memorable URLs using 4-8 character alphanumeric codes.",
     "version": "1.0.0",
     "contact": {
       "name": "Drew Streib",
@@ -25,25 +25,9 @@
   ],
   "paths": {
     "/": {
-      "get": {
-        "summary": "Get service homepage",
-        "description": "Returns the main landing page with usage instructions and service information.",
-        "responses": {
-          "200": {
-            "description": "Homepage HTML",
-            "content": {
-              "text/html": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        }
-      },
       "post": {
-        "summary": "Create short URL or store data",
-        "description": "Creates a short URL for a given URL or stores pastebin data. Supports both JSON and URL-encoded form data.",
+        "summary": "Store data",
+        "description": "Stores pastebin data or URLs. Supports both JSON and URL-encoded form data.",
         "parameters": [
           {
             "name": "input",
@@ -63,18 +47,18 @@
                 "$ref": "#/components/schemas/CreateRequest"
               },
               "examples": {
-                "url_example": {
-                  "summary": "URL shortening",
-                  "value": {
-                    "ttl": "1d",
-                    "url": "https://example.com"
-                  }
-                },
                 "data_example": {
                   "summary": "Data storage",
                   "value": {
                     "ttl": "1w", 
                     "data": "Hello, world!"
+                  }
+                },
+                "url_example": {
+                  "summary": "URL storage",
+                  "value": {
+                    "ttl": "1d",
+                    "url": "https://example.com"
                   }
                 }
               }
@@ -359,49 +343,6 @@
           }
         }
       }
-    },
-    "/api/stats": {
-      "get": {
-        "summary": "Get service statistics",
-        "description": "Returns basic service statistics and metrics.",
-        "responses": {
-          "200": {
-            "description": "Service statistics",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StatsResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/privacy": {
-      "get": {
-        "summary": "Get privacy policy",
-        "description": "Returns the service privacy policy and terms of service.",
-        "responses": {
-          "200": {
-            "description": "Privacy policy content",
-            "content": {
-              "text/html": {
-                "schema": {
-                  "type": "string",
-                  "description": "HTML page with privacy policy"
-                }
-              },
-              "text/plain": {
-                "schema": {
-                  "type": "string",
-                  "description": "Raw privacy policy text for API clients"
-                }
-              }
-            }
-          }
-        }
-      }
     }
   },
   "components": {
@@ -419,7 +360,7 @@
             "type": "string",
             "format": "uri",
             "maxLength": 4096,
-            "description": "URL to shorten (must include http:// or https://)"
+            "description": "URL to store (must include http:// or https://)"
           },
           "data": {
             "type": "string",
@@ -466,7 +407,7 @@
           "url": {
             "type": "string",
             "format": "uri",
-            "description": "URL of the created short link or data page"
+            "description": "URL of the created data page"
           }
         },
         "required": ["status", "url"]
@@ -498,20 +439,6 @@
           }
         },
         "required": ["status", "description"]
-      },
-      "StatsResponse": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": ["ok"]
-          },
-          "message": {
-            "type": "string",
-            "description": "Service status message"
-          }
-        },
-        "required": ["status"]
       }
     },
     "securitySchemes": {
@@ -522,19 +449,5 @@
         "description": "128-bit owner token for deletion access"
       }
     }
-  },
-  "tags": [
-    {
-      "name": "URL Shortening",
-      "description": "Operations for creating and managing short URLs"
-    },
-    {
-      "name": "Data Storage",
-      "description": "Operations for storing and retrieving pastebin data"
-    },
-    {
-      "name": "Management",
-      "description": "Service management and statistics"
-    }
-  ]
+  }
 }
