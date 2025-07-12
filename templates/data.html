@@ -121,19 +121,6 @@
             color: #d4d4d4;
             position: relative;
         }
-        .data-content:hover::after {
-            content: "Right-click to copy text";
-            position: absolute;
-            top: 10px;
-            right: 15px;
-            background-color: rgba(26, 26, 26, 0.9);
-            color: #cccccc;
-            padding: 4px 8px;
-            border-radius: 3px;
-            font-size: 12px;
-            font-style: italic;
-            z-index: 10;
-        }
         .data-content pre {
             margin: 0;
             padding: 0;
@@ -217,6 +204,7 @@
         <div class="status-left">
             <span class="url-display">{{.url}}</span>
             <button class="small-btn" onclick="copyToClipboard()">Copy URL</button>
+            <button class="small-btn" onclick="copyDataToClipboard()">Copy Text</button>
             <button class="small-btn delete" id="deleteButton" onclick="deleteData()" style="display: none;">Delete</button>
         </div>
         
@@ -420,15 +408,6 @@
             
             // Check if user owns this data and show delete button
             checkOwnershipAndShowDelete();
-            
-            // Add right-click copy functionality to data content
-            const dataContent = document.getElementById('dataContent');
-            if (dataContent) {
-                dataContent.addEventListener('contextmenu', function(e) {
-                    e.preventDefault();
-                    copyDataToClipboard();
-                });
-            }
         });
         
         function copyDataToClipboard() {
@@ -437,8 +416,15 @@
             
             try {
                 navigator.clipboard.writeText(textToCopy).then(() => {
-                    // Show a temporary notification
-                    showCopyNotification("Text copied to clipboard!");
+                    const copyTextBtn = document.querySelector('button[onclick="copyDataToClipboard()"]');
+                    const originalText = copyTextBtn.textContent;
+                    copyTextBtn.textContent = 'Copied!';
+                    copyTextBtn.style.backgroundColor = '#28a745';
+                    
+                    setTimeout(() => {
+                        copyTextBtn.textContent = originalText;
+                        copyTextBtn.style.backgroundColor = '#80F';
+                    }, 2000);
                 });
             } catch (err) {
                 // Fallback for older browsers
@@ -448,45 +434,19 @@
                 textArea.select();
                 document.execCommand('copy');
                 document.body.removeChild(textArea);
-                showCopyNotification("Text copied to clipboard!");
+                
+                const copyTextBtn = document.querySelector('button[onclick="copyDataToClipboard()"]');
+                const originalText = copyTextBtn.textContent;
+                copyTextBtn.textContent = 'Copied!';
+                copyTextBtn.style.backgroundColor = '#28a745';
+                
+                setTimeout(() => {
+                    copyTextBtn.textContent = originalText;
+                    copyTextBtn.style.backgroundColor = '#80F';
+                }, 2000);
             }
         }
         
-        function showCopyNotification(message) {
-            // Create or update notification
-            let notification = document.getElementById('copy-notification');
-            if (!notification) {
-                notification = document.createElement('div');
-                notification.id = 'copy-notification';
-                notification.style.cssText = `
-                    position: fixed;
-                    top: 60px;
-                    right: 20px;
-                    background-color: #2a5a3a;
-                    border: 1px solid #3a6b4a;
-                    color: #90ee90;
-                    padding: 8px 12px;
-                    border-radius: 4px;
-                    font-size: 14px;
-                    z-index: 1000;
-                    transition: opacity 0.3s ease;
-                `;
-                document.body.appendChild(notification);
-            }
-            
-            notification.textContent = message;
-            notification.style.opacity = '1';
-            
-            // Hide after 2 seconds
-            setTimeout(() => {
-                notification.style.opacity = '0';
-                setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.parentNode.removeChild(notification);
-                    }
-                }, 300);
-            }, 2000);
-        }
         
         // Function to get cookie value by name
         function getCookie(name) {
