@@ -267,6 +267,7 @@ func (h *Handlers) DeleteHandler(c *gin.Context) {
 			c.HTML(http.StatusUnauthorized, "error.html", gin.H{
 				"status":      "error",
 				"description": "You are not authorized to delete this item",
+				"statusCode":  http.StatusUnauthorized,
 			})
 		} else {
 			utils.RespondWithError(c, http.StatusUnauthorized, "error", "unauthorized")
@@ -286,6 +287,7 @@ func (h *Handlers) DeleteHandler(c *gin.Context) {
 				c.HTML(http.StatusUnauthorized, "error.html", gin.H{
 					"status":      "error",
 					"description": "You are not authorized to delete this item",
+					"statusCode":  http.StatusUnauthorized,
 				})
 			} else {
 				utils.RespondWithError(c, http.StatusUnauthorized, "error", "unauthorized")
@@ -299,6 +301,7 @@ func (h *Handlers) DeleteHandler(c *gin.Context) {
 			c.HTML(http.StatusInternalServerError, "error.html", gin.H{
 				"status":      "error",
 				"description": "Failed to delete item",
+				"statusCode":  http.StatusInternalServerError,
 			})
 		} else {
 			utils.RespondWithError(c, http.StatusInternalServerError, "error", "failed to delete")

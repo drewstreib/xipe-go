@@ -48,6 +48,7 @@ func RespondWithError(c *gin.Context, statusCode int, status, description string
 		c.HTML(statusCode, "error.html", gin.H{
 			"status":      status,
 			"description": description,
+			"statusCode":  statusCode,
 		})
 	} else {
 		c.JSON(statusCode, gin.H{

@@ -84,11 +84,12 @@
     </div>
     
     <div class="container">
-        <h1 class="error">✗ Error</h1>
+        <h1 class="error">✗ Error {{if .statusCode}}{{.statusCode}}{{end}}</h1>
         
         <div class="error-details">
             <strong>Status:</strong> {{.status}}<br>
-            <strong>Description:</strong> {{.description}}
+            <strong>Description:</strong> {{.description}}{{if .statusCode}}<br>
+            <strong>HTTP Status Code:</strong> {{.statusCode}}{{end}}
         </div>
         
         <div class="back-link">
