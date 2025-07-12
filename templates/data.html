@@ -17,7 +17,7 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #1a1a1a;
+            background-color: #000000;
             color: white;
         }
         .header-bar {
@@ -38,65 +38,39 @@
             font-weight: bold;
             font-family: 'Courier New', Monaco, monospace;
         }
-        .content {
-            padding: 20px;
-        }
-        .info {
-            color: white;
-            margin-bottom: 20px;
-        }
-        .url-container {
+        .status-bar {
+            background-color: #1a1a1a;
+            padding: 8px;
             display: flex;
-            gap: 10px;
-            margin: 20px 0;
-        }
-        .url-input {
-            padding: 0 12px;
-            border: 2px solid #333333;
-            border-radius: 4px;
-            font-size: 16px;
-            background-color: #222222;
-            color: white;
-            width: auto;
-            min-width: 300px;
-        }
-        .copy-btn {
-            padding: 8px 16px;
-            background-color: #80F;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        .copy-btn:hover {
-            background-color: #60C;
-        }
-        .copy-btn:active {
-            background-color: #004085;
-        }
-        .details {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #222222;
-            border-radius: 4px;
-        }
-        .data-container {
-            margin: 0 0 15px 0;
-            background: none;
-            border: none;
-        }
-        .data-content-wrapper {
-            padding: 0;
-        }
-        .data-controls {
-            margin-top: 15px;
-            display: flex;
-            gap: 20px;
             align-items: center;
+            gap: 10px;
             flex-wrap: wrap;
+            font-size: 14px;
+            border-bottom: 1px solid #333333;
         }
-        .data-controls label {
+        .status-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 0 0 auto;
+        }
+        .status-center {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+            margin-left: 10px;
+            font-style: italic;
+            color: #cccccc;
+        }
+        .status-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 0 0 auto;
+            margin-left: auto;
+        }
+        .status-right label {
             display: flex;
             align-items: center;
             gap: 5px;
@@ -105,35 +79,64 @@
             font-size: 14px;
             color: #cccccc;
         }
-        .copy-data-btn {
-            padding: 8px 16px;
+        .url-display {
+            font-family: 'Courier New', Monaco, monospace;
+            color: white;
+            background: none;
+            border: none;
+            padding: 0;
+            margin: 0;
+            font-size: 14px;
+        }
+        .small-btn {
+            padding: 4px 8px;
             background-color: #80F;
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 3px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 12px;
+            height: 24px;
+            line-height: 1;
         }
-        .copy-data-btn:hover {
+        .small-btn:hover {
             background-color: #60C;
+        }
+        .small-btn.delete {
+            background-color: #dc3545;
+        }
+        .small-btn.delete:hover {
+            background-color: #c82333;
         }
         .data-content {
             width: 100%;
-            height: 75vh; /* 75% of viewport height - responsive to screen size */
-            padding: 0;
-            border: 1px solid #333333;
-            border-radius: 4px;
+            min-height: calc(100vh - 120px);
+            padding: 12px;
+            margin: 0;
+            border: none;
             background-color: #000000;
             font-family: 'Courier New', Monaco, monospace;
             font-size: 14px;
             line-height: 1.4;
-            overflow: auto;
-            resize: none;
-            box-sizing: border-box;
+            color: #d4d4d4;
+            position: relative;
+        }
+        .data-content:hover::after {
+            content: "Right-click to copy text";
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background-color: rgba(26, 26, 26, 0.9);
+            color: #cccccc;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-style: italic;
+            z-index: 10;
         }
         .data-content pre {
             margin: 0;
-            padding: 12px;
+            padding: 0;
             white-space: pre-wrap;
             word-wrap: break-word;
             background: transparent;
@@ -146,43 +149,13 @@
             font-size: inherit;
             font-family: inherit;
         }
-        .actions {
-            margin-top: 20px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .action-btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            text-decoration: none;
-            text-align: center;
-            font-size: 14px;
-            display: inline-block;
-        }
-        .back-btn {
-            background-color: #6c757d;
-            color: white;
-        }
-        .back-btn:hover {
-            background-color: #545b62;
-        }
-        .delete-btn {
-            background-color: #dc3545;
-            color: white;
-        }
-        .delete-btn:hover {
-            background-color: #c82333;
-        }
         .footer {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid #333333;
+            background-color: #1a1a1a;
+            padding: 20px;
             text-align: center;
             font-size: 14px;
             color: #666666;
+            border-top: 1px solid #333333;
         }
         .footer a {
             color: #66aaff;
@@ -240,92 +213,46 @@
     </div>
     {{end}}
     
-    <div class="content">
-        
-        <div class="data-container">
-            <div class="data-content-wrapper">
-                <div class="data-content" id="dataContent">
-                    <pre><code>{{.data}}</code></pre>
-                </div>
-            </div>
-            <div class="data-controls">
-                <label>
-                    <input type="checkbox" id="syntax-highlighting-toggle" checked onchange="toggleDisplay()" style="margin: 0;">
-                    Syntax highlighting
-                </label>
-                <label>
-                    <input type="checkbox" id="line-numbers-toggle" checked onchange="toggleDisplay()" style="margin: 0;">
-                    Line numbers
-                </label>
-                <button class="copy-data-btn" onclick="copyDataToClipboard()">Copy Data</button>
-                <button class="copy-data-btn delete-btn" id="deleteButton" onclick="deleteData()" style="display: none; background-color: #dc3545;">Delete</button>
-            </div>
+    <div class="status-bar">
+        <div class="status-left">
+            <span class="url-display">{{.url}}</span>
+            <button class="small-btn" onclick="copyToClipboard()">Copy URL</button>
+            <button class="small-btn delete" id="deleteButton" onclick="deleteData()" style="display: none;">Delete</button>
         </div>
         
-        <div class="url-container">
-            <input type="text" class="url-input" id="shortUrl" value="{{.url}}" readonly>
-            <button class="copy-btn" onclick="copyToClipboard()">Copy URL</button>
+        <div class="status-center">
+            <span>{{len .data}} bytes</span>
+            <span>Created: <span id="created-relative" data-timestamp="{{.created}}">Loading...</span></span>
+            <span>Expires: <span id="expires-relative" data-timestamp="{{.expires}}">Loading...</span></span>
         </div>
         
-        <div class="details">
-            <strong>Data Size:</strong> {{len .data}} bytes<br>
-            <strong>Created:</strong> <span id="created-time" data-timestamp="{{.created}}">Loading...</span><br>
-            <strong>Expires:</strong> <span id="expires-time" data-timestamp="{{.expires}}">Loading...</span>
+        <div class="status-right">
+            <label>
+                <input type="checkbox" id="syntax-highlighting-toggle" checked onchange="toggleDisplay()" style="margin: 0;">
+                Syntax highlighting
+            </label>
+            <label>
+                <input type="checkbox" id="line-numbers-toggle" checked onchange="toggleDisplay()" style="margin: 0;">
+                Line numbers
+            </label>
         </div>
-        
-        <div class="actions">
-            <a href="/" class="action-btn back-btn">← Back to Home</a>
-        </div>
-        
-        <div class="footer">
-            <a href="/">xi.pe</a> - hosted at alt.org. <a href="/privacy">TOS & Privacy</a>. Syntax highlighting by <a href="https://highlightjs.org">highlight.js</a>. Abuse contact: <a href="mailto:abuse@xi.pe">abuse@xi.pe</a>
-        </div>
+    </div>
+    
+    <div class="data-content" id="dataContent">
+        <pre><code>{{.data}}</code></pre>
+    </div>
+    
+    <div class="footer">
+        <a href="/">xi.pe</a> - hosted at alt.org. <a href="/privacy">TOS & Privacy</a>. Syntax highlighting by <a href="https://highlightjs.org">highlight.js</a>. Abuse contact: <a href="mailto:abuse@xi.pe">abuse@xi.pe</a>
     </div>
 
     <script>
         function copyToClipboard() {
-            const urlInput = document.getElementById('shortUrl');
-            urlInput.select();
-            urlInput.setSelectionRange(0, 99999); // For mobile devices
+            const urlText = '{{.url}}';
             
             try {
-                navigator.clipboard.writeText(urlInput.value).then(() => {
-                    const btn = document.querySelector('.copy-btn');
-                    const originalText = btn.textContent;
-                    btn.textContent = 'Copied!';
-                    btn.style.backgroundColor = '#28a745';
-                    
-                    setTimeout(() => {
-                        btn.textContent = originalText;
-                        btn.style.backgroundColor = '#80F';
-                    }, 2000);
-                });
-            } catch (err) {
-                // Fallback for older browsers
-                document.execCommand('copy');
-                const btn = document.querySelector('.copy-btn');
-                const originalText = btn.textContent;
-                btn.textContent = 'Copied!';
-                btn.style.backgroundColor = '#28a745';
-                
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                    btn.style.backgroundColor = '#007bff';
-                }, 2000);
-            }
-        }
-        
-        // Store original data for copying (set on page load)
-        let originalDataText = '';
-        let highlightedHTML = '';
-        
-        function copyDataToClipboard() {
-            // Always copy from stored original text, not the DOM
-            const textToCopy = originalDataText;
-            
-            try {
-                navigator.clipboard.writeText(textToCopy).then(() => {
-                    const btn = document.querySelector('.copy-data-btn');
+                navigator.clipboard.writeText(urlText).then(() => {
+                    const btn = document.querySelector('.small-btn');
                     const originalText = btn.textContent;
                     btn.textContent = 'Copied!';
                     btn.style.backgroundColor = '#28a745';
@@ -338,23 +265,27 @@
             } catch (err) {
                 // Fallback for older browsers
                 const textArea = document.createElement('textarea');
-                textArea.value = textToCopy;
+                textArea.value = urlText;
                 document.body.appendChild(textArea);
                 textArea.select();
                 document.execCommand('copy');
                 document.body.removeChild(textArea);
                 
-                const btn = document.querySelector('.copy-data-btn');
+                const btn = document.querySelector('.small-btn');
                 const originalText = btn.textContent;
                 btn.textContent = 'Copied!';
                 btn.style.backgroundColor = '#28a745';
                 
                 setTimeout(() => {
                     btn.textContent = originalText;
-                    btn.style.backgroundColor = '#007bff';
+                    btn.style.backgroundColor = '#80F';
                 }, 2000);
             }
         }
+        
+        // Store original data for copying (set on page load)
+        let originalDataText = '';
+        let highlightedHTML = '';
         
         function toggleDisplay() {
             const codeBlock = document.querySelector('#dataContent code');
@@ -381,23 +312,13 @@
             }
         }
         
-        function formatTimestamp(timestamp) {
+        function formatRelativeTime(timestamp) {
             if (!timestamp || timestamp === 0) {
                 return 'Never';
             }
             
             const date = new Date(timestamp * 1000);
             const now = new Date();
-            
-            // Format the date in user's local timezone
-            const dateStr = date.toLocaleString(undefined, {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                timeZoneName: 'short'
-            });
             
             // Calculate relative time
             const diffMs = date - now;
@@ -409,11 +330,8 @@
             let relativeStr = '';
             if (diffDays > 0) {
                 const hours = diffHours % 24;
-                const mins = diffMins % 60;
                 if (hours > 0) {
-                    relativeStr = `${diffDays}d ${hours}h ${mins}m`;
-                } else if (mins > 0) {
-                    relativeStr = `${diffDays}d ${mins}m`;
+                    relativeStr = `${diffDays}d ${hours}h`;
                 } else {
                     relativeStr = `${diffDays}d`;
                 }
@@ -436,7 +354,7 @@
                 relativeStr = 'in ' + relativeStr;
             }
             
-            return `${dateStr} (${relativeStr})`;
+            return relativeStr;
         }
         
         // Initialize toast auto-hide
@@ -454,17 +372,17 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize toast
             initToast();
-            const createdEl = document.getElementById('created-time');
-            const expiresEl = document.getElementById('expires-time');
+            const createdEl = document.getElementById('created-relative');
+            const expiresEl = document.getElementById('expires-relative');
             
             if (createdEl) {
                 const timestamp = parseInt(createdEl.dataset.timestamp);
-                createdEl.textContent = formatTimestamp(timestamp);
+                createdEl.textContent = formatRelativeTime(timestamp);
             }
             
             if (expiresEl) {
                 const timestamp = parseInt(expiresEl.dataset.timestamp);
-                expiresEl.textContent = formatTimestamp(timestamp);
+                expiresEl.textContent = formatRelativeTime(timestamp);
             }
             
             // Remove ?from=success parameter from URL bar if present
@@ -502,7 +420,73 @@
             
             // Check if user owns this data and show delete button
             checkOwnershipAndShowDelete();
+            
+            // Add right-click copy functionality to data content
+            const dataContent = document.getElementById('dataContent');
+            if (dataContent) {
+                dataContent.addEventListener('contextmenu', function(e) {
+                    e.preventDefault();
+                    copyDataToClipboard();
+                });
+            }
         });
+        
+        function copyDataToClipboard() {
+            // Always copy from stored original text, not the DOM
+            const textToCopy = originalDataText;
+            
+            try {
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    // Show a temporary notification
+                    showCopyNotification("Text copied to clipboard!");
+                });
+            } catch (err) {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = textToCopy;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showCopyNotification("Text copied to clipboard!");
+            }
+        }
+        
+        function showCopyNotification(message) {
+            // Create or update notification
+            let notification = document.getElementById('copy-notification');
+            if (!notification) {
+                notification = document.createElement('div');
+                notification.id = 'copy-notification';
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 60px;
+                    right: 20px;
+                    background-color: #2a5a3a;
+                    border: 1px solid #3a6b4a;
+                    color: #90ee90;
+                    padding: 8px 12px;
+                    border-radius: 4px;
+                    font-size: 14px;
+                    z-index: 1000;
+                    transition: opacity 0.3s ease;
+                `;
+                document.body.appendChild(notification);
+            }
+            
+            notification.textContent = message;
+            notification.style.opacity = '1';
+            
+            // Hide after 2 seconds
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 2000);
+        }
         
         // Function to get cookie value by name
         function getCookie(name) {
