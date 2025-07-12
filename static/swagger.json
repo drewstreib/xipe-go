@@ -1,0 +1,540 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "xi.pe API",
+    "description": "A high-performance URL shortener and pastebin service providing short, memorable URLs using 4-8 character alphanumeric codes.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Drew Streib",
+      "email": "dtype@dtype.org"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://xi.pe",
+      "description": "Production server"
+    },
+    {
+      "url": "http://localhost:8080",
+      "description": "Development server"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Get service homepage",
+        "description": "Returns the main landing page with usage instructions and service information.",
+        "responses": {
+          "200": {
+            "description": "Homepage HTML",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create short URL or store data",
+        "description": "Creates a short URL for a given URL or stores pastebin data. Supports both JSON and URL-encoded form data.",
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "description": "Input format type",
+            "schema": {
+              "type": "string",
+              "enum": ["urlencoded"]
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRequest"
+              },
+              "examples": {
+                "url_example": {
+                  "summary": "URL shortening",
+                  "value": {
+                    "ttl": "1d",
+                    "url": "https://example.com"
+                  }
+                },
+                "data_example": {
+                  "summary": "Data storage",
+                  "value": {
+                    "ttl": "1w", 
+                    "data": "Hello, world!"
+                  }
+                }
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFormRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateResponse"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string",
+                  "description": "Redirect to the created item page for browser clients"
+                }
+              }
+            },
+            "headers": {
+              "Set-Cookie": {
+                "description": "Owner ID cookie for deletion access",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - URL blocked or content too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable - DNS service down",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "529": {
+            "description": "Unable to generate unique code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Store raw text data",
+        "description": "Stores raw text data with automatic UTF-8 validation, truncation at 50KB, and 1-day TTL.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string",
+                "maxLength": 51200,
+                "description": "Raw text content to store"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully stored",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "description": "URL of the created item"
+                }
+              }
+            },
+            "headers": {
+              "Set-Cookie": {
+                "description": "Owner ID cookie for deletion access",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid UTF-8 or empty content",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "529": {
+            "description": "Unable to generate unique code",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{code}": {
+      "get": {
+        "summary": "Access short URL or view data",
+        "description": "Accesses a short URL or views stored data. Returns HTML info page for browsers, raw content for API clients.",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "description": "The short code (4-6 characters) or static page name",
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9]{4,6}$|^[a-zA-Z]+$"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Source indicator for success pages",
+            "schema": {
+              "type": "string",
+              "enum": ["success"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Content found",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string",
+                  "description": "HTML page showing URL info or data content"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "description": "Raw URL or data content for API clients"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid code format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Code not found or expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a short URL or data",
+        "description": "Deletes a short URL or stored data. Requires owner authentication via cookie.",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "description": "The short code to delete",
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9]{4,6}$"
+            }
+          }
+        ],
+        "security": [
+          {
+            "OwnerCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - missing or invalid owner cookie",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stats": {
+      "get": {
+        "summary": "Get service statistics",
+        "description": "Returns basic service statistics and metrics.",
+        "responses": {
+          "200": {
+            "description": "Service statistics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/privacy": {
+      "get": {
+        "summary": "Get privacy policy",
+        "description": "Returns the service privacy policy and terms of service.",
+        "responses": {
+          "200": {
+            "description": "Privacy policy content",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string",
+                  "description": "HTML page with privacy policy"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "description": "Raw privacy policy text for API clients"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CreateRequest": {
+        "type": "object",
+        "properties": {
+          "ttl": {
+            "type": "string",
+            "enum": ["1d", "1w", "1mo"],
+            "description": "Time to live: 1d=4 chars, 1w=5 chars, 1mo=6 chars",
+            "default": "1d"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 4096,
+            "description": "URL to shorten (must include http:// or https://)"
+          },
+          "data": {
+            "type": "string",
+            "maxLength": 51200,
+            "description": "Text data to store (up to 50KB)"
+          }
+        },
+        "required": ["ttl"],
+        "oneOf": [
+          {
+            "required": ["url"]
+          },
+          {
+            "required": ["data"]
+          }
+        ]
+      },
+      "CreateFormRequest": {
+        "type": "object",
+        "properties": {
+          "ttl": {
+            "type": "string",
+            "enum": ["1d", "1w", "1mo"]
+          },
+          "url": {
+            "type": "string"
+          },
+          "data": {
+            "type": "string"
+          },
+          "format": {
+            "type": "string",
+            "enum": ["html"]
+          }
+        }
+      },
+      "CreateResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["ok"]
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL of the created short link or data page"
+          }
+        },
+        "required": ["status", "url"]
+      },
+      "DeleteResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["ok"]
+          },
+          "message": {
+            "type": "string",
+            "example": "deleted successfully"
+          }
+        },
+        "required": ["status", "message"]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["error"]
+          },
+          "description": {
+            "type": "string",
+            "description": "Error description"
+          }
+        },
+        "required": ["status", "description"]
+      },
+      "StatsResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["ok"]
+          },
+          "message": {
+            "type": "string",
+            "description": "Service status message"
+          }
+        },
+        "required": ["status"]
+      }
+    },
+    "securitySchemes": {
+      "OwnerCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "id",
+        "description": "128-bit owner token for deletion access"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "URL Shortening",
+      "description": "Operations for creating and managing short URLs"
+    },
+    {
+      "name": "Data Storage",
+      "description": "Operations for storing and retrieving pastebin data"
+    },
+    {
+      "name": "Management",
+      "description": "Service management and statistics"
+    }
+  ]
+}

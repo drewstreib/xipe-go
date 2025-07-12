@@ -119,6 +119,10 @@ func main() {
 	r.GET("/about.txt", func(c *gin.Context) {
 		c.FileFromFS("static/about.txt", http.FS(staticFS))
 	})
+	r.GET("/swagger.json", func(c *gin.Context) {
+		c.Header("Content-Type", "application/json")
+		c.FileFromFS("static/swagger.json", http.FS(staticFS))
+	})
 
 	r.GET("/:code", h.CatchAllHandler)
 
