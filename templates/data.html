@@ -231,6 +231,7 @@
     <div class="status-bar">
         <div class="status-left">
             <span class="url-display">{{.url}}</span>
+            <a href="{{.url}}?raw" style="color: #66aaff; text-decoration: none; margin-left: 4px;">?raw</a>
             <button class="small-btn" onclick="copyToClipboard()">Copy URL</button>
             <button class="small-btn" onclick="copyDataToClipboard()">Copy Text</button>
             <button class="small-btn delete" id="deleteButton" onclick="deleteData()" style="display: none;">Delete</button>
