@@ -212,15 +212,15 @@
             
             <div class="api-example">
                 <code><pre>#!/usr/bin/python3
-import requests
-data = "your text here"
-shorturl = requests.post('https://xi.pe/', json={"data": data}).json()['url']</pre></code>
+<span style="color: #6FBFFF;">import</span> requests
+<span style="color: #6FBFFF;">data</span> = <span style="color: #FF9E64;">"your text here"</span>
+shorturl = requests.post(<span style="color: #FF9E64;">'https://xi.pe/'</span>, json={<span style="color: #FF9E64;">"data"</span>: <span style="color: #6FBFFF;">data</span>}).json()[<span style="color: #FF9E64;">'url'</span>]</pre></code>
             </div>
 
             <div class="api-example">
                 <code><pre>#!/bin/bash
-alias xipe='curl -X PUT https://xi.pe/ -H "Content-Type: text/plain" --data-binary @-'
-echo "your text here" | xipe</pre></code>
+<span style="color: #50FA7B;">alias</span> xipe=<span style="color: #FF9E64;">'curl -X PUT https://xi.pe/ -H "Content-Type: text/plain" --data-binary @-'</span>
+<span style="color: #50FA7B;">echo</span> <span style="color: #FF9E64;">"your text here"</span> | xipe</pre></code>
             </div>
         </div>
         
