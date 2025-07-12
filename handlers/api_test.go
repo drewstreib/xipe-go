@@ -433,7 +433,7 @@ func TestPutHandler(t *testing.T) {
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusBadRequest,
 			checkResponse: func(t *testing.T, response string) {
-				assert.Equal(t, "Error: Input text must be UTF-8", response)
+				assert.Equal(t, "Error: Input text must be UTF-8\n", response)
 			},
 		},
 		{
@@ -442,7 +442,7 @@ func TestPutHandler(t *testing.T) {
 			setupMock:      func(m *db.MockDB) {},
 			expectedStatus: http.StatusBadRequest,
 			checkResponse: func(t *testing.T, response string) {
-				assert.Equal(t, "Error: Cannot store empty content", response)
+				assert.Equal(t, "Error: Cannot store empty content\n", response)
 			},
 		},
 		{
@@ -479,7 +479,7 @@ func TestPutHandler(t *testing.T) {
 			},
 			expectedStatus: http.StatusInternalServerError,
 			checkResponse: func(t *testing.T, response string) {
-				assert.Equal(t, "Error: Failed to store data", response)
+				assert.Equal(t, "Error: Failed to store data\n", response)
 			},
 		},
 		{
@@ -505,7 +505,7 @@ func TestPutHandler(t *testing.T) {
 			},
 			expectedStatus: 529,
 			checkResponse: func(t *testing.T, response string) {
-				assert.Equal(t, "Error: Could not allocate URL in the target namespace.", response)
+				assert.Equal(t, "Error: Could not allocate URL in the target namespace.\n", response)
 			},
 		},
 		{

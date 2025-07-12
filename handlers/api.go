@@ -360,13 +360,13 @@ func (h *Handlers) PutHandler(c *gin.Context) {
 	// Read the raw body
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		c.String(http.StatusBadRequest, "Error: Failed to read request body")
+		c.String(http.StatusBadRequest, "Error: Failed to read request body\n")
 		return
 	}
 
 	// Validate UTF-8
 	if !utf8.Valid(body) {
-		c.String(http.StatusBadRequest, "Error: Input text must be UTF-8")
+		c.String(http.StatusBadRequest, "Error: Input text must be UTF-8\n")
 		return
 	}
 
@@ -375,7 +375,7 @@ func (h *Handlers) PutHandler(c *gin.Context) {
 
 	// Validate that we have content to store
 	if len(rawData) == 0 {
-		c.String(http.StatusBadRequest, "Error: Cannot store empty content")
+		c.String(http.StatusBadRequest, "Error: Cannot store empty content\n")
 		return
 	}
 
@@ -397,7 +397,7 @@ func (h *Handlers) PutHandler(c *gin.Context) {
 
 		// Ensure truncation didn't result in empty content
 		if len(finalData) == 0 {
-			c.String(http.StatusBadRequest, "Error: Content became empty after truncation")
+			c.String(http.StatusBadRequest, "Error: Content became empty after truncation\n")
 			return
 		}
 	}
@@ -406,14 +406,14 @@ func (h *Handlers) PutHandler(c *gin.Context) {
 	ownerID, err := getOrCreateOwnerID(c)
 	if err != nil {
 		log.Printf("Failed to generate owner ID: %v", err)
-		c.String(http.StatusInternalServerError, "Error: Failed to generate owner ID")
+		c.String(http.StatusInternalServerError, "Error: Failed to generate owner ID\n")
 		return
 	}
 
 	// Use default 1d TTL for PUT requests
 	ettl, codeLength, err := utils.CalculateTTL("1d")
 	if err != nil {
-		c.String(http.StatusInternalServerError, "Error: Failed to calculate TTL")
+		c.String(http.StatusInternalServerError, "Error: Failed to calculate TTL\n")
 		return
 	}
 
@@ -423,7 +423,7 @@ func (h *Handlers) PutHandler(c *gin.Context) {
 	for attempts := 0; attempts < 5; attempts++ {
 		code, err = utils.GenerateCode(codeLength)
 		if err != nil {
-			c.String(http.StatusInternalServerError, "Error: Failed to generate code")
+			c.String(http.StatusInternalServerError, "Error: Failed to generate code\n")
 			return
 		}
 
@@ -471,7 +471,7 @@ func (h *Handlers) PutHandler(c *gin.Context) {
 		if !isDuplicateKeyError(insertErr) {
 			// Some other error occurred
 			log.Printf("DynamoDB error (not duplicate key): %v", insertErr)
-			c.String(http.StatusInternalServerError, "Error: Failed to store data")
+			c.String(http.StatusInternalServerError, "Error: Failed to store data\n")
 			return
 		}
 		log.Printf("Duplicate key error, retrying with new code. Error: %v", insertErr)
@@ -479,7 +479,7 @@ func (h *Handlers) PutHandler(c *gin.Context) {
 	}
 
 	// All attempts failed
-	c.String(529, "Error: Could not allocate URL in the target namespace.")
+	c.String(529, "Error: Could not allocate URL in the target namespace.\n")
 }
 
 func isDuplicateKeyError(err error) bool {
