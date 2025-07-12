@@ -111,7 +111,7 @@ func TestPostHandler(t *testing.T) {
 			setupMock: func(m *db.MockDB, s *db.MockS3) {
 				// S3 should be called to store the data
 				s.On("PutObject", mock.MatchedBy(func(key string) bool {
-					return strings.HasPrefix(key, "S/") && len(key) == 6 // S/ + 4-char code
+					return strings.HasPrefix(key, "S/") && strings.HasSuffix(key, ".zst") && len(key) == 10 // S/ + 4-char code + .zst
 				}), mock.MatchedBy(func(data []byte) bool {
 					return len(data) == 15000
 				})).Return(nil)

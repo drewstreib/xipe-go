@@ -104,7 +104,7 @@ xipe uses a hybrid storage approach to efficiently handle files of different siz
 ### S3 Configuration
 - **Bucket**: `xipe-data`
 - **Region**: `us-east-1` 
-- **Object Key Format**: `S/{code}` (e.g., `S/AbC4D`)
+- **Object Key Format**: `S/{code}.zst` (e.g., `S/AbC4D.zst`)
 - **Compression**: All objects stored with zstd level 3 compression for optimal storage efficiency
 - **Access**: Same AWS credentials as DynamoDB
 - **Expiration**: Objects expire after 30 days via S3 lifecycle policy (independent of DynamoDB TTL)

@@ -102,7 +102,7 @@ func (h *Handlers) DataHandler(c *gin.Context) {
 		dataContent = redirect.Val
 	} else if redirect.Typ == "S" {
 		// Data stored in S3, need to fetch it
-		s3Key := "S/" + code
+		s3Key := "S/" + code + ".zst"
 		s3Data, err := h.S3.GetObject(s3Key)
 		if err != nil {
 			// Check for specific S3 errors

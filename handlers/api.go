@@ -157,7 +157,7 @@ func (h *Handlers) PostHandler(c *gin.Context) {
 
 		// Set S3 key if using S3 storage
 		if recordType == "S" {
-			s3Key = "S/" + code
+			s3Key = "S/" + code + ".zst"
 		}
 
 		// Get the client IP (Gin's ClientIP handles X-Forwarded-For, X-Real-IP, etc.)
@@ -408,7 +408,7 @@ func (h *Handlers) PutHandler(c *gin.Context) {
 
 		// Set S3 key if using S3 storage
 		if recordType == "S" {
-			s3Key = "S/" + code
+			s3Key = "S/" + code + ".zst"
 		}
 
 		// Get the client IP
