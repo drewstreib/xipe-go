@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/drewstreib/xipe-go/db"
 	"github.com/drewstreib/xipe-go/handlers"
@@ -100,34 +101,47 @@ func main() {
 		api.GET("/stats", h.StatsHandler)
 	}
 
+	// Helper function to serve static files with 1-day cache headers
+	serveStaticWithCache := func(c *gin.Context, filePath string) {
+		// Cache static files for 1 day
+		c.Header("Cache-Control", "public, max-age=86400")
+		c.Header("Expires", time.Now().Add(24*time.Hour).UTC().Format(http.TimeFormat))
+		c.Header("Pragma", "")
+		c.FileFromFS(filePath, http.FS(staticFS))
+	}
+
 	// Serve static files
 	r.GET("/favicon.ico", func(c *gin.Context) {
-		c.FileFromFS("static/favicon.ico", http.FS(staticFS))
+		serveStaticWithCache(c, "static/favicon.ico")
 	})
 	r.GET("/favicon-16x16.png", func(c *gin.Context) {
-		c.FileFromFS("static/favicon-16x16.png", http.FS(staticFS))
+		serveStaticWithCache(c, "static/favicon-16x16.png")
 	})
 	r.GET("/favicon-32x32.png", func(c *gin.Context) {
-		c.FileFromFS("static/favicon-32x32.png", http.FS(staticFS))
+		serveStaticWithCache(c, "static/favicon-32x32.png")
 	})
 	r.GET("/apple-touch-icon.png", func(c *gin.Context) {
-		c.FileFromFS("static/apple-touch-icon.png", http.FS(staticFS))
+		serveStaticWithCache(c, "static/apple-touch-icon.png")
 	})
 	r.GET("/android-chrome-192x192.png", func(c *gin.Context) {
-		c.FileFromFS("static/android-chrome-192x192.png", http.FS(staticFS))
+		serveStaticWithCache(c, "static/android-chrome-192x192.png")
 	})
 	r.GET("/android-chrome-512x512.png", func(c *gin.Context) {
-		c.FileFromFS("static/android-chrome-512x512.png", http.FS(staticFS))
+		serveStaticWithCache(c, "static/android-chrome-512x512.png")
 	})
 	r.GET("/site.webmanifest", func(c *gin.Context) {
-		c.FileFromFS("static/site.webmanifest", http.FS(staticFS))
+		serveStaticWithCache(c, "static/site.webmanifest")
 	})
 	r.GET("/about.txt", func(c *gin.Context) {
-		c.FileFromFS("static/about.txt", http.FS(staticFS))
+		serveStaticWithCache(c, "static/about.txt")
 	})
 	r.GET("/swagger.json", func(c *gin.Context) {
 		c.Header("Content-Type", "application/json")
 		c.Header("Access-Control-Allow-Origin", "https://docs.xi.pe")
+		// Cache static files for 1 day
+		c.Header("Cache-Control", "public, max-age=86400")
+		c.Header("Expires", time.Now().Add(24*time.Hour).UTC().Format(http.TimeFormat))
+		c.Header("Pragma", "")
 		c.FileFromFS("static/swagger.json", http.FS(staticFS))
 	})
 
