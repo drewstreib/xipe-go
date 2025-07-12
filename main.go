@@ -8,6 +8,7 @@ import (
 
 	"github.com/drewstreib/xipe-go/db"
 	"github.com/drewstreib/xipe-go/handlers"
+	"github.com/drewstreib/xipe-go/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,6 +20,11 @@ var templatesFS embed.FS
 var staticFS embed.FS
 
 func main() {
+	// Initialize reserved codes from embedded pages
+	if err := utils.InitReservedCodes(); err != nil {
+		log.Fatal("Failed to initialize reserved codes:", err)
+	}
+
 	dbClient, err := db.NewDynamoDBClient()
 	if err != nil {
 		log.Fatal("Failed to create DynamoDB client:", err)

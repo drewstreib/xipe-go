@@ -60,6 +60,7 @@ xipe-go/
 ### 2. URL Redirection & Data Display
 - **Pattern**: `/[a-zA-Z0-9]{4,6}`
 - **Behavior**: 
+  - **Static Pages**: Reserved codes (e.g., `/privacy`) serve embedded content from `utils/pages/*.txt`
   - For URLs (typ="R"): Shows info page with target URL and metadata
   - For Data (typ="D"): Shows data page with syntax highlighting and copy options
 - **Fallthrough**: Catches all unmatched routes
@@ -83,7 +84,17 @@ xipe-go/
 - **Error Handling**: 503 for DNS unavailable, 403 for blocked content
 - **Timeout**: 10-second timeout for DNS queries
 
-### 5. Static Website
+### 5. Static Pages System
+- **Purpose**: Serve static content pages using short URL codes (e.g., `/privacy`)
+- **Implementation**: 
+  - Files stored in `utils/pages/*.txt` and embedded at build time
+  - Reserved codes automatically loaded from filenames (without .txt extension)
+  - Code generation avoids reserved codes (with 5 retry attempts)
+- **Display**: Uses same data.html template as pastebin content
+- **Access**: Both browser (HTML) and API (plain text) access supported
+- **Management**: Manual - add/remove .txt files in pages directory and rebuild
+
+### 6. Static Website
 - **Endpoint**: `/`
 - **Content**: Usage instructions and service information
 - **Stats**: `/api/stats` endpoint for service metrics

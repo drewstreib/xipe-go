@@ -203,7 +203,7 @@ func (h *Handlers) PostHandler(c *gin.Context) {
 	var code string
 	var insertErr error
 	for attempts := 0; attempts < 5; attempts++ {
-		code, err = utils.GenerateCode(codeLength)
+		code, err = utils.GenerateUniqueCode(codeLength)
 		if err != nil {
 			utils.RespondWithError(c, http.StatusInternalServerError, "error", "failed to generate code")
 			return
@@ -421,7 +421,7 @@ func (h *Handlers) PutHandler(c *gin.Context) {
 	var code string
 	var insertErr error
 	for attempts := 0; attempts < 5; attempts++ {
-		code, err = utils.GenerateCode(codeLength)
+		code, err = utils.GenerateUniqueCode(codeLength)
 		if err != nil {
 			c.String(http.StatusInternalServerError, "Error: Failed to generate code\n")
 			return
