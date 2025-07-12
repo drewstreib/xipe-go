@@ -238,7 +238,7 @@
             </div>
             <div class="data-controls">
                 <label>
-                    <input type="checkbox" id="syntax-highlighting-toggle" {{if not .isStaticPage}}checked{{end}} onchange="toggleDisplay()" style="margin: 0;">
+                    <input type="checkbox" id="syntax-highlighting-toggle" checked onchange="toggleDisplay()" style="margin: 0;">
                     Syntax highlighting
                 </label>
                 <label>
@@ -456,28 +456,24 @@
             }
             
             // Initialize syntax highlighting
-            const syntaxCheckbox = document.getElementById('syntax-highlighting-toggle');
-            const codeBlock = document.querySelector('#dataContent code');
+            hljs.highlightAll();
             
-            if (syntaxCheckbox.checked) {
-                hljs.highlightAll();
-                
-                // Store the highlighted HTML after highlighting but before line numbers
-                if (codeBlock) {
-                    highlightedHTML = codeBlock.innerHTML;
-                    // Add line numbers by default (checkbox starts checked)
-                    hljs.lineNumbersBlock(codeBlock);
-                }
-            } else {
-                // For static pages, keep plain text but add line numbers if enabled
-                if (codeBlock) {
-                    highlightedHTML = codeBlock.innerHTML; // Store original for later use
-                    const lineNumbersCheckbox = document.getElementById('line-numbers-toggle');
-                    if (lineNumbersCheckbox.checked) {
-                        hljs.lineNumbersBlock(codeBlock);
-                    }
-                }
+            // Store the highlighted HTML after highlighting but before line numbers
+            const codeBlock = document.querySelector('#dataContent code');
+            if (codeBlock) {
+                highlightedHTML = codeBlock.innerHTML;
+                // Add line numbers by default (checkbox starts checked)
+                hljs.lineNumbersBlock(codeBlock);
             }
+            
+            // For static pages, uncheck syntax highlighting after initialization
+            {{if .isStaticPage}}
+            const syntaxCheckbox = document.getElementById('syntax-highlighting-toggle');
+            if (syntaxCheckbox) {
+                syntaxCheckbox.checked = false;
+                toggleDisplay(); // Apply the unchecked state
+            }
+            {{end}}
             
             // Check if user owns this data and show delete button
             checkOwnershipAndShowDelete();
