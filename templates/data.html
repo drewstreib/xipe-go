@@ -209,7 +209,7 @@
             transition: transform 1s ease-in-out;
         }
         .toast.slide-out {
-            transform: translateX(100%);
+            transform: translateX(calc(100% + 40px));
         }
         .toast strong {
             color: #90ee90;
@@ -443,10 +443,10 @@
         function initToast() {
             const toast = document.getElementById('successToast');
             if (toast) {
-                // Auto-hide after 3 seconds
+                // Auto-hide after 2 seconds
                 setTimeout(() => {
                     toast.classList.add('slide-out');
-                }, 3000);
+                }, 2000);
             }
         }
         
