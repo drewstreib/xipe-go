@@ -30,13 +30,10 @@ content. Do not post content you do not own or lack permission to share.
 xi.pe provides this service "as is" without any warranties or guarantees. We
 act solely as a hosting platform for user-generated content.
 
-## Copyright Concerns
-If you believe posted content violates your rights, email abuse@xi.pe for
-prompt resolution.
-
 ## Your Rights
-You have the right to request access to, correction of, or deletion of your
-personal data. You may also lodge complaints with your local data protection
-authority.
+If you believe posted content violates your rights, email abuse@xi.pe for
+prompt resolution. You have the right to request access to, correction of, or
+deletion of your personal data. You may also lodge complaints with your local
+data protection authority.
 
 By using xi.pe, you accept these terms.
