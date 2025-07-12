@@ -8,7 +8,7 @@ import (
 
 func (h *Handlers) RootHandler(c *gin.Context) {
 	c.HTML(http.StatusOK, "index.html", gin.H{
-		"title": "xi.pe - URL Shortener & Pastebin",
+		"title": "xi.pe pastebin service",
 	})
 }
 
