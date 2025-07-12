@@ -133,6 +133,14 @@
             line-height: 1.4;
             color: #d4d4d4;
             position: relative;
+            /* Make the content area focusable */
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+        }
+        .data-content:focus {
+            outline: none; /* Remove focus outline since it's not a traditional input */
         }
         .data-content pre {
             margin: 0;
@@ -246,7 +254,7 @@
         </div>
     </div>
     
-    <div class="data-content" id="dataContent">
+    <div class="data-content" id="dataContent" tabindex="0">
         <pre><code>{{.data}}</code></pre>
     </div>
     
@@ -507,57 +515,30 @@
             }
         }
         
-        // Constrain Ctrl+A/Cmd+A to select only the visible text content
-        function isSelectAllKey(event) {
-            // Check for Cmd+A on Mac or Ctrl+A on Windows/Linux
-            return (event.metaKey || event.ctrlKey) && event.key === 'a';
-        }
-        
-        function selectOnlyVisibleTextContent() {
-            const codeElement = document.querySelector('#dataContent code');
-            if (!codeElement) return;
-            
-            const range = document.createRange();
-            const selection = window.getSelection();
-            
-            // Clear any existing selection
-            selection.removeAllRanges();
-            
-            // If line numbers are enabled, we need to select only the code parts, not line numbers
-            const lineNumbersEnabled = document.getElementById('line-numbers-toggle').checked;
-            
-            if (lineNumbersEnabled) {
-                // When line numbers are present, select only the .hljs-ln-code elements
-                const codeLines = codeElement.querySelectorAll('.hljs-ln-code');
-                if (codeLines.length > 0) {
-                    // Create a range that spans from the first to the last code line
-                    range.setStartBefore(codeLines[0]);
-                    range.setEndAfter(codeLines[codeLines.length - 1]);
-                } else {
-                    // Fallback: select the entire code element
-                    range.selectNodeContents(codeElement);
-                }
-            } else {
-                // No line numbers, select the entire code element content
-                range.selectNodeContents(codeElement);
-            }
-            
-            selection.addRange(range);
-        }
-        
-        // Add global keydown listener for select-all in the data content area
+        // Override global Ctrl+A/Cmd+A to select only text content
         document.addEventListener('keydown', function(event) {
-            if (isSelectAllKey(event)) {
-                const dataContent = document.getElementById('dataContent');
-                const target = event.target;
+            // Check for Cmd+A on Mac or Ctrl+A on Windows/Linux
+            if ((event.metaKey || event.ctrlKey) && event.key === 'a') {
+                event.preventDefault();
+                event.stopPropagation();
                 
-                // Check if the focus is within the data content area or if user clicked on line numbers
-                if (dataContent && (dataContent.contains(target) || target === dataContent)) {
-                    event.preventDefault();
-                    selectOnlyVisibleTextContent();
+                // Select only the code content
+                const codeElement = document.querySelector('#dataContent code');
+                if (codeElement) {
+                    const range = document.createRange();
+                    const selection = window.getSelection();
+                    
+                    // Clear any existing selection
+                    selection.removeAllRanges();
+                    
+                    // Select the entire code element content
+                    range.selectNodeContents(codeElement);
+                    selection.addRange(range);
                 }
+                
+                return false;
             }
-        });
+        }, true); // Use capture phase to catch it before other handlers
     </script>
 </body>
 </html>
