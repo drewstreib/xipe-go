@@ -1,12 +1,12 @@
-# TOS & Privacy Policy
+# Privacy Policy
 
-**xi.pe** is a public pastebin service. By using this service, you acknowledge and agree to the following:
+xi.pe is a public pastebin service operated by Drew Streib (dtype@dtype.org). By using this service, you acknowledge and agree to the following:
 
 ## Public Access
 All content you post is publicly accessible to anyone with the relevant URL.
 
 ## Data Collection
-For security purposes, we collect IP addresses when content is posted. This information is not displayed to end users.
+For security purposes, we collect IP addresses when content is posted. This information is not displayed to end users. IP addresses are retained only as long as the posted content (up to 1 month, selectable by user).
 
 ## License Grant
 You grant xi.pe and its operator a perpetual, worldwide, royalty-free license to use, display, distribute, and make available any content you post.
@@ -18,6 +18,9 @@ You are solely responsible for ensuring you have the legal right to post any con
 xi.pe provides this service "as is" without any warranties or guarantees. We act solely as a hosting platform for user-generated content.
 
 ## Copyright Concerns
-If you believe posted content violates your rights, email **abuse@xi.pe** for prompt resolution.
+If you believe posted content violates your rights, email abuse@xi.pe for prompt resolution.
+
+## Your Rights
+You have the right to request access to, correction of, or deletion of your personal data. You may also lodge complaints with your local data protection authority.
 
 By using xi.pe, you accept these terms.
