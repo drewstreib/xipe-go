@@ -73,7 +73,7 @@ xipe uses a hybrid storage approach for optimal performance:
 - **Small Files (≤10KB)**: Stored directly in DynamoDB for fast access
 - **Large Files (>10KB, ≤2MB)**: Content stored in S3 with zstd compression, metadata in DynamoDB
 - **All files**: 24-hour expiration (no user-selectable TTL)
-- **Code length**: 4-5 characters (cryptographically random, collision-resistant)
+- **Code length**: 4-5 characters (randomly generated with multiple allocation attempts before failing)
 
 ### Access Paste
 
