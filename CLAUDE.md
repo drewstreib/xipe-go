@@ -56,6 +56,7 @@ xipe-go/
 - **Behavior**: 
   - **Static Pages**: Reserved codes (e.g., `/privacy`) serve embedded content from `utils/pages/*.txt`
   - Shows data page with syntax highlighting and copy options
+  - **URL Parameters**: `?noh` disables syntax highlighting, `?raw` returns plain text
 - **Fallthrough**: Catches all unmatched routes
 - **Not Found**: Returns 404 if code doesn't exist or has expired
 
@@ -307,21 +308,21 @@ The most common CI failures are due to formatting issues. To prevent these:
 
 ## API Examples
 
-### JSON Format (Default)
+### Raw Text (Default)
 ```bash
-# Store pastebin data with 1-day TTL (4 char code)
+# Store pastebin data with 1-day TTL (4-5 char code)
 curl -X POST "http://localhost:8080/" \
-  -H "Content-Type: application/json" \
-  -d '{"ttl":"1d","data":"Hello, world!"}'
-# Response: {"status":"ok","url":"http://localhost:8080/XyZ9"}
+  -H "Content-Type: text/plain" \
+  -d "Hello, world!"
+# Response: http://localhost:8080/XyZ9
 ```
 
-### URL-Encoded Form Data
+### Form-Encoded Data (for HTML forms)
 ```bash
 # Store data using form data (for HTML forms)
-curl -X POST "http://localhost:8080/?input=urlencoded" \
+curl -X POST "http://localhost:8080/?input=form" \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "ttl=1d&data=Hello%20world%21"
+  -d "data=Hello%20world%21"
 ```
 
 ### Retrieving Pastes
@@ -358,10 +359,10 @@ curl -X DELETE "http://localhost:8080/Ab3d"
 - Consider read/write capacity based on traffic
 
 ### Input Formats
-- **JSON (Default)**: `POST /` with `{"ttl":"1d","data":"content"}` in body
-- **URL-encoded**: `POST /?input=urlencoded` with form data
-- **Required Fields**: `ttl` (1d|1w|1mo) and `data`
-- **Size Limit**: 2MB for data
+- **Raw Text (Default)**: `POST /` with raw text content in body
+- **Form-encoded**: `POST /?input=form` with form data (`data` field)
+- **TTL**: Fixed at 24 hours for all pastes
+- **Size Limit**: 2MB for data (auto-truncated with UTF-8 preservation)
 
 ### Error Handling
 - 400: Invalid parameters (ttl, malformed JSON)
@@ -389,3 +390,6 @@ curl -X DELETE "http://localhost:8080/Ab3d"
 - **Copy Functionality**: Always copies original plain text regardless of display formatting
 - **Text Trimming**: Client-side trimming to 2MB with proper UTF-8 byte counting
 - **Line Ending Handling**: Accounts for \n → \r\n conversion during form submission
+- **URL Parameter Control**: `?noh` parameter disables syntax highlighting (e.g., `/abc123?noh`)
+- **URL Synchronization**: Toggling syntax highlighting checkbox updates URL bar and copy functionality
+- **Shareable Preferences**: URLs preserve syntax highlighting state when shared

@@ -175,7 +175,7 @@
     
     <div class="content">
         <div class="form-section">
-            <form action="/?input=urlencoded&html" method="POST">
+            <form action="/?input=form&html" method="POST">
                 <div class="form-group">
                     <textarea id="data" name="data" placeholder="Paste text here (<=2MB). The link will be available for 24 hours." required></textarea>
                 </div>
@@ -194,16 +194,8 @@
             <div class="api-example">
                 <code><pre>#!/bin/bash
 
-<span style="color: #50FA7B;">alias</span> xipe=<span style="color: #FF9E64;">'curl -X PUT https://xi.pe/ -H "Content-Type: text/plain" --data-binary @-'</span>
+<span style="color: #50FA7B;">alias</span> xipe=<span style="color: #FF9E64;">'curl -d@- https://xi.pe/'</span>
 <span style="color: #50FA7B;">echo</span> <span style="color: #FF9E64;">"your text here"</span> | xipe</pre></code>
-            </div>
-
-            <div class="api-example">
-                <code><pre>#!/usr/bin/python3
-                    
-<span style="color: #6FBFFF;">import</span> requests
-<span style="color: #6FBFFF;">data</span> = <span style="color: #FF9E64;">"your text here"</span>
-shorturl = requests.post(<span style="color: #FF9E64;">'https://xi.pe/'</span>, json={<span style="color: #FF9E64;">"data"</span>: <span style="color: #6FBFFF;">data</span>}).json()[<span style="color: #FF9E64;">'url'</span>]</pre></code>
             </div>
         </div>
         
