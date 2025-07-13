@@ -27,7 +27,7 @@
     "/": {
       "post": {
         "summary": "Store data",
-        "description": "Stores pastebin data with 7-day expiration. Plain text input/output is the default and standard behavior. The ?input=form parameter exists purely to support HTML web forms.",
+        "description": "Stores pastebin data with 7-day expiration. Plain text input/output is the default and standard behavior. Non-browser clients receive a plain text URL response, while browsers receive an HTML redirect to the created item. The ?input=form parameter exists purely to support HTML web forms.",
         "parameters": [
           {
             "name": "input",
@@ -65,12 +65,13 @@
         },
         "responses": {
           "200": {
-            "description": "Successfully created",
+            "description": "Successfully created (API clients get plain text URL, browsers get HTML redirect)",
             "content": {
               "text/plain": {
                 "schema": {
                   "type": "string",
-                  "description": "Plain text URL of the created item (standard API response)"
+                  "description": "Plain text URL of the created item (for non-browser clients)",
+                  "example": "https://xi.pe/Ab3d"
                 }
               }
             },
@@ -84,12 +85,12 @@
             }
           },
           "303": {
-            "description": "See Other - redirect for form submissions",
+            "description": "See Other - redirect for browser clients and form submissions",
             "content": {
               "text/html": {
                 "schema": {
                   "type": "string",
-                  "description": "Redirect to the created item page (for form input)"
+                  "description": "HTML redirect to the created item page (for browsers and form submissions)"
                 }
               }
             },
