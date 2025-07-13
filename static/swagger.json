@@ -27,38 +27,39 @@
     "/": {
       "post": {
         "summary": "Store data",
-        "description": "Stores pastebin data with 24-hour expiration. Supports both JSON and URL-encoded form data.",
+        "description": "Stores pastebin data with 24-hour expiration. Accepts raw text body by default or form data with ?input=form parameter.",
         "parameters": [
           {
             "name": "input",
             "in": "query",
-            "description": "Input format type",
+            "description": "Input format type - use 'form' for URL-encoded form data",
             "schema": {
               "type": "string",
-              "enum": ["urlencoded"]
+              "enum": ["form"]
             }
           }
         ],
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": {
+            "text/plain": {
               "schema": {
-                "$ref": "#/components/schemas/CreateRequest"
+                "type": "string",
+                "maxLength": 2097152,
+                "description": "Raw text content to store (default behavior)"
               },
               "examples": {
-                "data_example": {
-                  "summary": "Data storage",
-                  "value": {
-                    "data": "Hello, world!"
-                  }
+                "text_example": {
+                  "summary": "Raw text storage",
+                  "value": "Hello, world!"
                 }
               }
             },
             "application/x-www-form-urlencoded": {
               "schema": {
                 "$ref": "#/components/schemas/CreateFormRequest"
-              }
+              },
+              "description": "Used with ?input=form parameter"
             }
           }
         },
@@ -66,21 +67,41 @@
           "200": {
             "description": "Successfully created",
             "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CreateResponse"
-                }
-              },
-              "text/html": {
+              "text/plain": {
                 "schema": {
                   "type": "string",
-                  "description": "Redirect to the created item page for browser clients"
+                  "description": "URL of the created item (for raw text input)"
                 }
               }
             },
             "headers": {
               "Set-Cookie": {
                 "description": "Owner ID cookie for deletion access",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "303": {
+            "description": "See Other - redirect for form submissions",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string",
+                  "description": "Redirect to the created item page (for form input)"
+                }
+              }
+            },
+            "headers": {
+              "Set-Cookie": {
+                "description": "Owner ID cookie for deletion access",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Location": {
+                "description": "Redirect URL to the created item page",
                 "schema": {
                   "type": "string"
                 }
@@ -133,83 +154,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "summary": "Store raw text data",
-        "description": "Stores raw text data with automatic UTF-8 validation, truncation at 2MB, and 1-day TTL.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "text/plain": {
-              "schema": {
-                "type": "string",
-                "maxLength": 2097152,
-                "description": "Raw text content to store"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successfully stored",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "string",
-                  "description": "URL of the created item"
-                }
-              }
-            },
-            "headers": {
-              "Set-Cookie": {
-                "description": "Owner ID cookie for deletion access",
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request - invalid UTF-8 or empty content",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "529": {
-            "description": "Unable to generate unique code",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "Service unavailable - storage service temporarily unavailable",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "string"
                 }
               }
             }
@@ -349,17 +293,6 @@
   },
   "components": {
     "schemas": {
-      "CreateRequest": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "string",
-            "maxLength": 2097152,
-            "description": "Text data to store (up to 2MB, expires after 24 hours)"
-          }
-        },
-        "required": ["data"]
-      },
       "CreateFormRequest": {
         "type": "object",
         "properties": {
@@ -373,21 +306,6 @@
           }
         },
         "required": ["data"]
-      },
-      "CreateResponse": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": ["ok"]
-          },
-          "url": {
-            "type": "string",
-            "format": "uri",
-            "description": "URL of the created data page"
-          }
-        },
-        "required": ["status", "url"]
       },
       "DeleteResponse": {
         "type": "object",
