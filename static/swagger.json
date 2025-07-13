@@ -27,7 +27,7 @@
     "/": {
       "post": {
         "summary": "Store data",
-        "description": "Stores pastebin data with 24-hour expiration. Accepts raw text body by default or form data with ?input=form parameter.",
+        "description": "Stores pastebin data with 7-day expiration. Accepts raw text body by default or form data with ?input=form parameter.",
         "parameters": [
           {
             "name": "input",
@@ -298,7 +298,7 @@
         "properties": {
           "data": {
             "type": "string",
-            "description": "Text data to store (expires after 24 hours)"
+            "description": "Text data to store (expires after 7 days)"
           },
           "format": {
             "type": "string",

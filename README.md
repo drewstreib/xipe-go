@@ -1,17 +1,17 @@
 # xipe - Pastebin Service
 
-A high-performance pastebin service for xi.pe, built with Go, AWS DynamoDB, and S3. Creates short, memorable codes using 4-5 character alphanumeric identifiers with 24-hour automatic expiration.
+A high-performance pastebin service for xi.pe, built with Go, AWS DynamoDB, and S3. Creates short, memorable codes using 4-5 character alphanumeric identifiers with 7-day automatic expiration.
 
 ## Features
 
-- **Pastebin Service**: Store and share text/code snippets with 24-hour expiration
+- **Pastebin Service**: Store and share text/code snippets with 7-day expiration
 - **Hybrid Storage**: Small files (≤10KB) in DynamoDB, large files (>10KB, ≤2MB) in S3 with zstd compression
 - **Syntax Highlighting**: Automatic code syntax highlighting with highlight.js
 - **High Performance**: In-memory LRU cache with TTL support
 - **REST API**: JSON API with optional form-encoded input support
 - **Static Pages**: Built-in support for static content pages
 - **Owner Authentication**: Delete functionality with secure 128-bit tokens
-- **Automatic Cleanup**: All pastes expire after 24 hours
+- **Automatic Cleanup**: All pastes expire after 7 days
 
 ## Quick Start
 
@@ -47,7 +47,7 @@ go build -o xipe .
 ### Create Paste
 
 ```bash
-# Create paste (24-hour expiration, 4-5 character code)
+# Create paste (7-day expiration, 4-5 character code)
 curl -X POST "http://localhost:8080/" \
   -H "Content-Type: application/json" \
   -d '{"data":"Hello, world!"}'  # ttl field no longer needed
@@ -72,7 +72,7 @@ xipe uses a hybrid storage approach for optimal performance:
 
 - **Small Files (≤10KB)**: Stored directly in DynamoDB for fast access
 - **Large Files (>10KB, ≤2MB)**: Content stored in S3 with zstd compression, metadata in DynamoDB
-- **All files**: 24-hour expiration (no user-selectable TTL)
+- **All files**: 7-day expiration (no user-selectable TTL)
 - **Code length**: 4-5 characters (randomly generated with multiple allocation attempts before failing)
 
 ### Access Paste

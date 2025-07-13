@@ -39,7 +39,7 @@ xipe-go/
 - **Endpoint**: `POST /`
 - **Method**: POST (required)
 - **Input Format**: JSON body (default) or URL-encoded form data with `?input=urlencoded`
-- **TTL**: Fixed at 24 hours (no longer user-selectable)
+- **TTL**: Fixed at 7 days (no longer user-selectable)
 - **Code Generation**: Cryptographically random alphanumeric (4-5 characters)
 - **Retry Logic**: 3 attempts with 4-character codes, then 3 attempts with 5-character codes on collision (returns 529 on failure)
 - **Storage**: DynamoDB table "xipe_redirects" with conditional writes
@@ -361,7 +361,7 @@ curl -X DELETE "http://localhost:8080/Ab3d"
 ### Input Formats
 - **Raw Text (Default)**: `POST /` with raw text content in body
 - **Form-encoded**: `POST /?input=form` with form data (`data` field)
-- **TTL**: Fixed at 24 hours for all pastes
+- **TTL**: Fixed at 7 days for all pastes
 - **Size Limit**: 2MB for data (auto-truncated with UTF-8 preservation)
 
 ### Error Handling
