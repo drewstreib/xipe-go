@@ -2,24 +2,24 @@
 
 echo "Testing text storage (default):"
 curl -X POST "http://localhost:8080/" \
-  -H "Content-Type: application/json" \
-  -d '{"ttl":"1d","data":"Hello world, this is a test!"}'
+  -H "Content-Type: text/plain" \
+  -d 'Hello world, this is a test!'
 echo -e "\n"
 
-echo "Testing URL storage:"
+echo "Testing pastebin storage with large content:"
 curl -X POST "http://localhost:8080/" \
-  -H "Content-Type: application/json" \
-  -d '{"ttl":"1d","data":"https://example.com","typ":"URL"}'
+  -H "Content-Type: text/plain" \
+  -d 'This is a longer text that would be stored as a pastebin entry.'
 echo -e "\n"
 
-echo "Testing form submission for text:"
-curl -X POST "http://localhost:8080/?input=urlencoded" \
+echo "Testing form submission:"
+curl -X POST "http://localhost:8080/?input=form" \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "ttl=1d&data=Hello+from+form&typ=Text"
+  -d "data=Hello+from+form"
 echo -e "\n"
 
-echo "Testing form submission for URL:"
-curl -X POST "http://localhost:8080/?input=urlencoded" \
+echo "Testing form submission with encoded content:"
+curl -X POST "http://localhost:8080/?input=form" \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "ttl=1d&data=https%3A%2F%2Fexample.com&typ=URL"
+  -d "data=Hello%20world%20with%20special%20characters%21"
 echo -e "\n"

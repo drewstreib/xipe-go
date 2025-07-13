@@ -3,7 +3,6 @@ package utils
 import (
 	"crypto/rand"
 	"math/big"
-	"time"
 )
 
 const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -40,27 +39,4 @@ func GenerateUniqueCode(length int) (string, error) {
 	// If we get here, we couldn't generate a non-reserved code in 5 tries
 	// This should be extremely rare, so just return a regular code
 	return GenerateCode(length)
-}
-
-// CalculateTTL calculates the TTL timestamp based on duration string
-func CalculateTTL(duration string) (int64, int, error) {
-	now := time.Now()
-	var expiry time.Time
-	var codeLength int
-
-	switch duration {
-	case "1d":
-		expiry = now.Add(24 * time.Hour)
-		codeLength = 4
-	case "1w":
-		expiry = now.Add(7 * 24 * time.Hour)
-		codeLength = 5
-	case "1mo":
-		expiry = now.AddDate(0, 1, 0)
-		codeLength = 6
-	default:
-		return 0, 0, nil
-	}
-
-	return expiry.Unix(), codeLength, nil
 }

@@ -135,12 +135,9 @@ func (h *Handlers) PostHandler(c *gin.Context) {
 		finalValue = "" // Empty in DynamoDB, data will be in S3
 	}
 
-	// Use default 1d TTL for POST requests
-	ettl, _, err := utils.CalculateTTL("1d")
-	if err != nil {
-		c.String(http.StatusInternalServerError, "Error: Failed to calculate TTL\n")
-		return
-	}
+	// POST TTL is fixed at 7 days
+	const postTTLSeconds = 7 * 86400
+	ettl := time.Now().Add(postTTLSeconds * time.Second).Unix()
 
 	// Try 3 times with 4-character codes, then 3 times with 5-character codes
 	var code string
