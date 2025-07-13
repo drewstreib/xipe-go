@@ -43,7 +43,7 @@ func ShouldReturnHTML(c *gin.Context) bool {
 	return false
 }
 
-// RespondWithError sends an error response in JSON or HTML format based on client type
+// RespondWithError sends an error response in HTML or plain text format based on client type
 func RespondWithError(c *gin.Context, statusCode int, status, description string) {
 	if ShouldReturnHTML(c) {
 		c.HTML(statusCode, "error.html", gin.H{
@@ -52,9 +52,7 @@ func RespondWithError(c *gin.Context, statusCode int, status, description string
 			"statusCode":  statusCode,
 		})
 	} else {
-		c.JSON(statusCode, gin.H{
-			"status":      status,
-			"description": description,
-		})
+		// For non-browser clients, return plain text error
+		c.String(statusCode, "Error %d: %s", statusCode, description)
 	}
 }

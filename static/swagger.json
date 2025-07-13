@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "xi.pe API",
-    "description": "A high-performance pastebin service providing short, memorable codes using 4-6 character alphanumeric identifiers.",
+    "description": "A high-performance pastebin service providing short, memorable codes using 4-6 character alphanumeric identifiers. The API uses plain text for all requests and responses by default. The ?input=form parameter exists solely for HTML form compatibility.",
     "version": "1.0.0",
     "contact": {
       "name": "Drew Streib",
@@ -27,12 +27,12 @@
     "/": {
       "post": {
         "summary": "Store data",
-        "description": "Stores pastebin data with 7-day expiration. Accepts raw text body by default or form data with ?input=form parameter.",
+        "description": "Stores pastebin data with 7-day expiration. Plain text input/output is the default and standard behavior. The ?input=form parameter exists purely to support HTML web forms.",
         "parameters": [
           {
             "name": "input",
             "in": "query",
-            "description": "Input format type - use 'form' for URL-encoded form data",
+            "description": "Input format type - use 'form' ONLY for HTML web form compatibility. Plain text is the default.",
             "schema": {
               "type": "string",
               "enum": ["form"]
@@ -46,7 +46,7 @@
               "schema": {
                 "type": "string",
                 "maxLength": 2097152,
-                "description": "Raw text content to store (default behavior)"
+                "description": "Plain text content to store (DEFAULT - this is the standard API behavior)"
               },
               "examples": {
                 "text_example": {
@@ -59,7 +59,7 @@
               "schema": {
                 "$ref": "#/components/schemas/CreateFormRequest"
               },
-              "description": "Used with ?input=form parameter"
+              "description": "Used ONLY with ?input=form parameter for HTML form compatibility"
             }
           }
         },
@@ -70,7 +70,7 @@
               "text/plain": {
                 "schema": {
                   "type": "string",
-                  "description": "URL of the created item (for raw text input)"
+                  "description": "Plain text URL of the created item (standard API response)"
                 }
               }
             },
@@ -111,9 +111,10 @@
           "400": {
             "description": "Bad request - invalid parameters",
             "content": {
-              "application/json": {
+              "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "type": "string",
+                  "example": "Error 400: Invalid parameters"
                 }
               }
             }
@@ -121,9 +122,10 @@
           "403": {
             "description": "Forbidden - content too large",
             "content": {
-              "application/json": {
+              "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "type": "string",
+                  "example": "Error 400: Invalid parameters"
                 }
               }
             }
@@ -131,9 +133,10 @@
           "500": {
             "description": "Internal server error",
             "content": {
-              "application/json": {
+              "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "type": "string",
+                  "example": "Error 400: Invalid parameters"
                 }
               }
             }
@@ -141,9 +144,10 @@
           "529": {
             "description": "Unable to generate unique code",
             "content": {
-              "application/json": {
+              "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "type": "string",
+                  "example": "Error 400: Invalid parameters"
                 }
               }
             }
@@ -151,9 +155,10 @@
           "503": {
             "description": "Service unavailable - storage service temporarily unavailable",
             "content": {
-              "application/json": {
+              "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "type": "string",
+                  "example": "Error 400: Invalid parameters"
                 }
               }
             }
@@ -199,7 +204,7 @@
               "text/plain": {
                 "schema": {
                   "type": "string",
-                  "description": "Raw data content for API clients"
+                  "description": "Plain text data content (standard API response)"
                 }
               }
             }
@@ -207,9 +212,10 @@
           "400": {
             "description": "Invalid code format",
             "content": {
-              "application/json": {
+              "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "type": "string",
+                  "example": "Error 400: Invalid parameters"
                 }
               }
             }
@@ -217,9 +223,10 @@
           "404": {
             "description": "Code not found or expired",
             "content": {
-              "application/json": {
+              "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "type": "string",
+                  "example": "Error 400: Invalid parameters"
                 }
               }
             }
@@ -227,9 +234,10 @@
           "500": {
             "description": "Internal server error",
             "content": {
-              "application/json": {
+              "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "type": "string",
+                  "example": "Error 400: Invalid parameters"
                 }
               }
             }
@@ -260,9 +268,10 @@
           "200": {
             "description": "Successfully deleted",
             "content": {
-              "application/json": {
+              "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteResponse"
+                  "type": "string",
+                  "example": "Deleted successfully"
                 }
               }
             }
@@ -270,9 +279,10 @@
           "401": {
             "description": "Unauthorized - missing or invalid owner cookie",
             "content": {
-              "application/json": {
+              "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "type": "string",
+                  "example": "Error 400: Invalid parameters"
                 }
               }
             }
@@ -280,9 +290,10 @@
           "500": {
             "description": "Internal server error",
             "content": {
-              "application/json": {
+              "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "type": "string",
+                  "example": "Error 400: Invalid parameters"
                 }
               }
             }
@@ -307,33 +318,10 @@
         },
         "required": ["data"]
       },
-      "DeleteResponse": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": ["ok"]
-          },
-          "message": {
-            "type": "string",
-            "example": "deleted successfully"
-          }
-        },
-        "required": ["status", "message"]
-      },
       "ErrorResponse": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": ["error"]
-          },
-          "description": {
-            "type": "string",
-            "description": "Error description"
-          }
-        },
-        "required": ["status", "description"]
+        "type": "string",
+        "description": "Plain text error message in format: Error {code}: {message}",
+        "example": "Error 404: Short URL not found or has expired"
       }
     },
     "securitySchemes": {

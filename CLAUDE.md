@@ -40,7 +40,7 @@ xipe-go/
 ### 1. Pastebin Service
 - **Endpoint**: `POST /`
 - **Method**: POST (required)
-- **Input Format**: JSON body (default) or URL-encoded form data with `?input=urlencoded`
+- **Input Format**: Plain text body (default) or URL-encoded form data with `?input=form` (for HTML forms only)
 - **TTL**: Configurable via environment variable (default: 7 days)
 - **Code Generation**: Cryptographically random alphanumeric (4-5 characters)
 - **Retry Logic**: 3 attempts with 4-character codes, then 3 attempts with 5-character codes on collision (returns 529 on failure)
@@ -335,11 +335,10 @@ The most common CI failures are due to formatting issues. To prevent these:
 
 ## API Examples
 
-### Raw Text (Default)
+### Plain Text (Default)
 ```bash
-# Store pastebin data with 1-day TTL (4-5 char code)
+# Store pastebin data (4-5 char code, 7 day TTL)
 curl -X POST "http://localhost:8080/" \
-  -H "Content-Type: text/plain" \
   -d "Hello, world!"
 # Response: http://localhost:8080/XyZ9
 ```
@@ -362,13 +361,12 @@ curl "http://localhost:8080/Ab3d"
 ```bash
 # Delete a post (requires owner cookie from creation)
 curl -X DELETE "http://localhost:8080/Ab3d" \
-  -b "id=<owner-token>" \
-  -H "Content-Type: application/json"
-# Response: {"status":"ok","message":"deleted successfully"}
+  -b "id=<owner-token>"
+# Response: Deleted successfully
 
 # Delete attempt without cookie (fails)
 curl -X DELETE "http://localhost:8080/Ab3d"
-# Response: {"status":"error","description":"unauthorized"}
+# Response: Error 401: unauthorized
 ```
 
 ## Implementation Notes
@@ -385,14 +383,16 @@ curl -X DELETE "http://localhost:8080/Ab3d"
 - Single table design for simplicity
 - Consider read/write capacity based on traffic
 
-### Input Formats
-- **Raw Text (Default)**: `POST /` with raw text content in body
-- **Form-encoded**: `POST /?input=form` with form data (`data` field)
+### Input/Output Formats
+- **Plain Text (Default)**: `POST /` with plain text content in body, returns plain text URL
+- **Form-encoded**: `POST /?input=form` with form data (`data` field) - for HTML form compatibility only
+- **Response Format**: All non-browser responses are plain text (URLs for success, "Error {code}: {message}" for errors)
 - **TTL**: Configurable for all pastes (default: 7 days)
 - **Size Limit**: Configurable max size for data (default: 2MB, auto-truncated with UTF-8 preservation)
 
 ### Error Handling
-- 400: Invalid parameters (ttl, malformed JSON)
+- **Response Format**: Plain text "Error {code}: {message}" for non-browser clients, HTML error page for browsers
+- 400: Invalid parameters
 - 401: Unauthorized (delete without valid owner cookie, or wrong owner)
 - 403: Data too long (configurable max, default: 2MB)
 - 404: Code not found or expired, S3 object not found

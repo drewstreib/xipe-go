@@ -51,23 +51,16 @@ go build -o xipe .
 ### Create Paste
 
 ```bash
-# Create paste (7-day expiration, 4-5 character code)
+# Create paste with plain text (default, 7-day expiration, 4-5 character code)
 curl -X POST "http://localhost:8080/" \
-  -H "Content-Type: application/json" \
-  -d '{"data":"Hello, world!"}'  # ttl field no longer needed
+  -d "Hello, world!"
+# Response: http://localhost:8080/Ab3d
 
-# Response:
-# {"status":"ok","url":"http://localhost:8080/Ab3d"}
-
-# Form-encoded alternative:
-curl -X POST "http://localhost:8080/?input=urlencoded" \
+# Form-encoded alternative (for HTML forms only):
+curl -X POST "http://localhost:8080/?input=form" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "data=Hello%20world%21"
-
-# Raw text alternative using PUT:
-curl -X PUT "http://localhost:8080/" \
-  -H "Content-Type: text/plain; charset=utf-8" \
-  -d "Hello, world!"
+# Response: http://localhost:8080/XyZ9
 ```
 
 ### Storage Architecture
@@ -209,75 +202,77 @@ ko build .
 
 Create a new paste.
 
-**Request Body (JSON)**:
-```json
-{
-  "data": "Your text or code here"
-}
+**Default: Plain Text Body**:
+```bash
+POST /
+Content-Type: text/plain
+
+Your text or code here
 ```
 
-**Alternative (Form-encoded)**:
+**Alternative (Form-encoded for HTML forms)**:
 ```bash
-POST /?input=urlencoded
+POST /?input=form
 Content-Type: application/x-www-form-urlencoded
 
 data=Your%20text%20here
 ```
 
-**Response**:
-```json
-{
-  "status": "ok",
-  "url": "http://localhost:8080/Ab3d"
-}
+**Response** (plain text):
+```
+http://localhost:8080/Ab3d
 ```
 
-### PUT /
+### GET /:code
 
-Create a new paste with raw UTF-8 text directly in the body.
+Retrieve a paste.
 
 **Request**:
 ```bash
-PUT /
-Content-Type: text/plain; charset=utf-8
-
-Your raw text or code content here
+GET /Ab3d
 ```
 
-**Response**:
-```json
-{
-  "status": "ok",
-  "url": "http://localhost:8080/Ab3d"
-}
+**Response** (plain text):
+```
+Your stored text or code content
 ```
 
-**Notes**:
-- Accepts raw UTF-8 text up to 2MB
-- Invalid UTF-8 sequences will return 400 error
-- Empty content will return 400 error
-- Same 24-hour expiration as POST endpoint
+**Browser Response**: HTML page with syntax highlighting
 
-**Error Responses**:
-- `400` - Invalid parameters or malformed JSON
-- `403` - Data too long (2MB max)
-- `500` - Database/S3 errors
-- `503` - S3 service temporarily unavailable
-- `529` - Unable to generate unique code (very rare)
+### DELETE /:code
 
-### GET /[code]
+Delete a paste (requires owner cookie).
 
-Display paste content.
+**Request**:
+```bash
+DELETE /Ab3d
+Cookie: id=<owner-token>
+```
 
-**Response**: HTML page with paste content and syntax highlighting
+**Response** (plain text):
+```
+Deleted successfully
+```
 
-**Query Parameters**:
-- `?raw` - Return plain text instead of HTML
-- `?html` - Force HTML response (default for browsers)
+### Error Responses
 
-### DELETE /[code]
+All errors return plain text for non-browser clients:
 
-Delete paste (requires owner cookie).
+```
+Error 404: Short URL not found or has expired
+Error 401: unauthorized
+Error 403: Data too long
+Error 500: Internal server error
+```
+
+Browser clients receive styled HTML error pages.
+
+### API Response Format Summary
+
+- **Plain text is the default**: All API responses use plain text (URLs for success, "Error {code}: {message}" for errors)
+- **HTML for browsers**: Browser clients (detected by User-Agent) receive HTML pages
+- **No JSON responses**: The API uses plain text exclusively for programmatic access
+- **Form support**: The `?input=form` parameter exists solely for HTML form compatibility
 
 **Response**: 
 - `200` - Successfully deleted

@@ -309,11 +309,8 @@ func (h *Handlers) DeleteHandler(c *gin.Context) {
 	if utils.ShouldReturnHTML(c) {
 		c.Redirect(http.StatusSeeOther, "/"+code)
 	} else {
-		// For API clients, return JSON success
-		c.JSON(http.StatusOK, gin.H{
-			"status":  "ok",
-			"message": "deleted successfully",
-		})
+		// For API clients, return plain text success
+		c.String(http.StatusOK, "Deleted successfully")
 	}
 }
 
