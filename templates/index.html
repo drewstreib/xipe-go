@@ -194,8 +194,11 @@
             <div class="api-example">
                 <code><pre>#!/bin/bash
 
-<span style="color: #50FA7B;">alias</span> xipe=<span style="color: #FF9E64;">'curl -d@- https://xi.pe/'</span>
-<span style="color: #50FA7B;">echo</span> <span style="color: #FF9E64;">"your text here"</span> | xipe</pre></code>
+<span style="color: #50faa2;">echo</span> <span style="color: #FF9E64;">"your text here"</span> | curl -d@- https://xi.pe/
+
+<span style="color: #00b800;"># alias this for convenience</span>
+<span style="color: #50faa2;">alias</span> xipe=<span style="color: #FF9E64;">'curl -d@- https://xi.pe/'</span>
+<span style="color: #50faa2;">echo</span> <span style="color: #FF9E64;">"your text here"</span> | xipe</pre></code>
             </div>
         </div>
         
