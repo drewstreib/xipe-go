@@ -326,7 +326,10 @@
             const url = new URL(window.location);
             if (!hasSyntax) {
                 // Add ?noh parameter when syntax highlighting is disabled
-                url.searchParams.set('noh', '');
+                url.searchParams.delete('noh'); // Remove first to avoid duplicates
+                // Manually add noh without equals sign
+                const separator = url.search ? '&' : '?';
+                url.search += separator + 'noh';
             } else {
                 // Remove ?noh parameter when syntax highlighting is enabled
                 url.searchParams.delete('noh');
