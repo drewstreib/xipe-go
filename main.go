@@ -133,9 +133,6 @@ func main() {
 	r.GET("/android-chrome-512x512.png", func(c *gin.Context) {
 		serveStaticWithCache(c, "static/android-chrome-512x512.png")
 	})
-	r.GET("/site.webmanifest", func(c *gin.Context) {
-		serveStaticWithCache(c, "static/site.webmanifest")
-	})
 	r.GET("/about.txt", func(c *gin.Context) {
 		serveStaticWithCache(c, "static/about.txt")
 	})
