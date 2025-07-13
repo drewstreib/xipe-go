@@ -105,10 +105,11 @@ func (h *Handlers) DataHandler(c *gin.Context) {
 
 	// Get the actual data content
 	var dataContent string
-	if redirect.Typ == "D" {
+	switch redirect.Typ {
+	case "D":
 		// Data stored directly in DynamoDB
 		dataContent = redirect.Val
-	} else if redirect.Typ == "S" {
+	case "S":
 		// Data stored in S3, need to fetch it
 		s3Key := "S/" + code + ".zst"
 		s3Data, err := h.S3.GetObject(s3Key)

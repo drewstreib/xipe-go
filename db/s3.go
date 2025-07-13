@@ -87,7 +87,11 @@ func (s *S3Client) GetObject(key string) ([]byte, error) {
 		log.Printf("Failed to get object %s from S3: %v", key, err)
 		return nil, err
 	}
-	defer result.Body.Close()
+	defer func() {
+		if closeErr := result.Body.Close(); closeErr != nil {
+			log.Printf("Failed to close S3 response body: %v", closeErr)
+		}
+	}()
 
 	// Read compressed data from S3
 	compressedData, err := io.ReadAll(result.Body)
