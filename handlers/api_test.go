@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/drewstreib/xipe-go/config"
 	"github.com/drewstreib/xipe-go/db"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -18,7 +19,13 @@ func TestPostHandlerSimple(t *testing.T) {
 	t.Run("Raw body success", func(t *testing.T) {
 		mockDB := &db.MockDB{}
 		mockS3 := &db.MockS3{}
-		h := &Handlers{DB: mockDB, S3: mockS3}
+		cfg := &config.Config{
+			PasteTTL:                86400 * 7, // 7 days
+			PasteDynamoDBCutoffSize: 10240,     // 10KB
+			PasteMaxSize:            2097152,   // 2MB
+			CacheMaxItems:           10000,     // 10K items
+		}
+		h := &Handlers{DB: mockDB, S3: mockS3, Cfg: cfg}
 
 		// Mock successful storage
 		mockDB.On("PutRedirect", mock.AnythingOfType("*db.RedirectRecord")).Return(nil)
@@ -53,7 +60,13 @@ func TestPostHandlerSimple(t *testing.T) {
 	t.Run("Form input success", func(t *testing.T) {
 		mockDB := &db.MockDB{}
 		mockS3 := &db.MockS3{}
-		h := &Handlers{DB: mockDB, S3: mockS3}
+		cfg := &config.Config{
+			PasteTTL:                86400 * 7, // 7 days
+			PasteDynamoDBCutoffSize: 10240,     // 10KB
+			PasteMaxSize:            2097152,   // 2MB
+			CacheMaxItems:           10000,     // 10K items
+		}
+		h := &Handlers{DB: mockDB, S3: mockS3, Cfg: cfg}
 
 		// Mock successful storage
 		mockDB.On("PutRedirect", mock.AnythingOfType("*db.RedirectRecord")).Return(nil)

@@ -3,12 +3,12 @@ package db
 import (
 	"context"
 	"log"
-	"os"
-	"strconv"
 	"time"
 
+	"github.com/drewstreib/xipe-go/config"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
@@ -48,21 +48,21 @@ type RedirectRecord struct {
 	Owner   string `dynamodbav:"owner"`
 }
 
-func NewDynamoDBClient() (DBInterface, error) {
+func NewDynamoDBClient(cfg *config.Config) (DBInterface, error) {
 	log.Println("Initializing DynamoDB client...")
 
 	// Log some environment info for debugging
 	log.Printf("AWS Region: us-east-1")
 	log.Printf("DynamoDB Table: xipe_redirects")
 
-	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion("us-east-1"))
+	awsCfg, err := awsconfig.LoadDefaultConfig(context.TODO(), awsconfig.WithRegion("us-east-1"))
 	if err != nil {
 		log.Printf("Failed to load AWS config: %v", err)
 		return nil, err
 	}
 
 	// Try to get credentials to verify they're working
-	creds, err := cfg.Credentials.Retrieve(context.TODO())
+	creds, err := awsCfg.Credentials.Retrieve(context.TODO())
 	if err != nil {
 		log.Printf("Failed to retrieve AWS credentials: %v", err)
 	} else {
@@ -70,22 +70,17 @@ func NewDynamoDBClient() (DBInterface, error) {
 		// Don't log the actual keys for security
 	}
 
-	// Initialize cache with configurable size
-	cacheSize := 10000 // Default
-	if envSize := os.Getenv("CACHE_SIZE"); envSize != "" {
-		if size, err := strconv.Atoi(envSize); err == nil && size > 0 {
-			cacheSize = size
-		}
-	}
+	// Use cache max items from config
+	cacheMaxItems := cfg.CacheMaxItems
 
 	// Cache TTL is 1 hour
 	cacheTTL := time.Hour
-	cache := expirable.NewLRU[string, *CachedRecord](cacheSize, nil, cacheTTL)
+	cache := expirable.NewLRU[string, *CachedRecord](cacheMaxItems, nil, cacheTTL)
 
-	log.Printf("Initialized LRU cache with size: %d, TTL: %v", cacheSize, cacheTTL)
+	log.Printf("Initialized LRU cache with max items: %d, TTL: %v", cacheMaxItems, cacheTTL)
 
 	client := &DynamoDBClient{
-		client: dynamodb.NewFromConfig(cfg),
+		client: dynamodb.NewFromConfig(awsCfg),
 		table:  "xipe_redirects",
 		cache:  cache,
 	}

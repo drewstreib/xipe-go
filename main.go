@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/drewstreib/xipe-go/config"
 	"github.com/drewstreib/xipe-go/db"
 	"github.com/drewstreib/xipe-go/handlers"
 	"github.com/drewstreib/xipe-go/utils"
@@ -21,12 +22,15 @@ var templatesFS embed.FS
 var staticFS embed.FS
 
 func main() {
+	// Load configuration
+	cfg := config.LoadConfig()
+
 	// Initialize reserved codes from embedded pages
 	if err := utils.InitReservedCodes(); err != nil {
 		log.Fatal("Failed to initialize reserved codes:", err)
 	}
 
-	dbClient, err := db.NewDynamoDBClient()
+	dbClient, err := db.NewDynamoDBClient(cfg)
 	if err != nil {
 		log.Fatal("Failed to create DynamoDB client:", err)
 	}
@@ -37,8 +41,9 @@ func main() {
 	}
 
 	h := &handlers.Handlers{
-		DB: dbClient,
-		S3: s3Client,
+		DB:  dbClient,
+		S3:  s3Client,
+		Cfg: cfg,
 	}
 
 	r := gin.Default()

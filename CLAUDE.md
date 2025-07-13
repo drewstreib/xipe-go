@@ -9,7 +9,7 @@ xipe (zippy) is a high-performance pastebin service for xi.pe, built with Go and
 - **Language**: Go 1.24.3
 - **Web Framework**: Gin (github.com/gin-gonic/gin)
 - **Database**: AWS DynamoDB
-- **Object Storage**: AWS S3 (for files >10KB)
+- **Object Storage**: AWS S3 (for files >configurable cutoff, default: 10KB)
 - **Cache**: HashiCorp golang-lru/v2/expirable (LRU cache with TTL)
 - **Testing**: testify/assert, testify/mock
 
@@ -17,6 +17,8 @@ xipe (zippy) is a high-performance pastebin service for xi.pe, built with Go and
 ```
 xipe-go/
 ├── main.go              # Application entry point
+├── config/              # Configuration management
+│   └── config.go       # Environment variable loading and defaults
 ├── handlers/            # HTTP request handlers
 │   ├── root.go         # Root page and stats endpoints
 │   ├── api.go          # API endpoints
@@ -39,13 +41,13 @@ xipe-go/
 - **Endpoint**: `POST /`
 - **Method**: POST (required)
 - **Input Format**: JSON body (default) or URL-encoded form data with `?input=urlencoded`
-- **TTL**: Fixed at 7 days (no longer user-selectable)
+- **TTL**: Configurable via environment variable (default: 7 days)
 - **Code Generation**: Cryptographically random alphanumeric (4-5 characters)
 - **Retry Logic**: 3 attempts with 4-character codes, then 3 attempts with 5-character codes on collision (returns 529 on failure)
 - **Storage**: DynamoDB table "xipe_redirects" with conditional writes
 - **Owner Authentication**: 128-bit random tokens for deletion access
 - **Features**:
-  - Store up to 2MB of text data (up to 10KB stored in DynamoDB, larger files stored in S3)
+  - Store up to configurable size of text data (configurable storage cutoff for DynamoDB vs S3, defaults: 10KB cutoff, 2MB max)
   - Syntax highlighting with highlight.js
   - Dynamic line numbers toggle
   - Optional syntax highlighting toggle
@@ -92,12 +94,12 @@ xipe-go/
 ### Hybrid Storage System
 xipe uses a hybrid storage approach to efficiently handle files of different sizes:
 
-- **Small Files (≤10KB)**: Stored directly in DynamoDB for fast access
-- **Large Files (>10KB, ≤2MB)**: Content stored in S3, metadata in DynamoDB
+- **Small Files (≤configurable cutoff, default: 10KB)**: Stored directly in DynamoDB for fast access
+- **Large Files (>cutoff, ≤configurable max, default: 2MB)**: Content stored in S3, metadata in DynamoDB
 
 ### Storage Decision Logic
-1. **Data ≤10KB**: Record type "D", content stored in DynamoDB `val` field
-2. **Data >10KB**: Record type "S", content stored in S3 bucket `xipe-data` with key `S/{code}`, DynamoDB `val` field empty
+1. **Data ≤PASTE_DYNAMODB_CUTOFF_SIZE**: Record type "D", content stored in DynamoDB `val` field
+2. **Data >PASTE_DYNAMODB_CUTOFF_SIZE**: Record type "S", content stored in S3 bucket `xipe-data` with key `S/{code}`, DynamoDB `val` field empty
 
 ### S3 Configuration
 - **Bucket**: `xipe-data`
@@ -199,26 +201,51 @@ ko apply -f config/
 ```
 
 ## Configuration
+
+### Environment Variables
+All configuration is handled via environment variables with sensible defaults:
+
+**Application Settings:**
+- `PASTE_TTL` - Paste expiration time in seconds (default: 604800 = 7 days)
+- `PASTE_DYNAMODB_CUTOFF_SIZE` - Size threshold for DynamoDB vs S3 storage in bytes (default: 10240 = 10KB)
+- `PASTE_MAX_SIZE` - Maximum paste size in bytes (default: 2097152 = 2MB)
+- `CACHE_MAX_ITEMS` - LRU cache maximum number of items (default: 10000)
+
+**AWS Settings:**
+- `AWS_ACCESS_KEY_ID` - AWS access key (required)
+- `AWS_SECRET_ACCESS_KEY` - AWS secret key (required)
+- `AWS_REGION` - AWS region (default: us-east-1)
+
+**Hardcoded Settings:**
 - **Port**: 8080 (hardcoded in main.go)
-- **AWS Region**: us-east-1 (hardcoded in db/dynamodb.go)
 - **Table Name**: xipe_redirects (hardcoded in db/dynamodb.go)
-- **Cache Size**: 10000 (configurable via CACHE_SIZE environment variable)
+- **S3 Bucket**: xipe-data (hardcoded in db/s3.go)
 - **Cache TTL**: 1 hour (hardcoded)
-- **DynamoDB Requirements**:
-  - Create table with 'code' as primary key (String)
-  - Enable TTL on 'ettl' attribute
-  - Recommended: On-demand billing for unpredictable traffic
+
+**Configuration Example:**
+```bash
+# Custom configuration
+export PASTE_TTL=86400              # 1 day expiration
+export PASTE_MAX_SIZE=1048576       # 1MB max size
+export PASTE_DYNAMODB_CUTOFF_SIZE=5120  # 5KB DynamoDB cutoff
+export CACHE_MAX_ITEMS=5000         # 5K cache items
+```
+
+**DynamoDB Requirements:**
+- Create table with 'code' as primary key (String)
+- Enable TTL on 'ettl' attribute
+- Recommended: On-demand billing for unpredictable traffic
 
 ## Future Enhancements
 - User registration and API keys
 - ✅ Pastebin functionality (completed)
+- ✅ Configuration via environment variables (completed)
 - Usage analytics
 - Custom domains
 - Rate limiting
-- Configuration via environment variables
 
 ## Performance Considerations
-- **In-Memory LRU Cache**: 10K item cache with 1-hour TTL reduces DynamoDB load
+- **In-Memory LRU Cache**: Configurable max items (default: 10K items) with 1-hour TTL reduces DynamoDB load
 - **Cache Logic**: Honors DynamoDB TTL by checking expiration before serving cached results
 - **DynamoDB session reuse** for connection pooling
 - **S3 Compression**: zstd level 3 compression reduces storage costs and transfer times
@@ -361,13 +388,13 @@ curl -X DELETE "http://localhost:8080/Ab3d"
 ### Input Formats
 - **Raw Text (Default)**: `POST /` with raw text content in body
 - **Form-encoded**: `POST /?input=form` with form data (`data` field)
-- **TTL**: Fixed at 7 days for all pastes
-- **Size Limit**: 2MB for data (auto-truncated with UTF-8 preservation)
+- **TTL**: Configurable for all pastes (default: 7 days)
+- **Size Limit**: Configurable max size for data (default: 2MB, auto-truncated with UTF-8 preservation)
 
 ### Error Handling
 - 400: Invalid parameters (ttl, malformed JSON)
 - 401: Unauthorized (delete without valid owner cookie, or wrong owner)
-- 403: Data too long (2MB max)
+- 403: Data too long (configurable max, default: 2MB)
 - 404: Code not found or expired, S3 object not found
 - 500: Database errors, S3 access denied, storage configuration errors
 - 503: S3 service temporarily unavailable
@@ -388,7 +415,7 @@ curl -X DELETE "http://localhost:8080/Ab3d"
 - **Line Numbers**: Optional line numbers with highlightjs-line-numbers.js plugin
 - **Display Modes**: 4 combinations - plain/highlighted × with/without line numbers
 - **Copy Functionality**: Always copies original plain text regardless of display formatting
-- **Text Trimming**: Client-side trimming to 2MB with proper UTF-8 byte counting
+- **Text Trimming**: Client-side trimming to configurable max size (default: 2MB) with proper UTF-8 byte counting
 - **Line Ending Handling**: Accounts for \n → \r\n conversion during form submission
 - **URL Parameter Control**: `?noh` parameter disables syntax highlighting (e.g., `/abc123?noh`)
 - **URL Synchronization**: Toggling syntax highlighting checkbox updates URL bar and copy functionality

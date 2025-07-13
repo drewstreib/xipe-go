@@ -12,6 +12,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/drewstreib/xipe-go/config"
 	"github.com/drewstreib/xipe-go/db"
 	"github.com/drewstreib/xipe-go/utils"
 
@@ -20,8 +21,9 @@ import (
 )
 
 type Handlers struct {
-	DB db.DBInterface
-	S3 db.S3Interface
+	DB  db.DBInterface
+	S3  db.S3Interface
+	Cfg *config.Config
 }
 
 // generateOwnerToken generates a 128-bit random token and encodes it as base64
@@ -98,8 +100,8 @@ func (h *Handlers) PostHandler(c *gin.Context) {
 		}
 	}
 
-	// Smart truncation to 2MB (2097152 bytes) while preserving UTF-8
-	const maxBytes = 2097152
+	// Smart truncation to configured max size while preserving UTF-8
+	maxBytes := h.Cfg.PasteMaxSize
 	finalData := rawData
 	if len(rawData) > maxBytes {
 		// Find the longest valid UTF-8 prefix within the limit
@@ -127,17 +129,16 @@ func (h *Handlers) PostHandler(c *gin.Context) {
 	var finalValue string
 	var s3Key string
 
-	if dataLen <= 10240 { // 10KB or less: store in DynamoDB
+	if dataLen <= h.Cfg.PasteDynamoDBCutoffSize { // Configurable size threshold: store in DynamoDB
 		recordType = "D"
 		finalValue = finalData
-	} else { // Over 10KB: store in S3
+	} else { // Over cutoff size: store in S3
 		recordType = "S"
 		finalValue = "" // Empty in DynamoDB, data will be in S3
 	}
 
-	// POST TTL is fixed at 7 days
-	const postTTLSeconds = 7 * 86400
-	ettl := time.Now().Add(postTTLSeconds * time.Second).Unix()
+	// POST TTL from configuration
+	ettl := time.Now().Add(time.Duration(h.Cfg.PasteTTL) * time.Second).Unix()
 
 	// Try 3 times with 4-character codes, then 3 times with 5-character codes
 	var code string

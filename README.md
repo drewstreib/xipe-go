@@ -4,14 +4,14 @@ A high-performance pastebin service for xi.pe, built with Go, AWS DynamoDB, and 
 
 ## Features
 
-- **Pastebin Service**: Store and share text/code snippets with 7-day expiration
-- **Hybrid Storage**: Small files (≤10KB) in DynamoDB, large files (>10KB, ≤2MB) in S3 with zstd compression
+- **Pastebin Service**: Store and share text/code snippets with configurable expiration (default: 7 days)
+- **Hybrid Storage**: Small files (≤10KB) in DynamoDB, large files (>10KB, ≤2MB) in S3 with zstd compression (thresholds configurable)
 - **Syntax Highlighting**: Automatic code syntax highlighting with highlight.js
 - **High Performance**: In-memory LRU cache with TTL support
 - **REST API**: JSON API with optional form-encoded input support
 - **Static Pages**: Built-in support for static content pages
 - **Owner Authentication**: Delete functionality with secure 128-bit tokens
-- **Automatic Cleanup**: All pastes expire after 7 days
+- **Automatic Cleanup**: All pastes expire after configurable TTL (default: 7 days)
 
 ## Quick Start
 
@@ -26,6 +26,10 @@ cd xipe-go
 export AWS_ACCESS_KEY_ID=your_access_key
 export AWS_SECRET_ACCESS_KEY=your_secret_key
 export AWS_REGION=us-east-1
+
+# Optional: Configure application settings
+export PASTE_TTL=604800              # 7 days (default)
+export PASTE_MAX_SIZE=2097152        # 2MB (default)
 
 # Run the service
 docker-compose up -d
@@ -70,9 +74,9 @@ curl -X PUT "http://localhost:8080/" \
 
 xipe uses a hybrid storage approach for optimal performance:
 
-- **Small Files (≤10KB)**: Stored directly in DynamoDB for fast access
-- **Large Files (>10KB, ≤2MB)**: Content stored in S3 with zstd compression, metadata in DynamoDB
-- **All files**: 7-day expiration (no user-selectable TTL)
+- **Small Files (≤configurable size, default: 10KB)**: Stored directly in DynamoDB for fast access
+- **Large Files (>cutoff size, ≤configurable max, default: 2MB)**: Content stored in S3 with zstd compression, metadata in DynamoDB
+- **All files**: Configurable expiration (default: 7 days)
 - **Code length**: 4-5 characters (randomly generated with multiple allocation attempts before failing)
 
 ### Access Paste
@@ -89,10 +93,25 @@ Navigate to `http://localhost:8080/[code]` to see the paste with:
 
 ### Environment Variables
 
+**AWS Configuration:**
 - `AWS_ACCESS_KEY_ID` - AWS access key (needs DynamoDB and S3 permissions)
 - `AWS_SECRET_ACCESS_KEY` - AWS secret key
 - `AWS_REGION` - AWS region (default: us-east-1)
-- `CACHE_SIZE` - LRU cache size (default: 10000)
+
+**Application Configuration:**
+- `PASTE_TTL` - Paste expiration time in seconds (default: 604800 = 7 days)
+- `PASTE_DYNAMODB_CUTOFF_SIZE` - Size threshold for DynamoDB vs S3 storage in bytes (default: 10240 = 10KB)
+- `PASTE_MAX_SIZE` - Maximum paste size in bytes (default: 2097152 = 2MB)
+- `CACHE_MAX_ITEMS` - LRU cache maximum number of items (default: 10000)
+
+**Example Configuration:**
+```bash
+# Override defaults
+export PASTE_TTL=86400              # 1 day instead of 7 days
+export PASTE_MAX_SIZE=1048576       # 1MB instead of 2MB
+export PASTE_DYNAMODB_CUTOFF_SIZE=5120  # 5KB instead of 10KB
+export CACHE_MAX_ITEMS=5000         # 5K items instead of 10K
+```
 
 ### AWS Setup
 
