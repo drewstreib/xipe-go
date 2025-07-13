@@ -59,6 +59,11 @@ curl -X POST "http://localhost:8080/" \
 curl -X POST "http://localhost:8080/?input=urlencoded" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "data=Hello%20world%21"
+
+# Raw text alternative using PUT:
+curl -X PUT "http://localhost:8080/" \
+  -H "Content-Type: text/plain; charset=utf-8" \
+  -d "Hello, world!"
 ```
 
 ### Storage Architecture
@@ -207,6 +212,32 @@ data=Your%20text%20here
   "url": "http://localhost:8080/Ab3d"
 }
 ```
+
+### PUT /
+
+Create a new paste with raw UTF-8 text directly in the body.
+
+**Request**:
+```bash
+PUT /
+Content-Type: text/plain; charset=utf-8
+
+Your raw text or code content here
+```
+
+**Response**:
+```json
+{
+  "status": "ok",
+  "url": "http://localhost:8080/Ab3d"
+}
+```
+
+**Notes**:
+- Accepts raw UTF-8 text up to 2MB
+- Invalid UTF-8 sequences will return 400 error
+- Empty content will return 400 error
+- Same 24-hour expiration as POST endpoint
 
 **Error Responses**:
 - `400` - Invalid parameters or malformed JSON
