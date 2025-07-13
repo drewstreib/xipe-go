@@ -5,7 +5,8 @@ import (
 	"math/big"
 )
 
-const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+// Character set excludes ambiguous characters: 0, O, 1, I, l, o, B, 8
+const charset = "2345679CDEFGHJKLMNPQRSTUVWXYZacdefghijkmnpqrstuvwxyz"
 
 // GenerateCode generates a random alphanumeric code of specified length
 func GenerateCode(length int) (string, error) {
