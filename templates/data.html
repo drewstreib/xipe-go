@@ -274,7 +274,8 @@
 
     <script>
         function copyToClipboard() {
-            const urlText = '{{.url}}';
+            // Get current URL including any parameters like ?noh
+            const urlText = window.location.href;
             
             try {
                 navigator.clipboard.writeText(urlText).then(() => {
@@ -320,6 +321,17 @@
             
             const hasSyntax = syntaxCheckbox.checked;
             const hasLineNumbers = lineNumbersCheckbox.checked;
+            
+            // Update URL bar based on syntax highlighting state
+            const url = new URL(window.location);
+            if (!hasSyntax) {
+                // Add ?noh parameter when syntax highlighting is disabled
+                url.searchParams.set('noh', '');
+            } else {
+                // Remove ?noh parameter when syntax highlighting is enabled
+                url.searchParams.delete('noh');
+            }
+            window.history.replaceState({}, '', url.toString());
             
             if (!hasSyntax && !hasLineNumbers) {
                 // Plain text only
@@ -443,14 +455,19 @@
                 hljs.lineNumbersBlock(codeBlock);
             }
             
-            // For static pages, uncheck syntax highlighting after initialization
+            // For static pages or ?noh parameter, uncheck syntax highlighting after initialization
+            const urlParams = new URLSearchParams(window.location.search);
             {{if .isStaticPage}}
-            const syntaxCheckbox = document.getElementById('syntax-highlighting-toggle');
-            if (syntaxCheckbox) {
-                syntaxCheckbox.checked = false;
-                toggleDisplay(); // Apply the unchecked state
-            }
+            if (true || urlParams.has('noh')) {
+            {{else}}
+            if (urlParams.has('noh')) {
             {{end}}
+                const syntaxCheckbox = document.getElementById('syntax-highlighting-toggle');
+                if (syntaxCheckbox) {
+                    syntaxCheckbox.checked = false;
+                    toggleDisplay(); // Apply the unchecked state
+                }
+            }
             
             // Check if user owns this data and show delete button
             checkOwnershipAndShowDelete();
