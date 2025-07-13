@@ -1,14 +1,17 @@
 # xipe - Pastebin Service
 
-A high-performance pastebin service for xi.pe, built with Go and AWS DynamoDB. Creates short, memorable codes using 4-6 character alphanumeric identifiers with automatic expiration.
+A high-performance pastebin service for xi.pe, built with Go, AWS DynamoDB, and S3. Creates short, memorable codes using 4-5 character alphanumeric identifiers with 24-hour automatic expiration.
 
 ## Features
 
-- **Pastebin Service**: Store and share text/code snippets with customizable expiration times
+- **Pastebin Service**: Store and share text/code snippets with 24-hour expiration
+- **Hybrid Storage**: Small files (≤10KB) in DynamoDB, large files (>10KB, ≤2MB) in S3 with zstd compression
 - **Syntax Highlighting**: Automatic code syntax highlighting with highlight.js
-- **High Performance**: In-memory LRU cache with TTL support and zstd compression
+- **High Performance**: In-memory LRU cache with TTL support
 - **REST API**: JSON API with optional form-encoded input support
-- **Automatic Cleanup**: Pastes expire automatically based on TTL settings
+- **Static Pages**: Built-in support for static content pages
+- **Owner Authentication**: Delete functionality with secure 128-bit tokens
+- **Automatic Cleanup**: All pastes expire after 24 hours
 
 ## Quick Start
 
@@ -19,7 +22,7 @@ A high-performance pastebin service for xi.pe, built with Go and AWS DynamoDB. C
 git clone https://github.com/drewstreib/xipe-go.git
 cd xipe-go
 
-# Set up AWS credentials
+# Set up AWS credentials (needs DynamoDB and S3 access)
 export AWS_ACCESS_KEY_ID=your_access_key
 export AWS_SECRET_ACCESS_KEY=your_secret_key
 export AWS_REGION=us-east-1
@@ -44,52 +47,66 @@ go build -o xipe .
 ### Create Paste
 
 ```bash
-# Create paste with 1-day expiration (4 character code)
+# Create paste (24-hour expiration, 4-5 character code)
 curl -X POST "http://localhost:8080/" \
   -H "Content-Type: application/json" \
-  -d '{"ttl":"1d","data":"Hello, world!"}'
+  -d '{"data":"Hello, world!"}'  # ttl field no longer needed
 
 # Response:
 # {"status":"ok","url":"http://localhost:8080/Ab3d"}
+
+# Form-encoded alternative:
+curl -X POST "http://localhost:8080/?input=urlencoded" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "data=Hello%20world%21"
 ```
 
-### TTL Options
+### Storage Architecture
 
-- `1d` - 1 day expiration (4 character code)
-- `1w` - 1 week expiration (5 character code)  
-- `1mo` - 1 month expiration (6 character code)
+xipe uses a hybrid storage approach for optimal performance:
+
+- **Small Files (≤10KB)**: Stored directly in DynamoDB for fast access
+- **Large Files (>10KB, ≤2MB)**: Content stored in S3 with zstd compression, metadata in DynamoDB
+- **All files**: 24-hour expiration (no user-selectable TTL)
+- **Code length**: 4-5 characters (cryptographically random, collision-resistant)
 
 ### Access Paste
 
 Navigate to `http://localhost:8080/[code]` to see the paste with:
-- Syntax highlighting (if code detected)
-- Line numbers toggle
-- Copy button
-- Creation timestamp
-- Expiration time
+- Syntax highlighting (toggleable)
+- Line numbers (toggleable)
+- Copy URL and Copy Text buttons
+- Delete button (if you're the owner)
+- Creation timestamp and expiration countdown
+- Raw text access via `?raw` parameter
 
 ## Configuration
 
 ### Environment Variables
 
-- `AWS_ACCESS_KEY_ID` - AWS access key for DynamoDB
+- `AWS_ACCESS_KEY_ID` - AWS access key (needs DynamoDB and S3 permissions)
 - `AWS_SECRET_ACCESS_KEY` - AWS secret key
 - `AWS_REGION` - AWS region (default: us-east-1)
 - `CACHE_SIZE` - LRU cache size (default: 10000)
 
-### DynamoDB Setup
+### AWS Setup
 
-Create a DynamoDB table named `xipe_redirects` with:
+**DynamoDB Table**: Create `xipe_redirects` with:
 - Primary key: `code` (String)
 - Enable TTL on `ettl` attribute
 - Recommended: Use on-demand billing
+
+**S3 Bucket**: Create `xipe-data` with:
+- Private access (public access blocked)
+- 30-day lifecycle policy for automatic cleanup
+- Same region as DynamoDB for optimal performance
 
 ## Development
 
 ### Prerequisites
 
 - Go 1.24.3 or later
-- AWS credentials with DynamoDB access
+- AWS credentials with DynamoDB and S3 access
 - Make (for build commands)
 
 ### Build Commands
@@ -124,32 +141,43 @@ ko build .
 
 ## Security Features
 
-- **Owner-based Deletion**: Only creators can delete their pastes
+- **Owner-based Deletion**: Only creators can delete their pastes (128-bit secure tokens)
 - **Size Limits**: 2MB maximum paste size
 - **IP Tracking**: Creator IP stored for abuse prevention
 - **Input Sanitization**: Protection against XSS and injection attacks
-- **Secure Tokens**: 128-bit cryptographically secure owner tokens
+- **Secure Code Generation**: Cryptographically random codes with collision handling
+- **Same-error Responses**: Prevents enumeration attacks on deletion endpoints
 
 ## Architecture
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌──────────────┐
 │   Client    │────▶│  Gin HTTP   │────▶│   DynamoDB   │
-└─────────────┘     │   Server    │     └──────────────┘
-                    └─────────────┘              ▲
-                           │                     │
+└─────────────┘     │   Server    │     │  (metadata)  │
+                    └─────────────┘     └──────────────┘
+                           │                     ▲
                            ▼                     │
                     ┌─────────────┐              │
                     │  LRU Cache  │──────────────┘
+                    │ (1hr TTL)   │
+                    └─────────────┘
+                           │
+                           ▼
+                    ┌─────────────┐
+                    │     S3      │
+                    │ (large files│
+                    │ + compress) │
                     └─────────────┘
 ```
 
 ### Key Components
 
 - **Web Framework**: Gin (high-performance HTTP)
-- **Database**: AWS DynamoDB (NoSQL)
-- **Cache**: HashiCorp golang-lru/v2 (TTL-aware)
-- **Syntax Highlighting**: highlight.js
+- **Database**: AWS DynamoDB (metadata and small files)
+- **Object Storage**: AWS S3 (large files with zstd compression)
+- **Cache**: HashiCorp golang-lru/v2 (1-hour TTL, respects DynamoDB expiration)
+- **Compression**: klauspost/compress (zstd level 3)
+- **Syntax Highlighting**: highlight.js with line numbers plugin
 
 ## API Reference
 
@@ -160,9 +188,16 @@ Create a new paste.
 **Request Body (JSON)**:
 ```json
 {
-  "ttl": "1d",
   "data": "Your text or code here"
 }
+```
+
+**Alternative (Form-encoded)**:
+```bash
+POST /?input=urlencoded
+Content-Type: application/x-www-form-urlencoded
+
+data=Your%20text%20here
 ```
 
 **Response**:
@@ -174,16 +209,30 @@ Create a new paste.
 ```
 
 **Error Responses**:
-- `400` - Invalid parameters
+- `400` - Invalid parameters or malformed JSON
 - `403` - Data too long (2MB max)
-- `500` - Internal server error
-- `529` - Unable to generate unique code
+- `500` - Database/S3 errors
+- `503` - S3 service temporarily unavailable
+- `529` - Unable to generate unique code (very rare)
 
 ### GET /[code]
 
 Display paste content.
 
 **Response**: HTML page with paste content and syntax highlighting
+
+**Query Parameters**:
+- `?raw` - Return plain text instead of HTML
+- `?html` - Force HTML response (default for browsers)
+
+### DELETE /[code]
+
+Delete paste (requires owner cookie).
+
+**Response**: 
+- `200` - Successfully deleted
+- `401` - Unauthorized (no cookie or wrong owner)
+- `404` - Paste not found
 
 ### GET /api/stats
 
