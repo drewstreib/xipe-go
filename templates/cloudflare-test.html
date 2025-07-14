@@ -111,20 +111,34 @@
             button.onclick = function() {
                 // Open challenge-check in new tab
                 window.open('/challenge-check', '_blank');
-                statusText.textContent = 'Challenge opened in new tab. Complete it and refresh this page.';
+                statusText.textContent = 'Challenge opened in new tab. Monitoring for completion...';
                 statusText.style.color = '#666';
+                
+                // Start polling for completion
+                startPolling();
             };
         }
         
-        // Listen for messages from challenge window
-        window.addEventListener('message', function(event) {
-            console.log('Received message:', event.data, 'from origin:', event.origin);
-            if (event.data && event.data.type === 'challenge-completed') {
-                console.log('Challenge completed message received, re-checking status...');
-                // Re-check status when challenge is completed
-                checkChallengeStatus();
-            }
-        });
+        function startPolling() {
+            const pollInterval = setInterval(() => {
+                if (sessionStorage.getItem('cloudflare-challenge-completed')) {
+                    // Clear the flag and stop polling
+                    sessionStorage.removeItem('cloudflare-challenge-completed');
+                    clearInterval(pollInterval);
+                    
+                    // Re-check status
+                    checkChallengeStatus();
+                }
+            }, 250); // Poll 4x per second
+            
+            // Stop polling after 30 seconds
+            setTimeout(() => {
+                clearInterval(pollInterval);
+            }, 30000);
+        }
+        
+        // Clear any existing challenge completion flag on page load
+        sessionStorage.removeItem('cloudflare-challenge-completed');
         
         // Check status on page load
         checkChallengeStatus();

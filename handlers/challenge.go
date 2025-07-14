@@ -17,10 +17,8 @@ func (h *Handlers) HandleChallengeCheck(c *gin.Context) {
 <body>
 <p>Challenge completed successfully!</p>
 <script>
-if (window.opener) {
-    window.opener.postMessage({type: 'challenge-completed'}, window.location.origin);
-}
-setTimeout(() => window.close(), 1000);
+sessionStorage.setItem('cloudflare-challenge-completed', '1');
+window.close();
 </script>
 </body>
 </html>`
