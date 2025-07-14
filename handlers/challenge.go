@@ -17,10 +17,8 @@ func (h *Handlers) HandleChallengeCheck(c *gin.Context) {
 <body>
 <p>Challenge completed successfully!</p>
 <script>
-console.log('Setting localStorage flag...');
 localStorage.setItem('cloudflare-challenge-completed', '1');
-console.log('Flag set:', localStorage.getItem('cloudflare-challenge-completed'));
-console.log('Tab will remain open for debugging');
+window.close();
 </script>
 </body>
 </html>`
