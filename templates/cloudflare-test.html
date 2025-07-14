@@ -118,7 +118,9 @@
         
         // Listen for messages from challenge window
         window.addEventListener('message', function(event) {
+            console.log('Received message:', event.data, 'from origin:', event.origin);
             if (event.data && event.data.type === 'challenge-completed') {
+                console.log('Challenge completed message received, re-checking status...');
                 // Re-check status when challenge is completed
                 checkChallengeStatus();
             }

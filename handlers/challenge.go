@@ -18,9 +18,9 @@ func (h *Handlers) HandleChallengeCheck(c *gin.Context) {
 <p>Challenge completed successfully!</p>
 <script>
 if (window.opener) {
-    window.opener.postMessage({type: 'challenge-completed'}, '*');
+    window.opener.postMessage({type: 'challenge-completed'}, window.location.origin);
 }
-setTimeout(() => window.close(), 500);
+setTimeout(() => window.close(), 1000);
 </script>
 </body>
 </html>`
