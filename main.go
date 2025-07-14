@@ -99,6 +99,7 @@ func main() {
 	r.GET("/", h.RootHandler)
 	r.POST("/", h.PostHandler)
 	r.DELETE("/:code", h.DeleteHandler)
+	r.GET("/challenge-check", h.HandleChallengeCheck)
 
 	api := r.Group("/api")
 	{
