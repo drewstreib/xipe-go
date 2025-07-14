@@ -100,6 +100,7 @@ func main() {
 	r.POST("/", h.PostHandler)
 	r.DELETE("/:code", h.DeleteHandler)
 	r.GET("/challenge-check", h.HandleChallengeCheck)
+	r.GET("/cloudflare-test", h.HandleCloudflareTest)
 
 	api := r.Group("/api")
 	{

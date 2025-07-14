@@ -11,3 +11,9 @@ import (
 func (h *Handlers) HandleChallengeCheck(c *gin.Context) {
 	c.String(http.StatusOK, "1")
 }
+
+// HandleCloudflareTest handles the /cloudflare-test endpoint
+// This endpoint serves a test page for the Cloudflare challenge verification
+func (h *Handlers) HandleCloudflareTest(c *gin.Context) {
+	c.HTML(http.StatusOK, "cloudflare-test.html", nil)
+}
