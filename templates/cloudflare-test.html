@@ -122,6 +122,14 @@
             };
         }
         
+        // Listen for messages from challenge window
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'challenge-completed') {
+                // Re-check status when challenge is completed
+                checkChallengeStatus();
+            }
+        });
+        
         // Check status on page load
         checkChallengeStatus();
     </script>

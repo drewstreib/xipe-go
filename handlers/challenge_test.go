@@ -32,8 +32,9 @@ func TestHandleChallengeCheck(t *testing.T) {
 
 	// Verify response
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, "1", w.Body.String())
-	assert.Equal(t, "text/plain; charset=utf-8", w.Header().Get("Content-Type"))
+	assert.Contains(t, w.Body.String(), "Challenge completed successfully!")
+	assert.Contains(t, w.Body.String(), "postMessage")
+	assert.Equal(t, "text/html; charset=utf-8", w.Header().Get("Content-Type"))
 }
 
 func TestHandleCloudflareTest(t *testing.T) {

@@ -7,9 +7,24 @@ import (
 )
 
 // HandleChallengeCheck handles the /challenge-check endpoint
-// This endpoint returns "1" as plain text and will be protected by Cloudflare managed challenge
+// This endpoint will be protected by Cloudflare managed challenge
 func (h *Handlers) HandleChallengeCheck(c *gin.Context) {
-	c.String(http.StatusOK, "1")
+	// If this page loads, the challenge was passed
+	// Send HTML that notifies parent window and closes tab
+	html := `<!DOCTYPE html>
+<html>
+<head><title>Challenge Passed</title></head>
+<body>
+<p>Challenge completed successfully!</p>
+<script>
+if (window.opener) {
+    window.opener.postMessage({type: 'challenge-completed'}, '*');
+}
+setTimeout(() => window.close(), 500);
+</script>
+</body>
+</html>`
+	c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(html))
 }
 
 // HandleCloudflareTest handles the /cloudflare-test endpoint
