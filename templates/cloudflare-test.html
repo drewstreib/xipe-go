@@ -81,20 +81,14 @@
                 });
                 
                 if (response.ok) {
-                    const text = await response.text();
-                    if (text.trim() === '1') {
-                        // Challenge passed
-                        button.textContent = 'Check Passed!';
-                        button.className = 'challenge-button passed';
-                        button.disabled = true;
-                        statusText.textContent = 'You have successfully passed the Cloudflare challenge.';
-                        statusText.style.color = '#28a745';
-                    } else {
-                        // Got 200 but not "1"
-                        showChallengeNeeded();
-                    }
+                    // Got 200 - challenge passed
+                    button.textContent = 'Check Passed!';
+                    button.className = 'challenge-button passed';
+                    button.disabled = true;
+                    statusText.textContent = 'You have successfully passed the Cloudflare challenge.';
+                    statusText.style.color = '#28a745';
                 } else {
-                    // Non-200 response
+                    // Non-200 response (likely 403 from Cloudflare)
                     showChallengeNeeded();
                 }
             } catch (error) {
