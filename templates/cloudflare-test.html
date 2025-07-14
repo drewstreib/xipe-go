@@ -121,9 +121,9 @@
         
         function startPolling() {
             const pollInterval = setInterval(() => {
-                if (sessionStorage.getItem('cloudflare-challenge-completed')) {
+                if (localStorage.getItem('cloudflare-challenge-completed')) {
                     // Clear the flag and stop polling
-                    sessionStorage.removeItem('cloudflare-challenge-completed');
+                    localStorage.removeItem('cloudflare-challenge-completed');
                     clearInterval(pollInterval);
                     
                     // Re-check status
@@ -138,7 +138,7 @@
         }
         
         // Clear any existing challenge completion flag on page load
-        sessionStorage.removeItem('cloudflare-challenge-completed');
+        localStorage.removeItem('cloudflare-challenge-completed');
         
         // Check status on page load
         checkChallengeStatus();

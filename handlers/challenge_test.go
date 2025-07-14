@@ -33,7 +33,7 @@ func TestHandleChallengeCheck(t *testing.T) {
 	// Verify response
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), "Challenge completed successfully!")
-	assert.Contains(t, w.Body.String(), "sessionStorage.setItem")
+	assert.Contains(t, w.Body.String(), "localStorage.setItem")
 	assert.Contains(t, w.Body.String(), "console.log")
 	assert.Equal(t, "text/html; charset=utf-8", w.Header().Get("Content-Type"))
 }
