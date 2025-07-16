@@ -22,7 +22,8 @@ xipe-go/
 ├── handlers/            # HTTP request handlers
 │   ├── root.go         # Root page and stats endpoints
 │   ├── api.go          # API endpoints
-│   └── data.go         # Data display handler
+│   ├── data.go         # Data display handler
+│   └── challenge.go    # Cloudflare challenge endpoints
 ├── db/                 # Database layer
 │   ├── dynamodb.go     # DynamoDB implementation
 │   └── mock.go         # Mock DB for testing
@@ -31,7 +32,8 @@ xipe-go/
 │   └── response.go     # HTTP response utilities
 ├── templates/          # HTML templates
 │   ├── index.html      # Landing page
-│   └── data.html       # Pastebin data display page
+│   ├── data.html       # Pastebin data display page
+│   └── cloudflare-test.html # Cloudflare challenge test page
 └── test files (*_test.go)
 ```
 
@@ -88,6 +90,27 @@ xipe-go/
 - **Endpoint**: `/`
 - **Content**: Usage instructions and service information
 - **Stats**: `/api/stats` endpoint for service metrics
+
+### 6. Cloudflare Challenge System
+- **Purpose**: Test and verify Cloudflare managed challenge functionality
+- **Endpoints**:
+  - `/challenge-check`: Protected endpoint that returns HTML when challenge is passed
+  - `/cloudflare-test`: Interactive test page with dynamic challenge verification
+- **Implementation**:
+  - Challenge check endpoint designed to be protected by Cloudflare managed challenge
+  - Returns HTML with localStorage flag when accessed (indicating challenge passed)
+  - Test page provides button interface for challenge verification
+  - Cross-tab communication via localStorage for seamless user experience
+- **User Flow**:
+  1. Visit `/cloudflare-test` → Initial status check → Red button if challenge needed
+  2. Click button → Opens `/challenge-check` in new tab (triggers Cloudflare challenge)
+  3. Complete Cloudflare challenge → Endpoint loads, sets localStorage, tab closes
+  4. Original tab polls localStorage → Detects completion → Button turns green
+- **Technical Details**:
+  - Uses localStorage for cross-tab communication (sessionStorage is isolated per-tab)
+  - Polling every 250ms for 30 seconds after opening challenge tab
+  - Automatic cleanup of localStorage flags on page load and after detection
+  - Challenge tab auto-closes after setting completion flag
 
 ## Storage Architecture
 
