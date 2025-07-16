@@ -87,7 +87,7 @@
         
         <div class="error-details">
             <strong>Status:</strong> {{.status}}<br>
-            <strong>Description:</strong> {{.description}}{{if .statusCode}}<br>
+            <strong>Description:</strong> <span style="white-space: pre-wrap;">{{.description}}</span>{{if .statusCode}}<br>
             <strong>HTTP Status Code:</strong> {{.statusCode}}{{end}}
         </div>
         

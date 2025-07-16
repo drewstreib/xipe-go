@@ -45,6 +45,11 @@ func ShouldReturnHTML(c *gin.Context) bool {
 
 // RespondWithError sends an error response in HTML or plain text format based on client type
 func RespondWithError(c *gin.Context, statusCode int, status, description string) {
+	// Check if this is a 404 following a delete operation
+	if statusCode == 404 && c.Query("from") == "delete" {
+		description = "Delete operation completed. The following error is the result of a normal attempt to show the now-deleted object.\n\n" + description
+	}
+
 	if ShouldReturnHTML(c) {
 		c.HTML(statusCode, "error.html", gin.H{
 			"status":      status,

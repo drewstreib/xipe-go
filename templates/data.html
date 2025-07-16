@@ -120,6 +120,9 @@
         .small-btn.delete:hover {
             background-color: #c82333;
         }
+        .small-btn[style*="66aaff"]:hover {
+            background-color: #4488dd !important;
+        }
         .data-content {
             width: 100%;
             min-height: calc(100vh - 150px);
@@ -239,9 +242,10 @@
     
     <div class="status-bar">
         <div class="status-left">
-            <span class="url-display">{{.url}} <a href="{{.url}}?raw" style="color: #66aaff; text-decoration: none;">?raw</a></span>
+            <span class="url-display">{{.url}}</span>
             <button class="small-btn" onclick="copyToClipboard()">Copy URL</button>
             <button class="small-btn" onclick="copyDataToClipboard()">Copy Text</button>
+            <button class="small-btn" onclick="window.location.href='{{.url}}?raw'" style="background-color: #66aaff;">View Raw</button>
             <button class="small-btn delete" id="deleteButton" onclick="deleteData()" style="display: none;">Delete</button>
         </div>
         

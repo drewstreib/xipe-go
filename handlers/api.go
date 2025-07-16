@@ -305,9 +305,12 @@ func (h *Handlers) DeleteHandler(c *gin.Context) {
 
 	log.Printf("Successfully deleted code: %s", code)
 
+	// Sleep for 500ms to allow DynamoDB to sync the delete
+	time.Sleep(500 * time.Millisecond)
+
 	// Always redirect for browser clients to the item URL (which will now 404)
 	if utils.ShouldReturnHTML(c) {
-		c.Redirect(http.StatusSeeOther, "/"+code)
+		c.Redirect(http.StatusSeeOther, "/"+code+"?from=delete")
 	} else {
 		// For API clients, return plain text success
 		c.String(http.StatusOK, "Deleted successfully")
