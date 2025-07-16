@@ -545,9 +545,9 @@
                     credentials: 'include', // Include cookies
                 })
                 .then(response => {
-                    // Always redirect to the item page regardless of response
+                    // Always redirect to the item page with from=delete parameter
                     // Server will show appropriate page (404 if deleted, error if not)
-                    window.location.href = `/${code}`;
+                    window.location.href = `/${code}?from=delete`;
                 })
                 .catch(error => {
                     console.error('Delete error:', error);
