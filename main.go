@@ -138,6 +138,9 @@ func main() {
 	r.GET("/about.txt", func(c *gin.Context) {
 		serveStaticWithCache(c, "static/about.txt")
 	})
+	r.GET("/robots.txt", func(c *gin.Context) {
+		serveStaticWithCache(c, "static/robots.txt")
+	})
 	r.GET("/swagger.json", func(c *gin.Context) {
 		c.Header("Content-Type", "application/json")
 		c.Header("Access-Control-Allow-Origin", "https://docs.xi.pe")
