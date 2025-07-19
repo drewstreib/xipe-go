@@ -1,39 +1,49 @@
 # Privacy Policy
 
-xi.pe is a public pastebin service operated by Drew Streib (dtype@dtype.org).
-By using this service, you acknowledge and agree to the following:
+xi.pe is a public pastebin service operated by Drew Streib (dtype@dtype.org). By
+using this service, you acknowledge and agree to the following:
 
 ## Public Access
 All content you post is publicly accessible to anyone with the relevant URL.
 
 ## Data Collection
 For security purposes, we collect IP addresses when content is posted. This
-information is not displayed to end users. IP addresses are retained only as
-long as the posted content (up to 1 month, selectable by user). This site does
-not collect identifying information otherwise, although such information may
-be present in user-submitted content.
+information is not displayed to end users. IP addresses are retained only as long
+as the posted content (1 week or as posted on the submission form). This site does
+not collect identifying information otherwise, although such information may be
+present in user-submitted content.
 
-Cookies are used only to provide a convenience mechanism for a posting user to
-be granted the right to delete the content that they submitted. By default, a
-cookie will allow this to happen from the browser used for the submission.
-This cookie has no further user-identifying information.
+Cookies are used only to provide a convenience mechanism to grant a user the
+ability to delete the content that they submitted. By default, a cookie will allow
+this to happen from the browser used for the submission. This cookie has no further
+user-identifying information.
+
+## Cloudflare
+This site uses Cloudflare as a caching and application firewall frontend. We may
+use Cloudflare-injected cookies for firewall tracking purposes to assist with bot
+detection and security. We may also use Cloudflare-injected javascript to separate
+humans from increasingly aggressive bots that otherwise cause site stability
+issues.
+
+We do not perform raw http log collection with Cloudflare, and any non-aggregated
+Cloudflare security data is kept for a maximum of 7 days.
 
 ## License Grant
-You grant xi.pe and its operator a perpetual, worldwide, royalty-free license
-to use, display, distribute, and make available any content you post.
+You grant xi.pe and its operator a perpetual, worldwide, royalty-free license to
+use, display, distribute, and make available any content you post.
 
 ## User Responsibility
 You are solely responsible for ensuring you have the legal right to post any
 content. Do not post content you do not own or lack permission to share.
 
 ## No Warranties
-xi.pe provides this service "as is" without any warranties or guarantees. We
-act solely as a hosting platform for user-generated content.
+xi.pe provides this service "as is" without any warranties or guarantees. We act
+solely as a hosting platform for user-generated content.
 
 ## Your Rights
-If you believe posted content violates your rights, email abuse@xi.pe for
-prompt resolution. You have the right to request access to, correction of, or
-deletion of your personal data. You may also lodge complaints with your local
-data protection authority.
+If you believe posted content violates your rights, email abuse@xi.pe for prompt
+resolution. You have the right to request access to, correction of, or deletion of
+your personal data. You may also lodge complaints with your local data protection
+authority.
 
 By using xi.pe, you accept these terms.
