@@ -72,7 +72,7 @@ func LoadConfig() *Config {
 	// Load SESSION_MAX_AGE (optional, defaults to 30 days)
 	if val := os.Getenv("SESSION_MAX_AGE"); val != "" {
 		if parsed, err := strconv.ParseInt(val, 10, 32); err == nil {
-			cfg.SessionMaxAge = int64(parsed)
+			cfg.SessionMaxAge = parsed
 		} else {
 			log.Printf("Warning: Invalid SESSION_MAX_AGE value '%s', using default %d", val, cfg.SessionMaxAge)
 		}
