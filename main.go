@@ -2,6 +2,8 @@ package main
 
 import (
 	"embed"
+	"encoding/json"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -15,6 +17,7 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
+	gorillaSessions "github.com/gorilla/sessions"
 )
 
 //go:embed templates/*
@@ -75,6 +78,39 @@ func main() {
 
 	// Apply session middleware
 	r.Use(sessions.Sessions("xipe_session", store))
+
+	// Debug middleware to log session contents
+	r.Use(func(c *gin.Context) {
+		session := sessions.Default(c)
+
+		// Access the underlying gorilla session to get all values
+		// This requires type assertion to access the internal session
+		if s, ok := session.(interface {
+			Session() *gorillaSessions.Session
+		}); ok {
+			gorillaSession := s.Session()
+			if gorillaSession != nil && len(gorillaSession.Values) > 0 {
+				// Convert all values to a string-keyed map for JSON marshaling
+				sessionData := make(map[string]interface{})
+				for key, value := range gorillaSession.Values {
+					// Convert key to string for JSON compatibility
+					keyStr := fmt.Sprintf("%v", key)
+					sessionData[keyStr] = value
+				}
+
+				// Convert to JSON for readable output
+				jsonData, err := json.Marshal(sessionData)
+				if err != nil {
+					log.Printf("Session Debug: Error marshaling session data: %v", err)
+				} else {
+					log.Printf("Session Debug: Path=%s Method=%s SessionData=%s",
+						c.Request.URL.Path, c.Request.Method, string(jsonData))
+				}
+			}
+		}
+
+		c.Next()
+	})
 
 	// Security headers middleware
 	r.Use(func(c *gin.Context) {
