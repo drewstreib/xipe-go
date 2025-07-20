@@ -246,7 +246,7 @@
             <button class="small-btn" onclick="copyToClipboard()">Copy URL</button>
             <button class="small-btn" onclick="copyDataToClipboard()">Copy Text</button>
             <button class="small-btn" onclick="window.location.href='{{.url}}?raw'" style="background-color: #1571e2;">View Raw</button>
-            <button class="small-btn delete" id="deleteButton" onclick="deleteData()" style="display: none;">Delete</button>
+            {{if .showDelete}}<button class="small-btn delete" id="deleteButton" onclick="deleteData()">Delete</button>{{end}}
         </div>
         
         <div class="status-center">
@@ -475,8 +475,6 @@
                 }
             }
             
-            // Check if user owns this data and show delete button
-            checkOwnershipAndShowDelete();
         });
         
         function copyDataToClipboard() {
@@ -525,15 +523,6 @@
             return null;
         }
         
-        // Check if current user owns this data
-        function checkOwnershipAndShowDelete() {
-            const ownerCookie = getCookie('id');
-            const ownerPrefix = {{if .ownerPrefix}}'{{.ownerPrefix}}'{{else}}null{{end}};
-            
-            if (ownerCookie && ownerPrefix && ownerCookie.startsWith(ownerPrefix)) {
-                document.getElementById('deleteButton').style.display = 'inline-block';
-            }
-        }
         
         // Function to delete the data
         function deleteData() {

@@ -53,10 +53,10 @@ func (h *Handlers) DataHandler(c *gin.Context) {
 				"url":          fullURL,
 				"data":         content,
 				"fromSuccess":  false,
-				"created":      0,    // Static pages have no creation time
-				"expires":      0,    // Static pages don't expire
-				"ownerPrefix":  "",   // Static pages have no owner
-				"isStaticPage": true, // Flag to indicate this is a static page
+				"created":      0,     // Static pages have no creation time
+				"expires":      0,     // Static pages don't expire
+				"showDelete":   false, // Static pages cannot be deleted
+				"isStaticPage": true,  // Flag to indicate this is a static page
 			})
 		} else {
 			// API clients get raw content as plain text
@@ -156,11 +156,12 @@ func (h *Handlers) DataHandler(c *gin.Context) {
 	// Return response based on client type
 	if utils.ShouldReturnHTML(c) {
 		// Browser clients get HTML template
-		// Only pass first 6 chars of owner for security
-		var ownerPrefix string
-		if len(redirect.Owner) >= 6 {
-			ownerPrefix = redirect.Owner[:6]
+		// Check if user owns this paste by comparing full owner IDs
+		showDelete := false
+		if ownerCookie, err := c.Cookie("id"); err == nil && ownerCookie == redirect.Owner {
+			showDelete = true
 		}
+
 		c.HTML(http.StatusOK, "data.html", gin.H{
 			"code":         code,
 			"url":          fullURL,
@@ -168,7 +169,7 @@ func (h *Handlers) DataHandler(c *gin.Context) {
 			"fromSuccess":  fromSuccess,
 			"created":      redirect.Created,
 			"expires":      redirect.Ettl,
-			"ownerPrefix":  ownerPrefix,
+			"showDelete":   showDelete,
 			"isStaticPage": false, // Flag to indicate this is user data
 		})
 	} else {
