@@ -79,16 +79,22 @@ func main() {
 
 	// Fix gorilla/sessions bug: MaxAge doesn't propagate to underlying securecookie codecs
 	// We need to access the underlying store and set MaxAge on each codec
-	// This uses reflection to access the private CookieStore field
+	// The CookieStore is embedded anonymously as the first field
 	if storeValue := reflect.ValueOf(store).Elem(); storeValue.IsValid() {
-		if cookieStoreField := storeValue.FieldByName("CookieStore"); cookieStoreField.IsValid() {
-			if cookieStore := cookieStoreField.Interface(); cookieStore != nil {
-				if cs := reflect.ValueOf(cookieStore); cs.IsValid() {
-					if codecsField := cs.Elem().FieldByName("Codecs"); codecsField.IsValid() {
+		if storeValue.NumField() > 0 {
+			cookieStoreField := storeValue.Field(0) // Embedded field is first
+			if cookieStoreField.IsValid() && !cookieStoreField.IsNil() {
+				if cs := cookieStoreField.Elem(); cs.IsValid() {
+					if codecsField := cs.FieldByName("Codecs"); codecsField.IsValid() {
 						for i := 0; i < codecsField.Len(); i++ {
 							codec := codecsField.Index(i).Interface()
-							if sc, ok := codec.(interface{ MaxAge(int) }); ok {
-								sc.MaxAge(int(cfg.SessionMaxAge))
+							// Use reflection to call MaxAge method on *securecookie.SecureCookie
+							codecValue := reflect.ValueOf(codec)
+							if codecValue.IsValid() {
+								maxAgeMethod := codecValue.MethodByName("MaxAge")
+								if maxAgeMethod.IsValid() {
+									maxAgeMethod.Call([]reflect.Value{reflect.ValueOf(int(cfg.SessionMaxAge))})
+								}
 							}
 						}
 					}
