@@ -14,15 +14,17 @@ type Config struct {
 	CacheMaxItems           int    // LRU cache maximum number of items
 	SessionsKey             string // Secret key for signing session cookies (required)
 	SessionsKeyPrev         string // Previous secret key for key rotation (optional)
+	SessionMaxAge           int64  // Maximum session age in seconds (default: 30 days)
 }
 
 // LoadConfig loads configuration from environment variables with defaults
 func LoadConfig() *Config {
 	cfg := &Config{
-		PasteTTL:                86400 * 7, // 7 days default
-		PasteDynamoDBCutoffSize: 10240,     // 10KB default
-		PasteMaxSize:            2097152,   // 2MB default
-		CacheMaxItems:           10000,     // 10K items default
+		PasteTTL:                86400 * 7,  // 7 days default
+		PasteDynamoDBCutoffSize: 10240,      // 10KB default
+		PasteMaxSize:            2097152,    // 2MB default
+		CacheMaxItems:           10000,      // 10K items default
+		SessionMaxAge:           86400 * 30, // 30 days default
 	}
 
 	// Load from environment variables if present
@@ -67,8 +69,17 @@ func LoadConfig() *Config {
 	// Load SESSIONS_KEY_PREV (optional for key rotation)
 	cfg.SessionsKeyPrev = os.Getenv("SESSIONS_KEY_PREV")
 
-	log.Printf("Config loaded - TTL: %ds, DynamoDB cutoff: %d bytes, Max size: %d bytes, Cache max items: %d",
-		cfg.PasteTTL, cfg.PasteDynamoDBCutoffSize, cfg.PasteMaxSize, cfg.CacheMaxItems)
+	// Load SESSION_MAX_AGE (optional, defaults to 30 days)
+	if val := os.Getenv("SESSION_MAX_AGE"); val != "" {
+		if parsed, err := strconv.ParseInt(val, 10, 64); err == nil {
+			cfg.SessionMaxAge = parsed
+		} else {
+			log.Printf("Warning: Invalid SESSION_MAX_AGE value '%s', using default %d", val, cfg.SessionMaxAge)
+		}
+	}
+
+	log.Printf("Config loaded - TTL: %ds, DynamoDB cutoff: %d bytes, Max size: %d bytes, Cache max items: %d, Session max age: %ds",
+		cfg.PasteTTL, cfg.PasteDynamoDBCutoffSize, cfg.PasteMaxSize, cfg.CacheMaxItems, cfg.SessionMaxAge)
 
 	return cfg
 }

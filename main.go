@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"reflect"
 	"time"
 
 	"github.com/drewstreib/xipe-go/config"
@@ -67,14 +68,34 @@ func main() {
 		store = cookie.NewStore([]byte(cfg.SessionsKey))
 	}
 
-	// Configure cookie options
+	// Configure cookie options using configurable MaxAge
 	store.Options(sessions.Options{
 		Path:     "/",
-		MaxAge:   30 * 24 * 60 * 60, // 30 days
-		HttpOnly: true,              // Security: prevent JavaScript access
-		Secure:   false,             // Allow HTTP for development (should be true in production with HTTPS)
+		MaxAge:   int(cfg.SessionMaxAge), // Use configurable session max age
+		HttpOnly: true,                   // Security: prevent JavaScript access
+		Secure:   false,                  // Allow HTTP for development (should be true in production with HTTPS)
 		SameSite: http.SameSiteLaxMode,
 	})
+
+	// Fix gorilla/sessions bug: MaxAge doesn't propagate to underlying securecookie codecs
+	// We need to access the underlying store and set MaxAge on each codec
+	// This uses reflection to access the private CookieStore field
+	if storeValue := reflect.ValueOf(store).Elem(); storeValue.IsValid() {
+		if cookieStoreField := storeValue.FieldByName("CookieStore"); cookieStoreField.IsValid() {
+			if cookieStore := cookieStoreField.Interface(); cookieStore != nil {
+				if cs := reflect.ValueOf(cookieStore); cs.IsValid() {
+					if codecsField := cs.Elem().FieldByName("Codecs"); codecsField.IsValid() {
+						for i := 0; i < codecsField.Len(); i++ {
+							codec := codecsField.Index(i).Interface()
+							if sc, ok := codec.(interface{ MaxAge(int) }); ok {
+								sc.MaxAge(int(cfg.SessionMaxAge))
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 
 	// Apply session middleware
 	r.Use(sessions.Sessions("xipe_session", store))

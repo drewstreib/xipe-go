@@ -112,6 +112,22 @@ xipe-go/
   - Automatic cleanup of localStorage flags on page load and after detection
   - Challenge tab auto-closes after setting completion flag
 
+### 6. Session Management
+- **Library**: gin-contrib/sessions with cookie store (gorilla/sessions backend)
+- **Cookie Configuration**:
+  - Name: `xipe_session`
+  - Expiration: 30 days
+  - HttpOnly: true (prevents JavaScript access)
+  - Secure: false (for development, should be true in production)
+  - SameSite: Lax
+- **Session Storage**: Signed, unencrypted cookies with no backend storage
+- **Key Rotation**: Supports dual keys via SESSIONS_KEY and SESSIONS_KEY_PREV
+  - New sessions signed with SESSIONS_KEY
+  - Existing sessions verified with either key
+- **Session Extension**: Sessions automatically extend to 30 days on each POST
+- **Current Usage**: Sets test value `"test"="a"` on successful POST (placeholder for future features)
+- **Debug Logging**: Middleware logs all session contents in JSON format (only when data exists)
+
 ## Storage Architecture
 
 ### Hybrid Storage System
@@ -233,6 +249,10 @@ All configuration is handled via environment variables with sensible defaults:
 - `PASTE_DYNAMODB_CUTOFF_SIZE` - Size threshold for DynamoDB vs S3 storage in bytes (default: 10240 = 10KB)
 - `PASTE_MAX_SIZE` - Maximum paste size in bytes (default: 2097152 = 2MB)
 - `CACHE_MAX_ITEMS` - LRU cache maximum number of items (default: 10000)
+
+**Session Settings:**
+- `SESSIONS_KEY` - Secret key for signing session cookies (required, fails startup if not set)
+- `SESSIONS_KEY_PREV` - Previous secret key for key rotation (optional)
 
 **AWS Settings:**
 - `AWS_ACCESS_KEY_ID` - AWS access key (required)
