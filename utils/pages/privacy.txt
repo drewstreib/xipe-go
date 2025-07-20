@@ -9,14 +9,18 @@ All content you post is publicly accessible to anyone with the relevant URL.
 ## Data Collection
 For security purposes, we collect IP addresses when content is posted. This
 information is not displayed to end users. IP addresses are retained only as long
-as the posted content (1 week or as posted on the submission form). This site does
+as the posted content (7 days or as posted on the submission form). This site does
 not collect identifying information otherwise, although such information may be
 present in user-submitted content.
 
-Cookies are used only to provide a convenience mechanism to grant a user the
-ability to delete the content that they submitted. By default, a cookie will allow
-this to happen from the browser used for the submission. This cookie has no further
-user-identifying information.
+This site uses cookies for browser-resident sessions without any backend session
+table storage. All cookies are signed and unencrypted. The only data stored is a
+user identifier for the purpose of allowing a user to delete posts that they have
+submitted. This user identifier is randomly generated and only stored along with
+the post for as long as the post endures (7 days).
+
+The code behind this site is open source and available for audit at:
+https://github.com/drewstreib/xipe-go
 
 ## Cloudflare
 This site uses Cloudflare as a caching and application firewall frontend. We may
@@ -25,8 +29,7 @@ detection and security. We may also use Cloudflare-injected javascript to separa
 humans from increasingly aggressive bots that otherwise cause site stability
 issues.
 
-We do not perform raw http log collection with Cloudflare, and any non-aggregated
-Cloudflare security data is kept for a maximum of 7 days.
+Any non-aggregated Cloudflare security data is kept for a maximum of 7 days.
 
 ## License Grant
 You grant xi.pe and its operator a perpetual, worldwide, royalty-free license to
