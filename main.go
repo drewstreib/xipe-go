@@ -12,6 +12,8 @@ import (
 	"github.com/drewstreib/xipe-go/handlers"
 	"github.com/drewstreib/xipe-go/utils"
 
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 )
 
@@ -47,6 +49,32 @@ func main() {
 	}
 
 	r := gin.Default()
+
+	// Configure session middleware with cookie store
+	// Create store with key rotation support
+	var store sessions.Store
+	if cfg.SessionsKeyPrev != "" {
+		// Support key rotation: new key for signing, both keys for verification
+		store = cookie.NewStore(
+			[]byte(cfg.SessionsKey),     // Current key for signing
+			[]byte(cfg.SessionsKeyPrev), // Previous key for verification only
+		)
+	} else {
+		// Single key for both signing and verification
+		store = cookie.NewStore([]byte(cfg.SessionsKey))
+	}
+
+	// Configure cookie options
+	store.Options(sessions.Options{
+		Path:     "/",
+		MaxAge:   30 * 24 * 60 * 60, // 30 days
+		HttpOnly: true,              // Security: prevent JavaScript access
+		Secure:   false,             // Allow HTTP for development (should be true in production with HTTPS)
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	// Apply session middleware
+	r.Use(sessions.Sessions("xipe_session", store))
 
 	// Security headers middleware
 	r.Use(func(c *gin.Context) {

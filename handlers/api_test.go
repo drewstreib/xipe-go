@@ -8,6 +8,8 @@ import (
 
 	"github.com/drewstreib/xipe-go/config"
 	"github.com/drewstreib/xipe-go/db"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -30,8 +32,10 @@ func TestPostHandlerSimple(t *testing.T) {
 		// Mock successful storage
 		mockDB.On("PutRedirect", mock.AnythingOfType("*db.RedirectRecord")).Return(nil)
 
-		// Create router
+		// Create router with session middleware
 		r := gin.New()
+		store := cookie.NewStore([]byte("test-secret-key"))
+		r.Use(sessions.Sessions("xipe_session", store))
 		r.POST("/", h.PostHandler)
 
 		// Create request with raw body
@@ -71,8 +75,10 @@ func TestPostHandlerSimple(t *testing.T) {
 		// Mock successful storage
 		mockDB.On("PutRedirect", mock.AnythingOfType("*db.RedirectRecord")).Return(nil)
 
-		// Create router
+		// Create router with session middleware
 		r := gin.New()
+		store := cookie.NewStore([]byte("test-secret-key"))
+		r.Use(sessions.Sessions("xipe_session", store))
 		r.POST("/", h.PostHandler)
 
 		// Create request with form data

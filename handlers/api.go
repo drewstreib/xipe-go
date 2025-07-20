@@ -17,6 +17,7 @@ import (
 	"github.com/drewstreib/xipe-go/utils"
 
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
@@ -205,6 +206,26 @@ func (h *Handlers) PostHandler(c *gin.Context) {
 
 				// Set the owner ID cookie (30 days expiration, no HttpOnly)
 				c.SetCookie("id", ownerID, 30*24*60*60, "/", "", false, false)
+
+				// Get session and set test value
+				session := sessions.Default(c)
+
+				// Check if session already exists (has any values)
+				existingTest := session.Get("test")
+				if existingTest != nil {
+					log.Printf("Extending existing session with test=%v", existingTest)
+				}
+
+				// Set/update test value - this marks session as modified
+				session.Set("test", "a")
+
+				// Save session - this automatically:
+				// 1. Preserves all existing session values
+				// 2. Re-signs the cookie with the current key
+				// 3. Sets a new expiration 30 days from now (using store's MaxAge)
+				if err := session.Save(); err != nil {
+					log.Printf("Failed to save session: %v", err)
+				}
 
 				// Build the full URL
 				scheme := "https"

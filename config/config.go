@@ -8,10 +8,12 @@ import (
 
 // Config holds all configuration values for the application
 type Config struct {
-	PasteTTL                int64 // TTL in seconds for pastes
-	PasteDynamoDBCutoffSize int   // Size threshold for DynamoDB vs S3 storage (bytes)
-	PasteMaxSize            int   // Maximum paste size (bytes)
-	CacheMaxItems           int   // LRU cache maximum number of items
+	PasteTTL                int64  // TTL in seconds for pastes
+	PasteDynamoDBCutoffSize int    // Size threshold for DynamoDB vs S3 storage (bytes)
+	PasteMaxSize            int    // Maximum paste size (bytes)
+	CacheMaxItems           int    // LRU cache maximum number of items
+	SessionsKey             string // Secret key for signing session cookies (required)
+	SessionsKeyPrev         string // Previous secret key for key rotation (optional)
 }
 
 // LoadConfig loads configuration from environment variables with defaults
@@ -55,6 +57,15 @@ func LoadConfig() *Config {
 			log.Printf("Warning: Invalid CACHE_MAX_ITEMS value '%s', using default %d", val, cfg.CacheMaxItems)
 		}
 	}
+
+	// Load SESSIONS_KEY (required)
+	cfg.SessionsKey = os.Getenv("SESSIONS_KEY")
+	if cfg.SessionsKey == "" {
+		log.Fatal("SESSIONS_KEY environment variable is required")
+	}
+
+	// Load SESSIONS_KEY_PREV (optional for key rotation)
+	cfg.SessionsKeyPrev = os.Getenv("SESSIONS_KEY_PREV")
 
 	log.Printf("Config loaded - TTL: %ds, DynamoDB cutoff: %d bytes, Max size: %d bytes, Cache max items: %d",
 		cfg.PasteTTL, cfg.PasteDynamoDBCutoffSize, cfg.PasteMaxSize, cfg.CacheMaxItems)
