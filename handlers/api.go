@@ -207,17 +207,20 @@ func (h *Handlers) PostHandler(c *gin.Context) {
 				// Set the owner ID cookie (30 days expiration, no HttpOnly)
 				c.SetCookie("id", ownerID, 30*24*60*60, "/", "", false, false)
 
-				// Get session and set test value
+				// Get session and set user identification values
 				session := sessions.Default(c)
 
-				// Check if session already exists (has any values)
-				existingTest := session.Get("test")
-				if existingTest != nil {
-					log.Printf("Extending existing session with test=%v", existingTest)
+				// Check if session already has a userid
+				existingUserID := session.Get("userid")
+				if existingUserID != nil {
+					log.Printf("Extending existing session for userid=%v", existingUserID)
+				} else {
+					log.Printf("Creating new session for userid=%s", ownerID)
 				}
 
-				// Set/update test value - this marks session as modified
-				session.Set("test", "a")
+				// Set/update session values - userid matches the id cookie
+				session.Set("userid", ownerID)   // Same value as in the id cookie
+				session.Set("provider", "local") // Local authentication provider
 
 				// Save session - this automatically:
 				// 1. Preserves all existing session values
