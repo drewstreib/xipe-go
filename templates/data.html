@@ -57,26 +57,29 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            flex: 0 0 auto;
+            flex: 1 1 auto;
             min-width: 0;
+            flex-wrap: wrap;
         }
         .status-center {
             display: flex;
             align-items: center;
             gap: 15px;
-            flex: 1;
+            flex: 1 1 auto;
             margin-left: 10px;
             font-style: italic;
             color: #cccccc;
             min-width: 0;
+            flex-wrap: wrap;
         }
         .status-right {
             display: flex;
             align-items: center;
             gap: 15px;
-            flex: 0 0 auto;
-            margin-left: auto;
+            flex: 1 1 auto;
+            margin-left: 10px;
             min-width: 0;
+            flex-wrap: wrap;
         }
         .status-right label {
             display: flex;
@@ -230,6 +233,16 @@
         @media (max-width: 800px) {
             .data-content {
                 font-size: 12px;
+            }
+            .status-bar {
+                gap: 15px;
+            }
+            .status-left, .status-center, .status-right {
+                flex: 1 1 100%;
+                margin-left: 0;
+            }
+            .url-display {
+                max-width: 200px;
             }
         }
         
