@@ -142,11 +142,11 @@ func main() {
 	// Security headers middleware
 	r.Use(func(c *gin.Context) {
 		// Content Security Policy - prevent XSS and script injection
-		// Allow highlight.js from cdnjs, inline styles for templates, and self for everything else
+		// Allow highlight.js from s.xi.pe, inline styles for templates, and self for everything else
 		c.Header("Content-Security-Policy",
 			"default-src 'self'; "+
-				"script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "+
-				"style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "+
+				"script-src 'self' 'unsafe-inline' https://s.xi.pe; "+
+				"style-src 'self' 'unsafe-inline' https://s.xi.pe; "+
 				"font-src 'self'; "+
 				"img-src 'self' data:; "+
 				"connect-src 'self'; "+
